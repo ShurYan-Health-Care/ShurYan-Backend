@@ -3,7 +3,7 @@ const appointmentService = require('../services/appointmentService');
 const createAppointment = async (req, res) => {
   try {
     const appointment = await appointmentService.create(req.body);
-    res.status(201).json({
+    res.status(203).json({
       success: true,
       data: appointment
     });
