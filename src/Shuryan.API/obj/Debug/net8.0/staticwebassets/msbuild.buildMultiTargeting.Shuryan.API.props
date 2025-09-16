@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\Shuryan.API.props" />
+</Project>

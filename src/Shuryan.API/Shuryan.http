@@ -1,0 +1,6 @@
+@Shuryan_HostAddress = http://localhost:5095
+
+GET {{Shuryan_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
