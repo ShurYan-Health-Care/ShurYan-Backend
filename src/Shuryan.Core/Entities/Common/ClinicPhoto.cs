@@ -8,7 +8,7 @@ using Shuryan.Core.Entities.System;
 
 namespace Shuryan.Core.Entities.Common
 {
-	public class ClinicPhotos
+	public class ClinicPhoto
 	{
 		public Guid Id { get; set; }
 		public string PhotoUrl { get; set; } = string.Empty;
