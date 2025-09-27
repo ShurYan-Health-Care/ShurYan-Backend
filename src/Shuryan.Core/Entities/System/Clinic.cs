@@ -28,8 +28,8 @@ namespace Shuryan.Core.Entities.System
 		// Navigation Properties
 		public virtual Doctor DoctorClinic { get; set;} = null!;
 		public virtual Address Address { get; set; } = null!;
-		public virtual ICollection<ClinicPhotos> Photos { get; set; } = new HashSet<ClinicPhotos>();
+		public virtual ICollection<ClinicPhoto> Photos { get; set; } = new HashSet<ClinicPhoto>();
 		public virtual ICollection<ClinicPhoneNumber> PhoneNumbers { get; set; } = new HashSet<ClinicPhoneNumber>();
-		public virtual ICollection<ClinicServicesOffered> OfferedServices { get; set; } = new HashSet<ClinicServicesOffered>();
+		public virtual ICollection<Common.ClinicService> OfferedServices { get; set; } = new HashSet<Common.ClinicService>();
 	}
 }

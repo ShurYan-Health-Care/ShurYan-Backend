@@ -9,15 +9,15 @@ using Shuryan.Core.Enums;
 
 namespace Shuryan.Core.Entities.Common
 {
-	public class ClinicServicesOffered
+	public class ClinicService
 	{
 		public Guid Id { get; set; }
-		public ClinicService ServiceType { get; set; }
+		public ClinicServiceType ServiceType { get; set; }
 
 		[ForeignKey("Clinic")]
 		public Guid ClinicId { get; set; }
 
 		// Navigation property to the Clinic
 		public virtual Clinic Clinic { get; set; } = null!;
-	}
+	} 
 }
