@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Enums
 {
-	public enum ClinicService
+	public enum ClinicServiceType
 	{
 		[Description("كشف")]
 		Examination = 1,
