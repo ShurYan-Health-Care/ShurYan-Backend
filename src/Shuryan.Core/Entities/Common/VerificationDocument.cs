@@ -15,6 +15,9 @@ namespace Shuryan.Core.Entities.Common
 		public Guid Id { get; set; }
 		public string DocumentUrl { get; set; } = string.Empty;
 		public DocumentType Type { get; set; }
+		public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+		public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.Pending;
+		public string? RejectionReason { get; set; }
 
 		[ForeignKey("Doctor")]
 		public Guid DoctorId { get; set; }

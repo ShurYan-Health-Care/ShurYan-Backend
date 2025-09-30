@@ -5,12 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.System;
 using Shuryan.Core.Enums;
+using Shuryan.Core.Entities.External;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
-	public class ClinicEntityConfiguration : IEntityTypeConfiguration<Clinic>
+    public class ClinicEntityConfiguration : IEntityTypeConfiguration<Clinic>
 	{
 		public void Configure(EntityTypeBuilder<Clinic> builder)
 		{

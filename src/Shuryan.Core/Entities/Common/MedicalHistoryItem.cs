@@ -14,6 +14,7 @@ namespace Shuryan.Core.Entities.Common
 		public Guid Id { get; set; }
 		public MedicalHistoryType Type { get; set; }
 		public string Text { get; set; } = string.Empty;
+		public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
 
 		[ForeignKey("Patient")]
 		public Guid PatientId { get; set; }
