@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Enums;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
@@ -14,8 +15,10 @@ namespace Shuryan.Infrastructure.Data.Configurations
 		public void Configure(EntityTypeBuilder<DoctorOverride> builder)
 		{
 			builder.HasKey(do_override => do_override.Id);
+			builder.Property(do_override => do_override.Type)
+				.HasConversion<int>()
+				.IsRequired();
 
-			// Relationships
 			builder.HasOne(do_override => do_override.Doctor)
 				   .WithMany(d => d.Overrides)
 				   .HasForeignKey(do_override => do_override.DoctorId)
