@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Shuryan.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -60,6 +60,8 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     ProfileImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     MedicalSpecialty = table.Column<int>(type: "int", nullable: true),
                     YearsOfExperience = table.Column<int>(type: "int", nullable: true),
+                    Rating = table.Column<int>(type: "int", nullable: true),
+                    Comment = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Biography = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     VerificationStatus = table.Column<int>(type: "int", nullable: true, defaultValue: 0),
                     VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -116,6 +118,51 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         principalTable: "AspNetRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Appointments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PreviousAppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Rating = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    ScheduledStartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ScheduledEndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ConsultationType = table.Column<int>(type: "int", nullable: false),
+                    ConsultationFee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    SessionDurationMinutes = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
+                    CancellationReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Appointments", x => x.Id);
+                    table.CheckConstraint("CK_Appointment_ConsultationFee", "[ConsultationFee] >= 0");
+                    table.CheckConstraint("CK_Appointment_Rating", "[Rating] >= 0 AND [Rating] <= 5");
+                    table.CheckConstraint("CK_Appointment_SessionDuration", "[SessionDurationMinutes] > 0 AND [SessionDurationMinutes] <= 480");
+                    table.CheckConstraint("CK_Appointment_TimeValidation", "[ScheduledStartTime] < [ScheduledEndTime]");
+                    table.ForeignKey(
+                        name: "FK_Appointments_Appointments_PreviousAppointmentId",
+                        column: x => x.PreviousAppointmentId,
+                        principalTable: "Appointments",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Appointments_AspNetUsers_DoctorId",
+                        column: x => x.DoctorId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Appointments_AspNetUsers_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -238,10 +285,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DayOfWeek = table.Column<int>(type: "int", nullable: false),
                     StartTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     EndTime = table.Column<TimeOnly>(type: "time", nullable: false),
-                    DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -260,9 +308,10 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     StartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Type = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -306,6 +355,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Text = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    RecordedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -326,6 +376,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DocumentUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
+                    UploadedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -335,6 +388,31 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         name: "FK_VerificationDocuments_AspNetUsers_DoctorId",
                         column: x => x.DoctorId,
                         principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ConsultationRecords",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ChiefComplaint = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    HistoryOfPresentIllness = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    PhysicalExamination = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    Diagnosis = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    ManagementPlan = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    RecordedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastUpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ConsultationRecords", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ConsultationRecords_Appointments_AppointmentId",
+                        column: x => x.AppointmentId,
+                        principalTable: "Appointments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -406,6 +484,21 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 name: "IX_Address_Governorate",
                 table: "Addresses",
                 column: "Governorate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointments_DoctorId",
+                table: "Appointments",
+                column: "DoctorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointments_PatientId",
+                table: "Appointments",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointments_PreviousAppointmentId",
+                table: "Appointments",
+                column: "PreviousAppointmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -532,6 +625,12 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "ClinicId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ConsultationRecords_AppointmentId",
+                table: "ConsultationRecords",
+                column: "AppointmentId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DoctorAvailability_DoctorId",
                 table: "DoctorAvailability",
                 column: "DoctorId");
@@ -585,6 +684,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 name: "ClinicServices");
 
             migrationBuilder.DropTable(
+                name: "ConsultationRecords");
+
+            migrationBuilder.DropTable(
                 name: "DoctorAvailability");
 
             migrationBuilder.DropTable(
@@ -604,6 +706,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Clinics");
+
+            migrationBuilder.DropTable(
+                name: "Appointments");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

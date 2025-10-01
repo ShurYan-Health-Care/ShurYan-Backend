@@ -4,11 +4,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Shuryan.Core.Entities.System;
+using Shuryan.Core.Entities.External;
 
 namespace Shuryan.Core.Entities.Common
 {
-	public class ClinicPhoto
+    public class ClinicPhoto
 	{
 		public Guid Id { get; set; }
 		public string PhotoUrl { get; set; } = string.Empty;

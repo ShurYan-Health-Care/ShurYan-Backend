@@ -13,15 +13,16 @@ namespace Shuryan.Core.Entities.Medical
 	public class DoctorAvailability
 	{
 		public Guid Id { get; set; }
+
+		[ForeignKey("Doctor")]
+		public Guid DoctorId { get; set; }
+
 		public ClinicDayOfWeek DayOfWeek { get; set; }
 
 		// We use TimeOnly to store only the time part
 		public TimeOnly StartTime { get; set; } // The start time of the slot (ex: 10:00 AM)
 		public TimeOnly EndTime { get; set; } // The end time of the slot (ex: 02:00 PM)
-
-		[ForeignKey("Doctor")]
-		public Guid DoctorId { get; set; }
-
+		public bool IsActive { get; set; } = true; // سوفت ديليت عشان لو الدكتور احتاج انه يعطل وقت معين ف يوم من الايام بشكل مؤقت او فاليوم ده بس
 
 		// Navigation Properties
 		public virtual Doctor Doctor { get; set; } = null!;

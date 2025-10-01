@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.External;
 using Shuryan.Core.Entities.Identity;
-using Shuryan.Core.Entities.System;
 using Shuryan.Core.Enums;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
-	public class DoctorEntityConfiguration : IEntityTypeConfiguration<Doctor>
+    public class DoctorEntityConfiguration : IEntityTypeConfiguration<Doctor>
 	{
 		public void Configure(EntityTypeBuilder<Doctor> builder)
 		{
@@ -25,7 +25,7 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			   .WithMany(v => v.VerifiedDoctors)
 			   .HasForeignKey(d => d.VerifierId)
 			   .IsRequired(false)
-			   .OnDelete(DeleteBehavior.NoAction);
+			   .OnDelete(DeleteBehavior.Restrict);
 
 			builder.HasOne(d => d.Clinic)
 				   .WithOne(c => c.DoctorClinic)
@@ -51,6 +51,11 @@ namespace Shuryan.Infrastructure.Data.Configurations
 				   .WithOne(vd => vd.Doctor)
 				   .HasForeignKey(vd => vd.DoctorId)
 				   .OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasMany(d => d.Appointments)
+				   .WithOne(a => a.Doctor)
+				   .HasForeignKey(a => a.DoctorId)
+				   .OnDelete(DeleteBehavior.Restrict);
 
 			// Indexes
 			builder.HasIndex(d => d.MedicalSpecialty)
