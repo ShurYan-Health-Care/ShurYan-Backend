@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Infrastructure.Data;
+using Shuryan.Shared.Configurations;
 using Shuryan.Shared.Extensions;
-
-
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDatabaseConfiguration(builder.Configuration);
+builder.Services.AddCorsConfiguration(builder.Configuration);
+
 
 // Add services to the container.
 builder.Services.AddControllers();
