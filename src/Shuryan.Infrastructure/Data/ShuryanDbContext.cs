@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.External;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.Medical;
-using Shuryan.Core.Entities.System;
 
 namespace Shuryan.Infrastructure.Data
 {
-	public class ShuryanDbContext : IdentityDbContext<User, Role, Guid>
+    public class ShuryanDbContext : IdentityDbContext<User, Role, Guid>
 	{
 		public ShuryanDbContext(DbContextOptions<ShuryanDbContext> options)
 		: base(options)
@@ -22,7 +22,7 @@ namespace Shuryan.Infrastructure.Data
 		// Identity Entities
 		public DbSet<User> Users { get; set; }
 
-		// System Entities
+		// External Entities
 		public DbSet<Clinic> Clinics { get; set; }
 
 		// Common Entities
@@ -37,6 +37,8 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<DoctorService> DoctorService { get; set; }
 		public DbSet<DoctorOverride> DoctorOverride { get; set; }
 		public DbSet<DoctorAvailability> DoctorAvailability { get; set; }
+		public DbSet<Appointment> Appointments { get; set; }
+		public DbSet<ConsultationRecord> ConsultationRecords { get; set; }
 		#endregion
 
 		protected override void OnModelCreating(ModelBuilder builder)

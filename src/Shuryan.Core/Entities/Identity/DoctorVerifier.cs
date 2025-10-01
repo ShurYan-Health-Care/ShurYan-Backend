@@ -10,7 +10,7 @@ namespace Shuryan.Core.Entities.Identity
 {
 	public class DoctorVerifier : User
 	{
-		public Guid CreatedByAdminId { get; set; }
+		public Guid CreatedByAdminId { get; set; } // حاليا مفيش يوزر ادمن ف فمفيش ربط حاليا
 
 		public DoctorVerifier()
 		{

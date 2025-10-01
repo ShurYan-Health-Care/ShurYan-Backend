@@ -1,15 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Infrastructure.Data;
+using Shuryan.Shared.Configurations;
+using Shuryan.Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddDatabaseConfiguration(builder.Configuration);
+builder.Services.AddCorsConfiguration(builder.Configuration);
+
+
 // Add services to the container.
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-builder.Services.AddDbContext<ShuryanDbContext>(options =>
-	options.UseSqlServer(connectionString));
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

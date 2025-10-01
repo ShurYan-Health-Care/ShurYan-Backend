@@ -23,6 +23,11 @@ namespace Shuryan.Infrastructure.Data.Configurations
 				   .WithOne(mhi => mhi.Patient)
 				   .HasForeignKey(mhi => mhi.PatientId)
 				   .OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasMany(p => p.Appointments)
+				   .WithOne(a => a.Patient)
+				   .HasForeignKey(a => a.PatientId)
+				   .OnDelete(DeleteBehavior.Restrict);
 		}
 	}
 }

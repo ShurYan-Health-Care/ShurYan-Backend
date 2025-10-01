@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.Identity;
-using Shuryan.Core.Entities.System;
+using Shuryan.Core.Entities.External;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
-	public class AddressEntityConfiguration : IEntityTypeConfiguration<Address>
+    public class AddressEntityConfiguration : IEntityTypeConfiguration<Address>
 	{
 		public void Configure(EntityTypeBuilder<Address> builder)
 		{
@@ -39,11 +39,6 @@ namespace Shuryan.Infrastructure.Data.Configurations
 				   .HasPrecision(18, 12);
 
 			// Relationships
-			builder.HasOne(a => a.Patient)
-				   .WithOne(p => p.Address)
-				   .HasForeignKey<Patient>(p => p.AddressId)
-				   .OnDelete(DeleteBehavior.NoAction);
-
 			builder.HasOne(a => a.Clinic)
 				   .WithOne(c => c.Address)
 				   .HasForeignKey<Clinic>(c => c.AddressId)
