@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Enums
 {
-	public enum OverrideType
-	{
-		[Description("متاح")]
-		Available = 1,
+    public enum OverrideType
+    {
+        [Description("متاح")]
+        Available = 1,
 
-		[Description("غير متاح")]
-		Unavailable = 2
-	}
+        [Description("غير متاح")]
+        Unavailable = 2
+    }
 }
