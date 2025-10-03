@@ -21,11 +21,5 @@ namespace Shuryan.Core.Entities.Common
 		// Geographic Coordinates
 		public double? Latitude { get; set; }
 		public double? Longitude { get; set; }
-
-		// Navigation Properties
-		// Address with Patient -> Optional 1:1
-		// Address with Clinic -> Mandatory 1:1
-		public virtual Patient? Patient { get; set; } = null!;
-		public virtual Clinic? Clinic { get; set; }
 	}
 }

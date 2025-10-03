@@ -15,6 +15,9 @@ namespace Shuryan.Infrastructure.Data.Configurations
 		{
 			builder.Property(pu => pu.Gender)
 				   .HasConversion<int>();
+
+			builder.Property(pu => pu.ProfileImageUrl)
+				   .HasMaxLength(500);
 		}
 	}
 }

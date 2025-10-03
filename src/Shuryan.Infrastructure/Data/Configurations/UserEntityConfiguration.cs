@@ -18,21 +18,18 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			builder.Property(u => u.FirstName).IsRequired().HasMaxLength(50);
 			builder.Property(u => u.LastName).IsRequired().HasMaxLength(50);
 			builder.Property(u => u.Email).IsRequired().HasMaxLength(200);
-			builder.Property(u => u.CreatedAt).IsRequired();
+			builder.Property(u => u.CreatedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 			builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
-			builder.Property(u => u.UserRole).HasConversion<int>().IsRequired();
 
-			builder.HasDiscriminator(u => u.UserRole)
-				.HasValue<Patient>(UserRole.Patient)
-				.HasValue<Doctor>(UserRole.Doctor)
-				.HasValue<DoctorVerifier>(UserRole.Verifier);
+			builder.HasDiscriminator<string>("UserType")
+				.HasValue<Patient>("Patient")
+				.HasValue<Doctor>("Doctor")
+				.HasValue<Verifier>("Verifier")
+				.HasValue<Laboratory>("Laboratory");
 
 			builder.HasIndex(u => u.Email)
 				   .HasDatabaseName("IX_User_Email")
 				   .IsUnique();
-
-			builder.HasIndex(u => u.UserRole)
-				   .HasDatabaseName("IX_User_UserRole");
 
 			builder.HasIndex(u => u.IsActive)
 				   .HasDatabaseName("IX_User_IsActive");

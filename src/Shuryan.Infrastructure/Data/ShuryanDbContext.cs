@@ -18,9 +18,15 @@ namespace Shuryan.Infrastructure.Data
 		: base(options)
 		{
 		}
+
 		#region DbSets
 		// Identity Entities
 		public DbSet<User> Users { get; set; }
+		public DbSet<Role> Roles { get; set; }
+		public DbSet<Patient> Patients { get; set; }
+		public DbSet<Doctor> Doctors { get; set; }
+		public DbSet<Verifier> Verifiers { get; set; }
+		public DbSet<Laboratory> Laboratories { get; set; }
 
 		// External Entities
 		public DbSet<Clinic> Clinics { get; set; }
@@ -32,13 +38,21 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<MedicalHistoryItem> MedicalHistoryItems { get; set; }
 		public DbSet<VerificationDocument> VerificationDocuments { get; set; }
 		public DbSet<ClinicService> ClinicServices { get; set; }
+		public DbSet<LaboratoryDocument> LaboratoryDocuments { get; set; }
 
 		// Medical Entities
-		public DbSet<DoctorService> DoctorService { get; set; }
-		public DbSet<DoctorOverride> DoctorOverride { get; set; }
-		public DbSet<DoctorAvailability> DoctorAvailability { get; set; }
 		public DbSet<Appointment> Appointments { get; set; }
 		public DbSet<ConsultationRecord> ConsultationRecords { get; set; }
+		public DbSet<DoctorAvailability> DoctorAvailability { get; set; }
+		public DbSet<DoctorOverride> DoctorOverride { get; set; }
+		public DbSet<DoctorService> DoctorService { get; set; }
+		public DbSet<LaboratoryWorkingHours> LaboratoryWorkingHours { get; set; }
+		public DbSet<LabOrder> LabOrders { get; set; }
+		public DbSet<LabPrescription> LabPrescriptions { get; set; }
+		public DbSet<LabPrescriptionItem> LabPrescriptionItems { get; set; }
+		public DbSet<LabResult> LabResults { get; set; }
+		public DbSet<LabService> LabServices { get; set; }
+		public DbSet<LabTest> LabTests { get; set; }
 		#endregion
 
 		protected override void OnModelCreating(ModelBuilder builder)
@@ -46,13 +60,6 @@ namespace Shuryan.Infrastructure.Data
 			base.OnModelCreating(builder);
 
 			builder.ApplyConfigurationsFromAssembly(typeof(ShuryanDbContext).Assembly);
-		}
-
-		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-		{
-			base.OnConfiguring(optionsBuilder);
-
-
 		}
 	}
 }
