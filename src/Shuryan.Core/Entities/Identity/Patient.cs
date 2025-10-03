@@ -18,5 +18,6 @@ namespace Shuryan.Core.Entities.Identity
 		public virtual Address? Address { get; set; }
 		public virtual ICollection<MedicalHistoryItem> MedicalHistory { get; set; } = new HashSet<MedicalHistoryItem>();
 		public virtual ICollection<Appointment> Appointments { get; set; } = new HashSet<Appointment>();
+		public virtual ICollection<LabOrder> LabOrders { get; set; } = new HashSet<LabOrder>();
 	}
 }

@@ -17,8 +17,11 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			builder.HasKey(a => a.Id);
 
 			// Properties Configuration
-			builder.Property(a => a.Rating)
-				   .HasDefaultValue(0);
+			builder.Property(a => a.ScheduledStartTime)
+				   .IsRequired();
+
+			builder.Property(a => a.ScheduledEndTime)
+				   .IsRequired();
 
 			builder.Property(a => a.ConsultationFee)
 				   .IsRequired()
@@ -39,6 +42,8 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			builder.Property(a => a.CancellationReason)
 				   .HasMaxLength(500);
 
+			builder.Property(a => a.CreatedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
+
 			// Relationships
 			builder.HasOne(a => a.Patient)
 				   .WithMany(p => p.Appointments)
@@ -55,14 +60,22 @@ namespace Shuryan.Infrastructure.Data.Configurations
 				   .HasForeignKey<ConsultationRecord>(cr => cr.AppointmentId)
 				   .OnDelete(DeleteBehavior.Cascade);
 
+			builder.HasOne(a => a.PreviousAppointment)
+				   .WithMany(a => a.FollowUpAppointments)
+				   .HasForeignKey(a => a.PreviousAppointmentId)
+				   .OnDelete(DeleteBehavior.Restrict);
+
+			builder.HasMany(a => a.LabPrescription)
+				   .WithOne(lp => lp.Appointment)
+				   .HasForeignKey(lp => lp.AppointmentId)
+				   .OnDelete(DeleteBehavior.Cascade);
+
 			// Check Constraints
 			builder.HasCheckConstraint("CK_Appointment_TimeValidation", "[ScheduledStartTime] < [ScheduledEndTime]");
 
 			builder.HasCheckConstraint("CK_Appointment_ConsultationFee", "[ConsultationFee] >= 0");
 
 			builder.HasCheckConstraint("CK_Appointment_SessionDuration", "[SessionDurationMinutes] > 0 AND [SessionDurationMinutes] <= 480");
-
-			builder.HasCheckConstraint("CK_Appointment_Rating", "[Rating] >= 0 AND [Rating] <= 5");
 		}
 	}
 }

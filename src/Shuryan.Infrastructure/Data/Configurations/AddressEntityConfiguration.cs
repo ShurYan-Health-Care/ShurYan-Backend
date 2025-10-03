@@ -38,12 +38,6 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			builder.Property(a => a.Longitude)
 				   .HasPrecision(18, 12);
 
-			// Relationships
-			builder.HasOne(a => a.Clinic)
-				   .WithOne(c => c.Address)
-				   .HasForeignKey<Clinic>(c => c.AddressId)
-				   .OnDelete(DeleteBehavior.Restrict);
-
 			// Indexes for performance
 			builder.HasIndex(a => a.Governorate)
 				   .HasDatabaseName("IX_Address_Governorate");

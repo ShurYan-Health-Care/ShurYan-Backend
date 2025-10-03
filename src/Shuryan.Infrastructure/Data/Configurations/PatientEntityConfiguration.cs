@@ -15,7 +15,7 @@ namespace Shuryan.Infrastructure.Data.Configurations
 		{
 			// Relationships
 			builder.HasOne(p => p.Address)
-				   .WithOne(a => a.Patient)
+				   .WithOne()
 				   .HasForeignKey<Patient>(p => p.AddressId)
 				   .OnDelete(DeleteBehavior.SetNull);
 
@@ -27,6 +27,11 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			builder.HasMany(p => p.Appointments)
 				   .WithOne(a => a.Patient)
 				   .HasForeignKey(a => a.PatientId)
+				   .OnDelete(DeleteBehavior.Restrict);
+
+			builder.HasMany(p => p.LabOrders)
+				   .WithOne(lo => lo.Patient)
+				   .HasForeignKey(lo => lo.PatientId)
 				   .OnDelete(DeleteBehavior.Restrict);
 		}
 	}
