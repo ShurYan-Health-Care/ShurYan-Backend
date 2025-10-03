@@ -17,9 +17,9 @@ namespace Shuryan.Core.Entities.Identity
 		public MedicalSpecialty MedicalSpecialty { get; set; }
 		public int YearsOfExperience { get; set; }
 
-		[Range(0, 5)] // 0 means not rated yet
-		public int Rating { get; set; } // هيتحسب بشكل تلقائي من متوسط التقيمات لل Appointment بتوعه
-		public string? Comment { get; set; }
+		//[Range(0, 5)] // 0 means not rated yet
+		//public int Rating { get; set; } // هيتحسب بشكل تلقائي من متوسط التقيمات لل Appointment بتوعه
+		//public string? Comment { get; set; }
 
 		// Optional for Credibility
 		public string? Biography { get; set; }
@@ -32,12 +32,14 @@ namespace Shuryan.Core.Entities.Identity
 		public Guid? VerifierId { get; set; }
 
 		// Navigation Properties
-		public virtual DoctorVerifier? Verifier { get; set; }
+		public virtual Verifier? Verifier { get; set; }
 		public virtual Clinic? Clinic { get; set; }
 		public virtual ICollection<DoctorService> Services { get; set; } = new HashSet<DoctorService>();
 		public virtual ICollection<DoctorOverride> Overrides { get; set; } = new HashSet<DoctorOverride>();
 		public virtual ICollection<DoctorAvailability> Availabilities { get; set; } = new HashSet<DoctorAvailability>();
 		public virtual ICollection<VerificationDocument> VerificationDocuments { get; set; } = new HashSet<VerificationDocument>();
 		public virtual ICollection<Appointment> Appointments { get; set; } = new HashSet<Appointment>();
+		public virtual ICollection<LabPrescription> LabPrescriptions { get; set; } = new HashSet<LabPrescription>();
+
 	}
 }

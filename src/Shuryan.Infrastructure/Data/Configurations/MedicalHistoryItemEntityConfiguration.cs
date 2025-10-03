@@ -23,6 +23,8 @@ namespace Shuryan.Infrastructure.Data.Configurations
 				   .IsRequired()
 				   .HasMaxLength(1000);
 
+			builder.Property(mhi => mhi.RecordedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
+
 			// Relationships
 			builder.HasOne(mhi => mhi.Patient)
 				   .WithMany(p => p.MedicalHistory)

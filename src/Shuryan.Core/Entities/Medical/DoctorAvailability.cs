@@ -17,7 +17,7 @@ namespace Shuryan.Core.Entities.Medical
 		[ForeignKey("Doctor")]
 		public Guid DoctorId { get; set; }
 
-		public ClinicDayOfWeek DayOfWeek { get; set; }
+		public Enums.DayOfWeek DayOfWeek { get; set; }
 
 		// We use TimeOnly to store only the time part
 		public TimeOnly StartTime { get; set; } // The start time of the slot (ex: 10:00 AM)
