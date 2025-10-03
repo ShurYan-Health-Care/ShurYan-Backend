@@ -19,6 +19,9 @@ namespace Shuryan.Core.Enums
 		Admin = 3,
 
 		[Description("فاحص الطبيب")]
-		Verifier = 4
+		Verifier = 4,
+
+		[Description("معمل تحاليل")]
+		Laboratory = 5
 	}
 }

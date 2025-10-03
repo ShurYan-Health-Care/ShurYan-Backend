@@ -14,8 +14,7 @@ namespace Shuryan.Core.Entities.Identity
 		public string FirstName { get; set; } = string.Empty;
 		public string LastName { get; set; } = string.Empty;
 		public bool IsActive { get; set; } = true; // Soft delete -> if false, the user is considered deleted
-		public UserRole UserRole { get; set; }
-		public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Nessessary for Reports
+		public DateTime CreatedAt { get; set; } // Nessessary for Reports
 		public DateTime? UpdatedAt { get; set; } // Records the last time the user updated any of their account details.
 	}
 }

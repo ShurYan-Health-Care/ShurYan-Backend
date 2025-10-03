@@ -15,7 +15,7 @@ namespace Shuryan.Core.Entities.External
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public ClinicStatus Status { get; set; } = ClinicStatus.Active;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string? FacilityVideoUrl { get; set; }
 

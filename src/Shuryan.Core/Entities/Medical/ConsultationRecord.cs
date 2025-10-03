@@ -24,7 +24,7 @@ namespace Shuryan.Core.Entities.Medical
 
 		public string ManagementPlan { get; set; } = string.Empty; // الخطة العلاجية: راحة تامة، سوائل دافئة، علاج موسع للشعب الهوائية، متابعة بعد 3 أيام
 
-		public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
+		public DateTime RecordedAt { get; set; } 
 		public DateTime? LastUpdatedAt { get; set; }
 
 		// Navigation Properties

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Enums
 {
-	public enum ClinicDayOfWeek
+	public enum DayOfWeek
 	{
 		Saturday = 1,
 		Sunday = 2,
