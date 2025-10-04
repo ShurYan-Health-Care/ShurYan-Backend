@@ -13,33 +13,34 @@ using Shuryan.Core.Enums;
 namespace Shuryan.Core.Entities.Identity
 {
     public class Doctor : ProfileUser
-	{
-		public MedicalSpecialty MedicalSpecialty { get; set; }
-		public int YearsOfExperience { get; set; }
+    {
+        public MedicalSpecialty MedicalSpecialty { get; set; }
+        public int YearsOfExperience { get; set; }
 
-		//[Range(0, 5)] // 0 means not rated yet
-		//public int Rating { get; set; } // هيتحسب بشكل تلقائي من متوسط التقيمات لل Appointment بتوعه
-		//public string? Comment { get; set; }
+        //[Range(0, 5)] // 0 means not rated yet
+        //public int Rating { get; set; } // هيتحسب بشكل تلقائي من متوسط التقيمات لل Appointment بتوعه
+        //public string? Comment { get; set; }
 
-		// Optional for Credibility
-		public string? Biography { get; set; }
+        // Optional for Credibility
+        public string? Biography { get; set; }
 
-		// Verification
-		public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Unverified;
-		public DateTime? VerifiedAt { get; set; }
+        // Verification
+        public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Unverified;
+        public DateTime? VerifiedAt { get; set; }
 
-		[ForeignKey("Verifier")]
-		public Guid? VerifierId { get; set; }
+        [ForeignKey("Verifier")]
+        public Guid? VerifierId { get; set; }
 
-		// Navigation Properties
-		public virtual Verifier? Verifier { get; set; }
-		public virtual Clinic? Clinic { get; set; }
-		public virtual ICollection<DoctorService> Services { get; set; } = new HashSet<DoctorService>();
-		public virtual ICollection<DoctorOverride> Overrides { get; set; } = new HashSet<DoctorOverride>();
-		public virtual ICollection<DoctorAvailability> Availabilities { get; set; } = new HashSet<DoctorAvailability>();
-		public virtual ICollection<VerificationDocument> VerificationDocuments { get; set; } = new HashSet<VerificationDocument>();
-		public virtual ICollection<Appointment> Appointments { get; set; } = new HashSet<Appointment>();
-		public virtual ICollection<LabPrescription> LabPrescriptions { get; set; } = new HashSet<LabPrescription>();
+        // Navigation Properties
+        public virtual Verifier? Verifier { get; set; }
+        public virtual Clinic? Clinic { get; set; }
+        public virtual ICollection<DoctorService> Services { get; set; } = new HashSet<DoctorService>();
+        public virtual ICollection<DoctorOverride> Overrides { get; set; } = new HashSet<DoctorOverride>();
+        public virtual ICollection<DoctorAvailability> Availabilities { get; set; } = new HashSet<DoctorAvailability>();
+        public virtual ICollection<VerificationDocument> VerificationDocuments { get; set; } = new HashSet<VerificationDocument>();
+        public virtual ICollection<Appointment> Appointments { get; set; } = new HashSet<Appointment>();
+        public virtual ICollection<LabPrescription> LabPrescriptions { get; set; } = new HashSet<LabPrescription>();
+        public virtual ICollection<Prescription> Prescriptions { get; set; } = new HashSet<Prescription>();
 
-	}
+    }
 }

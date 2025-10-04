@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Enums
 {
-	public enum VerificationDocumentStatus
-	{
-		[Description("في الانتظار")]
-		Pending = 1,
+    public enum VerificationDocumentStatus
+    {
+        [Description("في الانتظار")]
+        Pending = 1,
 
-		[Description("مقبول")]
-		Approved = 2,
+        [Description("مقبول")]
+        Approved = 2,
 
-		[Description("مرفوض")]
-		Rejected = 3
-	}
+        [Description("مرفوض")]
+        Rejected = 3
+    }
 }
