@@ -30,13 +30,13 @@ namespace Shuryan.Infrastructure.Data
 
         // External Entities
         public DbSet<Clinic> Clinics { get; set; }
-        public DbSet<Pharmacy> Pharmacies { get; set; }
-        public DbSet<PharmacyDocument> PharmacyDocuments { get; set; } // For Pharmacies
         public DbSet<Medication> Medications { get; set; }
-        public DbSet<MedicationPrescription> MedicationPrescriptions { get; set; }
-        public DbSet<PrescribedMedication> PrescribedMedications { get; set; }
-        public DbSet<PharmacyWorkingHours> PharmacyWorkingHours { get; set; }
+        public DbSet<PharmacyDocument> PharmacyDocuments { get; set; }
         public DbSet<PharmacyOrder> PharmacyOrders { get; set; }
+        public DbSet<PharmacyWorkingHours> PharmacyWorkingHours { get; set; }
+        public DbSet<PrescribedMedication> PrescribedMedications { get; set; }
+        public DbSet<Prescription> Prescription { get; set; }
+        public DbSet<Pharmacy> Pharmacies { get; set; }
 
         // Common Entities
         public DbSet<Address> Addresses { get; set; }
@@ -61,7 +61,7 @@ namespace Shuryan.Infrastructure.Data
         public DbSet<LabService> LabServices { get; set; }
         public DbSet<LabTest> LabTests { get; set; }
         #endregion
-     
+
 
         // --- DbSets for Appointment Flow ---
         protected override void OnModelCreating(ModelBuilder builder)

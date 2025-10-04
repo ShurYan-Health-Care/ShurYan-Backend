@@ -9,13 +9,10 @@ namespace Shuryan.Core.Enums
 {
     public enum OrderDeliveryType
     {
-        [Description("توصيل سريع")]
-        ExpressDelivery = 1,
-
-        [Description("توصيل مُجدوَل")]
-        ScheduledDelivery = 2,
+        [Description("توصيل")]
+        Delivery = 1,
 
         [Description("استلام من الصيدلية")]
-        PharmacyPickup = 3
+        PharmacyPickup = 2
     }
 }

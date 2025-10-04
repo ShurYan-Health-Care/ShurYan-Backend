@@ -9,28 +9,34 @@ namespace Shuryan.Core.Enums
 {
     public enum PharmacyOrderStatus
     {
+        [Description("في انتظار الموافقة والدفع من المريض")]
+        PendingPayment = 1,
+
+        [Description("تم الدفع - في انتظار تأكيد الصيدله")]
+        PaidPendingLabConfirmation = 2,
+
         [Description("تم استلام الطلب")]
-        Received = 1,
+        Received = 3,
 
         [Description("جاري التحقق من التوفر")]
-        VerificationInProgress = 2,
+        VerificationInProgress = 4,
 
         [Description("تم تأكيد الطلب")]
         Confirmed = 3,
 
         [Description("جاري تحضير الطلب")]
-        PreparationInProgress = 4,
+        PreparationInProgress = 5,
 
         [Description("خرج للتوصيل")]
-        OutForDelivery = 5,
+        OutForDelivery = 6,
 
         [Description("جاهز للاستلام")]
-        ReadyForPickup = 6,
+        ReadyForPickup = 7,
 
         [Description("تم التسليم")]
-        Delivered = 7,
+        Delivered = 8,
 
         [Description("ملغي")]
-        Cancelled = 8
+        Cancelled = 9
     }
 }

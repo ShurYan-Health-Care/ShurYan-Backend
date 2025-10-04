@@ -16,17 +16,18 @@ namespace Shuryan.Core.Entities.External
     {
         public Guid Id { get; set; }
         public string OrderNumber { get; set; }
-        public PharmacyOrderStatus Status { get; set; }
+        public PharmacyOrderStatus Status { get; set; } = PharmacyOrderStatus.PendingPayment;
         public decimal TotalCost { get; set; }
         public decimal DeliveryFee { get; set; }
         public OrderDeliveryType DeliveryType { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
         public DateTime? EstimatedDeliveryTime { get; set; }
-        public string DeliveryPersonPhone { get; set; } // د الرقم اللي العميل هيتواصل بيه مع بتاع الدليفري
+        public string? DeliveryPersonPhone { get; set; } // د الرقم اللي العميل هيتواصل بيه مع بتاع الدليفري
         public string DeliveryPersonName { get; set; } // اسم بتاع الدليفري
         public string? DeliveryNotes { get; set; } // معلومات عن التوصيل زي مثلا حط الطلب قدام الباب وصوره خبط مرتين
+        public DateTime? ActualDeliveryTime { get; set; }
 
-        public PharmacyPaymentMethod PaymentMethod { get; set; }
+
         // --- العلاقات ---
         [ForeignKey("Patient")]
         public Guid PatientId { get; set; }
@@ -35,10 +36,7 @@ namespace Shuryan.Core.Entities.External
         [ForeignKey("Pharmacy")]
         public Guid PharmacyId { get; set; }
         public virtual Pharmacy Pharmacy { get; set; } = null!;
-
-        [ForeignKey("MedicationPrescription")]
-        public Guid MedicationPrescriptionId { get; set; }
-        public virtual MedicationPrescription MedicationPrescription { get; set; } = null!;
+        public virtual Prescription MedicationPrescription { get; set; } = null!;
     }
 
 }
