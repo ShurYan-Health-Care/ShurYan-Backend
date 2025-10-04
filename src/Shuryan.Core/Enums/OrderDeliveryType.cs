@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Enums
 {
-    public enum OverrideType
+    public enum OrderDeliveryType
     {
-        [Description("متاح")]
-        Available = 1,
+        [Description("توصيل")]
+        Delivery = 1,
 
-        [Description("غير متاح")]
-        Unavailable = 2
+        [Description("استلام من الصيدلية")]
+        PharmacyPickup = 2
     }
 }
