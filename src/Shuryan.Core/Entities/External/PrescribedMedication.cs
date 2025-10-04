@@ -12,7 +12,6 @@ namespace Shuryan.Core.Entities.External
     /// </summary>
     public class PrescribedMedication
     {
-        public Guid Id { get; set; }
         public string Dosage { get; set; } // الجرعة: "قرص واحد"
         public string Frequency { get; set; } // التكرار: "3 مرات يوميًا"
         public int DurationDays { get; set; } // المدة بالأيام
@@ -20,7 +19,7 @@ namespace Shuryan.Core.Entities.External
 
         [ForeignKey("MedicationPrescription")]
         public Guid MedicationPrescriptionId { get; set; }
-        public virtual MedicationPrescription MedicationPrescription { get; set; } = null!;
+        public virtual Prescription MedicationPrescription { get; set; } = null!;
 
         [ForeignKey("Medication")]
         public Guid MedicationId { get; set; }

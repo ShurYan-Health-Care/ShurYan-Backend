@@ -8,11 +8,12 @@ using Shuryan.Core.Enums;
 
 namespace Shuryan.Core.Entities.Identity
 {
-	public class Verifier : User
-	{
-		public Guid CreatedByAdminId { get; set; } // حاليا مفيش يوزر ادمن ف فمفيش ربط حاليا
+    public class Verifier : User
+    {
+        public Guid CreatedByAdminId { get; set; } // حاليا مفيش يوزر ادمن ف فمفيش ربط حاليا
 
-		public virtual ICollection<Doctor> VerifiedDoctors { get; set; } = new HashSet<Doctor>();
-		public virtual ICollection<Laboratory> VerifiedLabors { get; set;} = new HashSet<Laboratory>();
-	}
+        public virtual ICollection<Doctor> VerifiedDoctors { get; set; } = new HashSet<Doctor>();
+        public virtual ICollection<Laboratory> VerifiedLabors { get; set; } = new HashSet<Laboratory>();
+        public virtual ICollection<Pharmacy> VerifiedPharmacies { get; set; } = new HashSet<Pharmacy>();
+    }
 }

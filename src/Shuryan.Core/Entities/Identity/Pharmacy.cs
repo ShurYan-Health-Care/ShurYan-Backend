@@ -1,9 +1,9 @@
 ﻿using Shuryan.Core.Entities.Common;
-using Shuryan.Core.Entities.Identity;
+using Shuryan.Core.Entities.External;
 using Shuryan.Core.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Shuryan.Core.Entities.External
+namespace Shuryan.Core.Entities.Identity
 {
     /// <summary>
     /// بيمثل الصيدلية كـ "مستخدم" في النظام له حساب وصلاحيات
@@ -11,10 +11,11 @@ namespace Shuryan.Core.Entities.External
     public class Pharmacy : User
     {
         public string Name { get; set; } = string.Empty;
-        public float Rating { get; set; }
-        public int ReviewCount { get; set; }
+        public string? Description { get; set; }
+        public string? WhatsAppNumber { get; set; }
+        public string? Website { get; set; }
+        public PharmacyStatus LaboratoryStatus { get; set; } = PharmacyStatus.Active;
         public bool OffersDelivery { get; set; } = true;
-        public bool IsActive { get; set; } = true;
         public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Unverified;
         public DateTime? VerifiedAt { get; set; }
 

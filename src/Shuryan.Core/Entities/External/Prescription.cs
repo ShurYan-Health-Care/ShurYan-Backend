@@ -11,14 +11,16 @@ namespace Shuryan.Core.Entities.External
 {/// <summary>
  /// بيمثل روشتة الأدوية اللي بيكتبها الدكتور
  /// </summary>
-    public class MedicationPrescription
+    public class Prescription
     {
         public Guid Id { get; set; }
         public string PrescriptionNumber { get; set; }
-        public string? DigitalSignature { get; set; }
+        public string DigitalSignature { get; set; }
         public string? GeneralInstructions { get; set; }
-        public DateTime IssuedDate { get; set; } = DateTime.UtcNow;
-
+        public DateTime IssuedDate { get; set; }
+        public string? FollowUpInstructions { get; set; }
+        public bool IsDigitallyShared { get; set; } = false;
+        public DateTime? SharedAt { get; set; }
         // --- العلاقات ---
         [ForeignKey("Appointment")]
         public Guid AppointmentId { get; set; }
@@ -32,6 +34,10 @@ namespace Shuryan.Core.Entities.External
         public Guid PatientId { get; set; }
         public virtual Patient Patient { get; set; } = null!;
 
+        [ForeignKey("PharmacyOrder")]
+        public Guid PharmacyOrderId { get; set; }
+        public virtual PharmacyOrder PharmacyOrder { get; set; }
         public virtual ICollection<PrescribedMedication> PrescribedMedications { get; set; } = new HashSet<PrescribedMedication>();
+
     }
 }

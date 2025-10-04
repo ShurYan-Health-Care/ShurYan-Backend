@@ -1,4 +1,5 @@
-﻿using Shuryan.Core.Enums;
+﻿using Shuryan.Core.Entities.Identity;
+using Shuryan.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -15,9 +16,10 @@ namespace Shuryan.Core.Entities.External
     {
         public Guid Id { get; set; }
         public string DocumentUrl { get; set; } = string.Empty;
-        public DocumentType Type { get; set; }
+        public PharmacyDocumentType Type { get; set; }
         public VerificationDocumentStatus Status { get; set; }
-
+        public string? RejectionReason { get; set; }
+        public DateTime UploadedAt { get; set; }
         [ForeignKey("Pharmacy")]
         public Guid PharmacyId { get; set; }
         public virtual Pharmacy Pharmacy { get; set; } = null!;
