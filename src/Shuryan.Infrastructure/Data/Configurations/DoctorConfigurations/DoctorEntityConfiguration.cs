@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.External;
 using Shuryan.Core.Entities.Identity;
-using Shuryan.Core.Enums;
+using Shuryan.Core.Enums.Identity;
 
 namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
 {
@@ -16,7 +16,9 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
     {
         public void Configure(EntityTypeBuilder<Doctor> builder)
         {
-            builder.Property(d => d.YearsOfExperience).IsRequired();
+			builder.ToTable("Doctors");
+
+			builder.Property(d => d.YearsOfExperience).IsRequired();
             builder.Property(d => d.Biography).HasMaxLength(1000);
             builder.Property(d => d.MedicalSpecialty).HasConversion<int>().IsRequired();
             builder.Property(d => d.VerificationStatus).HasConversion<int>().IsRequired().HasDefaultValue(VerificationStatus.Unverified);
@@ -27,7 +29,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
                    .IsRequired(false)
                    .OnDelete(DeleteBehavior.Restrict);
 
-			builder.HasMany(d => d.Services)
+			builder.HasMany(d => d.Consultations)
                    .WithOne(ds => ds.Doctor)
                    .HasForeignKey(ds => ds.DoctorId)
                    .OnDelete(DeleteBehavior.Cascade);
@@ -52,8 +54,23 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
                    .HasForeignKey(a => a.DoctorId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            // Indexes
-            builder.HasIndex(d => d.MedicalSpecialty)
+			builder.HasMany(d => d.Prescriptions)
+				   .WithOne(pr => pr.Doctor)
+				   .HasForeignKey(pr => pr.DoctorId)
+				   .OnDelete(DeleteBehavior.Restrict);
+
+			builder.HasMany(d => d.LabPrescriptions)
+				   .WithOne(lp => lp.Doctor)
+				   .HasForeignKey(lp => lp.DoctorId)
+				   .OnDelete(DeleteBehavior.Restrict);
+
+			builder.HasMany(d => d.DoctorReviews)
+	                .WithOne(dr => dr.Doctor)
+	                .HasForeignKey(dr => dr.DoctorId)
+	                .OnDelete(DeleteBehavior.Restrict);
+
+			// Indexes
+			builder.HasIndex(d => d.MedicalSpecialty)
                    .HasDatabaseName("IX_Doctor_MedicalSpecialty");
 
             builder.HasIndex(d => d.VerificationStatus)

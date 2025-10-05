@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.External.Laboratories;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
-	public class LabPrescriptionEntityConfiguration : IEntityTypeConfiguration<LabPrescription>
+    public class LabPrescriptionEntityConfiguration : IEntityTypeConfiguration<LabPrescription>
 	{
 		public void Configure(EntityTypeBuilder<LabPrescription> builder)
 		{
@@ -22,12 +22,12 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 
 			// Relationships
 			builder.HasOne(lp => lp.Appointment)
-					.WithMany() // يمكن للحجز الواحد أن يكون له أكثر من روشتة في حالات مختلفة
+					.WithMany(a => a.LabPrescription)
 					.HasForeignKey(lp => lp.AppointmentId)
 					.OnDelete(DeleteBehavior.Restrict);
 
 			builder.HasOne(lp => lp.Doctor)
-					.WithMany()
+					.WithMany(d => d.LabPrescriptions)
 					.HasForeignKey(lp => lp.DoctorId)
 					.OnDelete(DeleteBehavior.Restrict);
 

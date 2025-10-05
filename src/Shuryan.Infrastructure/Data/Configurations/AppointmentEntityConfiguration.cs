@@ -5,12 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shuryan.Core.Entities.Medical;
-using Shuryan.Core.Enums;
+using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.System.Review;
+using Shuryan.Core.Enums.Appointments;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
-	public class AppointmentEntityConfiguration : IEntityTypeConfiguration<Appointment>
+    public class AppointmentEntityConfiguration : IEntityTypeConfiguration<Appointment>
 	{
 		public void Configure(EntityTypeBuilder<Appointment> builder)
 		{
@@ -69,6 +71,18 @@ namespace Shuryan.Infrastructure.Data.Configurations
 				   .WithOne(lp => lp.Appointment)
 				   .HasForeignKey(lp => lp.AppointmentId)
 				   .OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(a => a.Prescription)
+				   .WithOne(p => p.Appointment)
+				   .HasForeignKey<Prescription>(p => p.AppointmentId)
+				   .IsRequired(false)
+				   .OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(a => a.DoctorReview)
+					.WithOne(dr => dr.Appointment)
+					.HasForeignKey<DoctorReview>(dr => dr.AppointmentId)
+					.IsRequired(false)
+					.OnDelete(DeleteBehavior.Restrict);
 
 			// Check Constraints
 			builder.HasCheckConstraint("CK_Appointment_TimeValidation", "[ScheduledStartTime] < [ScheduledEndTime]");

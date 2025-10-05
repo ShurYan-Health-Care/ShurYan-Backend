@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Identity;
-using Shuryan.Core.Enums;
+using Shuryan.Core.Enums.Laboratory;
+using Shuryan.Core.Enums.Identity;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
@@ -14,7 +15,9 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
     {
         public void Configure(EntityTypeBuilder<Laboratory> builder)
         {
-            builder.Property(l => l.Name)
+			builder.ToTable("Laboratories");
+
+			builder.Property(l => l.Name)
                    .IsRequired()
                    .HasMaxLength(200);
 
@@ -30,7 +33,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
             builder.Property(l => l.LaboratoryStatus)
                    .HasConversion<int>()
                    .IsRequired()
-                   .HasDefaultValue(LaboratoryStatus.Active);
+                   .HasDefaultValue(Status.Active);
 
 			builder.Property(l => l.OffersHomeSampleCollection)
 				   .IsRequired()
@@ -43,7 +46,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
             builder.Property(l => l.VerificationStatus)
                    .HasConversion<int>()
                    .IsRequired()
-                   .HasDefaultValue(LaboratoryVerificationStatus.Unverified);
+                   .HasDefaultValue(VerificationStatus.Unverified);
 
             // Relationships
             builder.HasOne(l => l.Verifier)
@@ -76,8 +79,13 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
                    .HasForeignKey(lo => lo.LaboratoryId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            // Indexes
-            builder.HasIndex(l => l.Name).HasDatabaseName("IX_Laboratory_Name");
+			builder.HasMany(l => l.LaboratoryReviews)
+	            .WithOne(lr => lr.Laboratory)
+	            .HasForeignKey(lr => lr.LaboratoryId)
+	            .OnDelete(DeleteBehavior.Restrict);
+
+			// Indexes
+			builder.HasIndex(l => l.Name).HasDatabaseName("IX_Laboratory_Name");
 
             // Constraints
 			builder.HasCheckConstraint("CK_Laboratory_HomeSampleFee", "[HomeSampleCollectionFee] IS NULL OR [HomeSampleCollectionFee] >= 0");
