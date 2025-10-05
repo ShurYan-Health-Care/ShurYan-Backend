@@ -1,6 +1,8 @@
 ﻿using Shuryan.Core.Entities.Common;
-using Shuryan.Core.Entities.External;
-using Shuryan.Core.Enums;
+using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Core.Entities.Shared;
+using Shuryan.Core.Entities.System.Review;
+using Shuryan.Core.Enums.Identity;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Shuryan.Core.Entities.Identity
@@ -14,7 +16,7 @@ namespace Shuryan.Core.Entities.Identity
         public string? Description { get; set; }
         public string? WhatsAppNumber { get; set; }
         public string? Website { get; set; }
-        public PharmacyStatus LaboratoryStatus { get; set; } = PharmacyStatus.Active;
+        public Status PharmacyStatus { get; set; } = Status.Active;
         public bool OffersDelivery { get; set; } = true;
         public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Unverified;
         public DateTime? VerifiedAt { get; set; }
@@ -31,5 +33,12 @@ namespace Shuryan.Core.Entities.Identity
         public virtual ICollection<PharmacyDocument> VerificationDocuments { get; set; } = new HashSet<PharmacyDocument>();
         public virtual ICollection<PharmacyWorkingHours> WorkingHours { get; set; } = new HashSet<PharmacyWorkingHours>();
         public virtual ICollection<PharmacyOrder> Orders { get; set; } = new HashSet<PharmacyOrder>();
-    }
+		public virtual ICollection<PharmacyReview> PharmacyReviews { get; set; } = new HashSet<PharmacyReview>();
+
+		[NotMapped]
+		public double? AverageRating { get; set; }
+
+		[NotMapped]
+		public int TotalReviewsCount { get; set; }
+	}
 }

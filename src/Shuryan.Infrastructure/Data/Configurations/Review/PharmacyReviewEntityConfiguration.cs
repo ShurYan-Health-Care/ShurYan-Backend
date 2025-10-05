@@ -1,0 +1,57 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
+using Shuryan.Core.Entities.System.Review;
+
+namespace Shuryan.Infrastructure.Data.Configurations.Review
+{
+	public class PharmacyReviewEntityConfiguration : IEntityTypeConfiguration<PharmacyReview>
+	{
+		public void Configure(EntityTypeBuilder<PharmacyReview> builder)
+		{
+			builder.HasKey(pr => pr.Id);
+
+			// Properties
+			builder.Property(pr => pr.OverallSatisfaction).IsRequired();
+			builder.Property(pr => pr.MedicationAvailability).IsRequired();
+			builder.Property(pr => pr.ServiceQuality).IsRequired();
+			builder.Property(pr => pr.DeliverySpeed).IsRequired();
+			builder.Property(pr => pr.ValueForMoney).IsRequired();
+
+			builder.Property(pr => pr.IsEdited)
+				.IsRequired()
+				.HasDefaultValue(false);
+
+			builder.Property(pr => pr.CreatedAt)
+				.IsRequired()
+				.HasDefaultValueSql("GETUTCDATE()");
+
+			// Relationships
+			builder.HasOne(pr => pr.PharmacyOrder)
+				.WithOne(po => po.PharmacyReview)
+				.HasForeignKey<PharmacyReview>(pr => pr.PharmacyOrderId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			builder.HasOne(pr => pr.Patient)
+				.WithMany(p => p.PharmacyReviews)
+				.HasForeignKey(pr => pr.PatientId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			builder.HasOne(pr => pr.Pharmacy)
+				.WithMany(ph => ph.PharmacyReviews)
+				.HasForeignKey(pr => pr.PharmacyId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			// Check Constraints
+			builder.HasCheckConstraint("CK_PharmacyReview_OverallSatisfaction", "[OverallSatisfaction] >= 1 AND [OverallSatisfaction] <= 5");
+			builder.HasCheckConstraint("CK_PharmacyReview_MedicationAvailability", "[MedicationAvailability] >= 1 AND [MedicationAvailability] <= 5");
+			builder.HasCheckConstraint("CK_PharmacyReview_ServiceQuality", "[ServiceQuality] >= 1 AND [ServiceQuality] <= 5");
+			builder.HasCheckConstraint("CK_PharmacyReview_DeliverySpeed", "[DeliverySpeed] >= 1 AND [DeliverySpeed] <= 5");
+			builder.HasCheckConstraint("CK_PharmacyReview_ValueForMoney", "[ValueForMoney] >= 1 AND [ValueForMoney] <= 5");
+		}
+	}
+}
