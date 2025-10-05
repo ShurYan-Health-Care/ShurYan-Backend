@@ -1,6 +1,8 @@
 ﻿using Shuryan.Core.Entities.Common;
-using Shuryan.Core.Entities.External;
-using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.External.Laboratories;
+using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.System.Review;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -22,6 +24,10 @@ namespace Shuryan.Core.Entities.Identity
         public virtual ICollection<LabOrder> LabOrders { get; set; } = new HashSet<LabOrder>();
         public virtual ICollection<Prescription> Prescriptions { get; set; } = new HashSet<Prescription>();
         public virtual ICollection<PharmacyOrder> PharmacyOrders { get; set; } = new HashSet<PharmacyOrder>();
+		public virtual ICollection<DoctorReview> DoctorReviews { get; set; } = new HashSet<DoctorReview>();
+		public virtual ICollection<LaboratoryReview> LaboratoryReviews { get; set; } = new HashSet<LaboratoryReview>();
+		public virtual ICollection<PharmacyReview> PharmacyReviews { get; set; } = new HashSet<PharmacyReview>();
 
-    }
+
+	}
 }

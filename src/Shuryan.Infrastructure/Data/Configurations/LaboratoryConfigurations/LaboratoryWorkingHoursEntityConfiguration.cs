@@ -5,13 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.External.Laboratories;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
-    public class LaboratoryWorkingHoursEntityConfiguration : IEntityTypeConfiguration<LaboratoryWorkingHours>
+    public class LaboratoryWorkingHoursEntityConfiguration : IEntityTypeConfiguration<LabWorkingHours>
     {
-        public void Configure(EntityTypeBuilder<LaboratoryWorkingHours> builder)
+        public void Configure(EntityTypeBuilder<LabWorkingHours> builder)
         {
             builder.HasKey(wh => wh.Id);
 

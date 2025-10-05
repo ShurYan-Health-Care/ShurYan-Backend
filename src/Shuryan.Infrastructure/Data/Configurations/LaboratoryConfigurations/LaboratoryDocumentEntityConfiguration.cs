@@ -5,8 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Enums;
+using Shuryan.Core.Entities.Shared;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
@@ -27,7 +27,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
             builder.Property(ld => ld.Status)
                    .HasConversion<int>()
                    .IsRequired()
-                   .HasDefaultValue(LaboratoryDocumentStatus.Pending);
+                   .HasDefaultValue(VerificationDocumentStatus.Pending);
 
             builder.Property(ld => ld.RejectionReason)
                    .HasMaxLength(500);

@@ -5,8 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Medical;
 using Shuryan.Core.Enums;
+using Shuryan.Core.Entities.Medical.Schedules;
 
 namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
 {

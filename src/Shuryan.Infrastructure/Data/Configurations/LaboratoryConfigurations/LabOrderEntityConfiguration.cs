@@ -5,8 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Medical;
-using Shuryan.Core.Enums;
+using Shuryan.Core.Entities.External.Laboratories;
+using Shuryan.Core.Enums.Laboratory;
+using Shuryan.Core.Entities.System.Review;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
@@ -56,6 +57,12 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 				   .WithOne(lr => lr.LabOrder)
 				   .HasForeignKey(lr => lr.LabOrderId)
 				   .OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(lo => lo.LaboratoryReview)
+					.WithOne(lr => lr.LabOrder)
+					.HasForeignKey<LaboratoryReview>(lr => lr.LabOrderId)
+					.IsRequired(false)
+					.OnDelete(DeleteBehavior.Restrict);
 
 			builder.HasCheckConstraint("CK_LabOrder_TotalCost", "[TotalCost] >= [TestsTotalCost]");
 			builder.HasCheckConstraint("CK_LabOrder_Costs", "[TestsTotalCost] >= 0 AND [SampleCollectionDeliveryCost] >= 0");

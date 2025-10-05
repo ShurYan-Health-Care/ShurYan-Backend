@@ -1,0 +1,33 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Shuryan.Core.Entities.Identity;
+using System.Xml.Linq;
+using Shuryan.Core.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+using Shuryan.Core.Enums.Doctor;
+
+namespace Shuryan.Core.Entities.Common
+{
+    public class DoctorDocument
+    {
+        public Guid Id { get; set; }
+		[Required, MaxLength(500)]
+		[RegularExpression(@"^https?://.*", ErrorMessage = "Must be a valid URL")]
+		public string DocumentUrl { get; set; } = string.Empty;
+        public DoctorDocumentType Type { get; set; }
+        public DateTime UploadedAt { get; set; }
+        public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.Pending;
+        public string? RejectionReason { get; set; }
+
+        [ForeignKey("Doctor")]
+        public Guid DoctorId { get; set; }
+
+
+        // Navigation Properties
+        public virtual Doctor Doctor { get; set; } = null!;
+    }
+}

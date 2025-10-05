@@ -6,9 +6,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Core.Entities.Common;
-using Shuryan.Core.Entities.External;
-using Shuryan.Core.Entities.Medical;
-using Shuryan.Core.Enums;
+using Shuryan.Core.Entities.External.Clinic;
+using Shuryan.Core.Entities.External.Laboratories;
+using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Medical.Consultations;
+using Shuryan.Core.Entities.Medical.Schedules;
+using Shuryan.Core.Entities.System.Review;
+using Shuryan.Core.Enums.Doctor;
+using Shuryan.Core.Enums.Identity;
 
 namespace Shuryan.Core.Entities.Identity
 {
@@ -17,12 +23,8 @@ namespace Shuryan.Core.Entities.Identity
         public MedicalSpecialty MedicalSpecialty { get; set; }
         public int YearsOfExperience { get; set; }
 
-        //[Range(0, 5)] // 0 means not rated yet
-        //public int Rating { get; set; } // هيتحسب بشكل تلقائي من متوسط التقيمات لل Appointment بتوعه
-        //public string? Comment { get; set; }
-
-        // Optional for Credibility
-        public string? Biography { get; set; }
+		// Optional for Credibility
+		public string? Biography { get; set; }
 
         // Verification
         public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Unverified;
@@ -34,13 +36,19 @@ namespace Shuryan.Core.Entities.Identity
         // Navigation Properties
         public virtual Verifier? Verifier { get; set; }
         public virtual Clinic? Clinic { get; set; }
-        public virtual ICollection<DoctorService> Services { get; set; } = new HashSet<DoctorService>();
-        public virtual ICollection<DoctorOverride> Overrides { get; set; } = new HashSet<DoctorOverride>();
+		public virtual ICollection<DoctorConsultation> Consultations { get; set; } = new HashSet<DoctorConsultation>();
+		public virtual ICollection<DoctorOverride> Overrides { get; set; } = new HashSet<DoctorOverride>();
         public virtual ICollection<DoctorAvailability> Availabilities { get; set; } = new HashSet<DoctorAvailability>();
-        public virtual ICollection<VerificationDocument> VerificationDocuments { get; set; } = new HashSet<VerificationDocument>();
+        public virtual ICollection<DoctorDocument> VerificationDocuments { get; set; } = new HashSet<DoctorDocument>();
         public virtual ICollection<Appointment> Appointments { get; set; } = new HashSet<Appointment>();
         public virtual ICollection<LabPrescription> LabPrescriptions { get; set; } = new HashSet<LabPrescription>();
         public virtual ICollection<Prescription> Prescriptions { get; set; } = new HashSet<Prescription>();
+		public virtual ICollection<DoctorReview> DoctorReviews { get; set; } = new HashSet<DoctorReview>();
 
-    }
+		[NotMapped]
+		public double? AverageRating { get; set; }
+
+		[NotMapped]
+		public int TotalReviewsCount { get; set; }
+	}
 }

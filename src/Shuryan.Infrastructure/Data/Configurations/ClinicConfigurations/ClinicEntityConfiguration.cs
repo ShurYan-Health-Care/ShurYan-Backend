@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Enums;
-using Shuryan.Core.Entities.External;
+using Shuryan.Core.Entities.External.Clinic;
+using Shuryan.Core.Enums.Identity;
 
 namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
 {
@@ -20,10 +21,10 @@ namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
                    .IsRequired()
                    .HasMaxLength(200);
 
-            builder.Property(c => c.Status)
+            builder.Property(c => c.ClinicStatus)
                    .HasConversion<int>()
                    .IsRequired()
-                   .HasDefaultValue(ClinicStatus.Active);
+                   .HasDefaultValue(Status.Active);
 
 			builder.Property(c => c.FacilityVideoUrl)
 				   .HasMaxLength(500);
@@ -31,7 +32,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
 			builder.Property(c => c.CreatedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 
 			// Relationships
-			builder.HasOne(c => c.DoctorClinic)
+			builder.HasOne(c => c.Doctor)
                    .WithOne(d => d.Clinic)
                    .HasForeignKey<Clinic>(c => c.DoctorId)
                    .OnDelete(DeleteBehavior.Cascade);
@@ -56,16 +57,6 @@ namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
                    .HasForeignKey(os => os.ClinicId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            // Indexes
-            builder.HasIndex(c => c.Name)
-                   .HasDatabaseName("IX_Clinic_Name");
-
-            builder.HasIndex(c => c.Status)
-                   .HasDatabaseName("IX_Clinic_Status");
-
-            builder.HasIndex(c => c.DoctorId)
-                   .HasDatabaseName("IX_Clinic_DoctorId")
-                   .IsUnique();
         }
     }
 }

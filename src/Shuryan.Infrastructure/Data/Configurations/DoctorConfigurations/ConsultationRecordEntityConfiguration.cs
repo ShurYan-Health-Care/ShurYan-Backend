@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.Medical.Appointments;
 
 namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
 {
