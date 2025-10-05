@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.External.Laboratories;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
-	public class LabTestEntityConfiguration : IEntityTypeConfiguration<LabTest>
+    public class LabTestEntityConfiguration : IEntityTypeConfiguration<LabTest>
 	{
 		public void Configure(EntityTypeBuilder<LabTest> builder)
 		{

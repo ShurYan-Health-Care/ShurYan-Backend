@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.External.Clinic;
 
 namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
 {
