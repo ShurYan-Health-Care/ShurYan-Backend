@@ -6,19 +6,21 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.External.Laboratories;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
-    public class LabPrescriptionEntityConfiguration : IEntityTypeConfiguration<LabPrescription>
+    public class LabPrescriptionEntityConfiguration : AuditableEntityConfiguration<LabPrescription>
 	{
-		public void Configure(EntityTypeBuilder<LabPrescription> builder)
+		public override void Configure(EntityTypeBuilder<LabPrescription> builder)
 		{
+			base.Configure(builder);
+
 			builder.HasKey(lp => lp.Id);
 
 			builder.Property(lp => lp.GeneralNotes)
 					.HasMaxLength(1000);
 
-			builder.Property(lp => lp.CreatedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 
 			// Relationships
 			builder.HasOne(lp => lp.Appointment)

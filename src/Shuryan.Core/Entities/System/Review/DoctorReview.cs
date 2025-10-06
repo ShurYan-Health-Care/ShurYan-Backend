@@ -7,12 +7,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.System.Review
 {
-    public class DoctorReview
+    public class DoctorReview : AuditableEntity
 	{
-		public Guid Id { get; set; }
 
 		[ForeignKey("Appointment")]
 		public Guid AppointmentId { get; set; }
@@ -45,8 +45,6 @@ namespace Shuryan.Core.Entities.System.Review
 		// هل التقييم منشور كمجهول؟
 		public bool IsAnonymous { get; set; } = false;
 
-		public DateTime CreatedAt { get; set; } // تاريخ النشر الأول
-		public DateTime? UpdatedAt { get; set; } // تاريخ آخر تعديل (إن وجد)
 		public bool IsEdited { get; set; } = false; // هل تم تعديل التقييم؟
 
 		// Navigation Properties

@@ -7,13 +7,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Entities.Shared;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
-    public class LaboratoryDocumentEntityConfiguration : IEntityTypeConfiguration<LaboratoryDocument>
+    public class LaboratoryDocumentEntityConfiguration : AuditableEntityConfiguration<LaboratoryDocument>
     {
-        public void Configure(EntityTypeBuilder<LaboratoryDocument> builder)
+		public override void Configure(EntityTypeBuilder<LaboratoryDocument> builder)
         {
+            base.Configure(builder);
+
             builder.HasKey(ld => ld.Id);
 
             builder.Property(ld => ld.DocumentUrl)
@@ -31,8 +34,6 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 
             builder.Property(ld => ld.RejectionReason)
                    .HasMaxLength(500);
-
-			builder.Property(ld => ld.UploadedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 
 			builder.HasOne(ld => ld.Laboratory)
                    .WithMany(l => l.VerificationDocuments)

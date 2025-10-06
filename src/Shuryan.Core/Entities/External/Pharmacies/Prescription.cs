@@ -1,4 +1,5 @@
-﻿using Shuryan.Core.Entities.Identity;
+﻿using Shuryan.Core.Entities.Base;
+using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.Medical.Appointments;
 using System;
 using System.Collections.Generic;
@@ -11,13 +12,11 @@ namespace Shuryan.Core.Entities.External.Pharmacies
 {/// <summary>
  /// بيمثل روشتة الأدوية اللي بيكتبها الدكتور
  /// </summary>
-	public class Prescription
-    {
-        public Guid Id { get; set; }
+	public class Prescription : AuditableEntity
+	{
         public string PrescriptionNumber { get; set; } = null!;
         public string DigitalSignature { get; set; } = null!;
         public string? GeneralInstructions { get; set; }
-        public DateTime IssuedDate { get; set; }
         public string? FollowUpInstructions { get; set; }
         public bool IsDigitallyShared { get; set; } = false;
         public DateTime? SharedAt { get; set; }

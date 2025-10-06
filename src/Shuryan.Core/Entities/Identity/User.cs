@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Enums;
 
 namespace Shuryan.Core.Entities.Identity
@@ -14,9 +15,17 @@ namespace Shuryan.Core.Entities.Identity
 	{
 		public string FirstName { get; set; } = string.Empty;
 		public string LastName { get; set; } = string.Empty;
-		public bool IsActive { get; set; } = true; // Soft delete -> if false, the user is considered deleted
-		public DateTime CreatedAt { get; set; } // Nessessary for Reports
-		public DateTime? UpdatedAt { get; set; } // Records the last time the user updated any of their account details.
+
+		public DateTime CreatedAt { get; set; }
+		public Guid? CreatedBy { get; set; } // User ID who created this record
+
+		public DateTime? UpdatedAt { get; set; }
+		public Guid? UpdatedBy { get; set; } // User ID who last updated this record
+
+		public bool IsDeleted { get; set; } = false;
+		public DateTime? DeletedAt { get; set; }
+		public Guid? DeletedBy { get; set; } // User ID who deleted this record
+
 
 		[Phone, MaxLength(20)]
 		public override string? PhoneNumber { get; set; }

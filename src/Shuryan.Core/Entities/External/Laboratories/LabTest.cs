@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Enums.Laboratory;
 
 namespace Shuryan.Core.Entities.External.Laboratories
@@ -11,15 +12,12 @@ namespace Shuryan.Core.Entities.External.Laboratories
     /// ده جدول بنحط فيه أشهر أنواع التحاليل (Master Data) 
     /// عشان الدكتور يختار من قائمة جاهزة بدل ما يكتب free text
     /// </summary>
-    public class LabTest
-    {
-        public Guid Id { get; set; }
+    public class LabTest : AuditableEntity
+	{
         public string Name { get; set; } = string.Empty; // اسم التحليل (مثال: "صورة دم كاملة") إلخ
         public string Code { get; set; } = string.Empty; // كود التحليل : CBC, HbA1c
         public LabTestCategory Category { get; set; } // التحليل ده تبع قسم ايه ؟ (دم - سكر - كبد) إلخ
         public string? SpecialInstructions { get; set; } // تعليمات خاصة (مثلاً: "صيام 4 ساعات") بنحطها علي نوع تحليل معين
-        public bool IsActive { get; set; } = true; // soft delete (التحليل لسه متاح ولا لا؟)
-        public DateTime CreatedAt { get; set; }  // نوع التحليل ده اتضاف فالسيستم امته ؟
 
         // Navigation Properties
 

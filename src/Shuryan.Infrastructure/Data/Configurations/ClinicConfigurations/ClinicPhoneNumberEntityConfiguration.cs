@@ -6,14 +6,17 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.External.Clinic;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
 {
-    public class ClinicPhoneNumberEntityConfiguration : IEntityTypeConfiguration<ClinicPhoneNumber>
-    {
-        public void Configure(EntityTypeBuilder<ClinicPhoneNumber> builder)
+    public class ClinicPhoneNumberEntityConfiguration : AuditableEntityConfiguration<ClinicPhoneNumber>
+	{
+        public override void Configure(EntityTypeBuilder<ClinicPhoneNumber> builder)
         {
-            builder.HasKey(cpn => cpn.Id);
+			base.Configure(builder);
+
+			builder.HasKey(cpn => cpn.Id);
 
             builder.Property(cpn => cpn.Number)
                    .IsRequired()

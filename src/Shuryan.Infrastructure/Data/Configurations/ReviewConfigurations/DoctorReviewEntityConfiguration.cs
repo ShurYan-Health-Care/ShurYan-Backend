@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.System.Review;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
-namespace Shuryan.Infrastructure.Data.Configurations.Review
+namespace Shuryan.Infrastructure.Data.Configurations.ReviewConfigurations
 {
-	public class DoctorReviewEntityConfiguration : IEntityTypeConfiguration<DoctorReview>
+	public class DoctorReviewEntityConfiguration : AuditableEntityConfiguration<DoctorReview>
 	{
-		public void Configure(EntityTypeBuilder<DoctorReview> builder)
+		public override void Configure(EntityTypeBuilder<DoctorReview> builder)
 		{
+			base.Configure(builder);
+
 			builder.HasKey(dr => dr.Id);
 
 			builder.Property(dr => dr.OverallSatisfaction)

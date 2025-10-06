@@ -6,14 +6,17 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
 {
-    public class ConsultationRecordEntityConfiguration : IEntityTypeConfiguration<ConsultationRecord>
+    public class ConsultationRecordEntityConfiguration : AuditableEntityConfiguration<ConsultationRecord>
     {
-        public void Configure(EntityTypeBuilder<ConsultationRecord> builder)
+        public override void Configure(EntityTypeBuilder<ConsultationRecord> builder)
         {
-            builder.HasKey(cr => cr.Id);
+			base.Configure(builder);
+
+			builder.HasKey(cr => cr.Id);
 
             builder.Property(cr => cr.ChiefComplaint)
                    .IsRequired()
@@ -35,7 +38,6 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
                    .IsRequired()
                    .HasMaxLength(2000);
 
-			builder.Property(cr => cr.RecordedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 
 			// Relationships
 			builder.HasOne(cr => cr.Appointment)
