@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.External;
 using Shuryan.Core.Entities.Identity;
 
@@ -13,9 +14,8 @@ namespace Shuryan.Core.Entities.External.Laboratories
     /// جدول بيربط بين ال Laboratory وال LabTest -> (Many-to-Many)
     /// عشان نحدد كل معمل بيقدم أي تحليل وبكام
     /// </summary>
-    public class LabService
-    {
-        public Guid Id { get; set; }
+    public class LabService : AuditableEntity
+	{
 
         [ForeignKey("Laboratory")]
         public Guid LaboratoryId { get; set; } // المعمل ال بيقدم التحليل

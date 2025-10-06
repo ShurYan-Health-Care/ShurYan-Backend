@@ -4,14 +4,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums;
 
 namespace Shuryan.Core.Entities.External.Pharmacies
 {
-    public class PharmacyWorkingHours
-    {
-        public Guid Id { get; set; }
+    public class PharmacyWorkingHours : AuditableEntity
+	{
         public SysDayOfWeek DayOfWeek { get; set; }
 
         public TimeOnly StartTime { get; set; }

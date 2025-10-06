@@ -9,14 +9,19 @@ using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Entities.Medical.Appointments;
 using Shuryan.Core.Entities.System.Review;
 using Shuryan.Core.Enums.Appointments;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
-    public class AppointmentEntityConfiguration : IEntityTypeConfiguration<Appointment>
+    public class AppointmentEntityConfiguration : AuditableEntityConfiguration<Appointment>
 	{
-		public void Configure(EntityTypeBuilder<Appointment> builder)
+		public override void Configure(EntityTypeBuilder<Appointment> builder)
 		{
+			base.Configure(builder);
+
 			builder.HasKey(a => a.Id);
+			builder.Property(a => a.Id)
+					.ValueGeneratedOnAdd();
 
 			// Properties Configuration
 			builder.Property(a => a.ScheduledStartTime)
@@ -44,7 +49,6 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			builder.Property(a => a.CancellationReason)
 				   .HasMaxLength(500);
 
-			builder.Property(a => a.CreatedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 
 			// Relationships
 			builder.HasOne(a => a.Patient)

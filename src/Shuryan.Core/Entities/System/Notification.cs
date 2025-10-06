@@ -7,12 +7,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums.Notifications;
+using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.System
 {
-	public class Notification
+	public class Notification : AuditableEntity
 	{
-		public Guid Id { get; set; }
 
 		[ForeignKey("User")]
 		public Guid UserId { get; set; } // اليوزر اللي هيتبعتله الاشعار
@@ -46,8 +46,6 @@ namespace Shuryan.Core.Entities.System
 
 		[MaxLength(500)]
 		public string? FailureReason { get; set; } // Reason for transmission failure (if any)
-
-		public DateTime CreatedAt { get; set; }
 
 		// Navigation Property
 		public virtual User User { get; set; } = null!;

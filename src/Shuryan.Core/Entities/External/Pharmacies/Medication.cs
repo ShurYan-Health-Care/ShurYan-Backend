@@ -1,4 +1,5 @@
-﻿using Shuryan.Core.Enums.Pharmacy;
+﻿using Shuryan.Core.Entities.Base;
+using Shuryan.Core.Enums.Pharmacy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,9 +11,8 @@ namespace Shuryan.Core.Entities.External.Pharmacies
     /// <summary>
     /// بيمثل الدواء نفسه في قاعدة البيانات المركزية (كتالوج الأدوية)
     /// </summary>
-    public class Medication
-    {
-        public Guid Id { get; set; }
+    public class Medication : AuditableEntity
+	{
         public string BrandName { get; set; }
         public string? GenericName { get; set; }
         public string? Strength { get; set; }

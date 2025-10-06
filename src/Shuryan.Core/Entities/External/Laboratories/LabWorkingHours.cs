@@ -4,13 +4,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
 
 namespace Shuryan.Core.Entities.External.Laboratories
 {
-    public class LabWorkingHours
-    {
-        public Guid Id { get; set; }
+    public class LabWorkingHours : AuditableEntity
+	{
 
         [ForeignKey("Laboratory")]
         public Guid LaboratoryId { get; set; }

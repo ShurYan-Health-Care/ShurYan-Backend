@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Common;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
-	public class MedicalHistoryItemEntityConfiguration : IEntityTypeConfiguration<MedicalHistoryItem>
+	public class MedicalHistoryItemEntityConfiguration : AuditableEntityConfiguration<MedicalHistoryItem>
 	{
-		public void Configure(EntityTypeBuilder<MedicalHistoryItem> builder)
+		public override void Configure(EntityTypeBuilder<MedicalHistoryItem> builder)
 		{
+			base.Configure(builder);
+
 			builder.HasKey(mhi => mhi.Id);
 
 			builder.Property(mhi => mhi.Type)
@@ -22,8 +25,6 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			builder.Property(mhi => mhi.Text)
 				   .IsRequired()
 				   .HasMaxLength(1000);
-
-			builder.Property(mhi => mhi.RecordedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 
 			// Relationships
 			builder.HasOne(mhi => mhi.Patient)

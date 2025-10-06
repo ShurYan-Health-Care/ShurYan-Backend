@@ -6,14 +6,17 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.External.Clinic;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
 {
-    public class ClinicPhotosEntityConfiguration : IEntityTypeConfiguration<ClinicPhoto>
-    {
-        public void Configure(EntityTypeBuilder<ClinicPhoto> builder)
+    public class ClinicPhotosEntityConfiguration : AuditableEntityConfiguration<ClinicPhoto>
+	{
+        public override void Configure(EntityTypeBuilder<ClinicPhoto> builder)
         {
-            builder.HasKey(cp => cp.Id);
+			base.Configure(builder);
+
+			builder.HasKey(cp => cp.Id);
 
 			builder.Property(cp => cp.PhotoUrl)
 				   .IsRequired()

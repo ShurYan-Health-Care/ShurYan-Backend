@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.External.Laboratories;
 using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Entities.Identity;
@@ -13,10 +14,8 @@ using Shuryan.Core.Enums.Appointments;
 
 namespace Shuryan.Core.Entities.Medical.Appointments
 {
-    public class Appointment
-    {
-        public Guid Id { get; set; }
-
+    public class Appointment : AuditableEntity
+	{
         [ForeignKey("Patient")]
         public Guid PatientId { get; set; }
         [ForeignKey("Doctor")]
@@ -35,7 +34,6 @@ namespace Shuryan.Core.Entities.Medical.Appointments
         public AppointmentStatus Status { get; set; } = AppointmentStatus.Confirmed;
         public string? CancellationReason { get; set; }
         public DateTime? CancelledAt { get; set; }
-        public DateTime CreatedAt { get; set; }
 
         // Navigation Properties
         public virtual Patient Patient { get; set; } = null!;

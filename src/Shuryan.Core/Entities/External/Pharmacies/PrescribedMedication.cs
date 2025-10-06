@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.External.Pharmacies
 {
@@ -11,7 +12,7 @@ namespace Shuryan.Core.Entities.External.Pharmacies
     /// بيمثل دواء واحد (سطر واحد) داخل روشتة الأدوية
     /// </summary>
     public class PrescribedMedication
-    {
+	{
         public string Dosage { get; set; } // الجرعة: "قرص واحد"
         public string Frequency { get; set; } // التكرار: "3 مرات يوميًا"
         public int DurationDays { get; set; } // المدة بالأيام

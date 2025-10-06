@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums;
@@ -12,13 +13,10 @@ using Shuryan.Core.Enums.Identity;
 
 namespace Shuryan.Core.Entities.External.Clinic
 {
-    public class Clinic
+    public class Clinic : AuditableEntity
     {
-        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public Status ClinicStatus { get; set; } = Status.Active;
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
         [Required, MaxLength(500)]
         [RegularExpression(@"^https?://.*", ErrorMessage = "Must be a valid URL")]
         public string? FacilityVideoUrl { get; set; }

@@ -8,13 +8,16 @@ using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.External.Laboratories;
 using Shuryan.Core.Enums.Laboratory;
 using Shuryan.Core.Entities.System.Review;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
-    public class LabOrderEntityConfiguration : IEntityTypeConfiguration<LabOrder>
+    public class LabOrderEntityConfiguration : AuditableEntityConfiguration<LabOrder>
     {
-        public void Configure(EntityTypeBuilder<LabOrder> builder)
+        public override void Configure(EntityTypeBuilder<LabOrder> builder)
         {
+			base.Configure(builder);
+
             builder.HasKey(lo => lo.Id);
 
             builder.Property(lo => lo.Status)
@@ -64,7 +67,6 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 					.IsRequired(false)
 					.OnDelete(DeleteBehavior.Restrict);
 
-			builder.HasCheckConstraint("CK_LabOrder_TotalCost", "[TotalCost] >= [TestsTotalCost]");
 			builder.HasCheckConstraint("CK_LabOrder_Costs", "[TestsTotalCost] >= 0 AND [SampleCollectionDeliveryCost] >= 0");
 		}
 	}

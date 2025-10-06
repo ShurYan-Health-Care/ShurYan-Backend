@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +10,12 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Infrastructure.Data.Configurations.PrescriptionConfigurations
 {
-    public class PrescriptionEntityConfiguration : IEntityTypeConfiguration<Prescription>
+    public class PrescriptionEntityConfiguration : AuditableEntityConfiguration<Prescription>
     {
-        public void Configure(EntityTypeBuilder<Prescription> builder)
+        public override void Configure(EntityTypeBuilder<Prescription> builder)
         {
+			base.Configure(builder);
+
             builder.HasKey(p => p.Id);
 
             builder.Property(p => p.PrescriptionNumber)
@@ -29,9 +32,6 @@ namespace Shuryan.Infrastructure.Data.Configurations.PrescriptionConfigurations
             builder.Property(p => p.FollowUpInstructions)
                 .HasMaxLength(1000);
 
-
-            builder.Property(p => p.IssuedDate).IsRequired()
-                .HasDefaultValueSql("GETUTCDATE()");
 
 			builder.HasOne(p => p.Doctor)
 				 .WithMany(d => d.Prescriptions) 

@@ -16,17 +16,25 @@ using Shuryan.Core.Entities.Medical.Schedules;
 using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Entities.System.Review;
 using Shuryan.Core.Entities.System;
+using Shuryan.Core.Entities.Base;
+using System.Linq.Expressions;
 
 namespace Shuryan.Infrastructure.Data
 {
     public class ShuryanDbContext : IdentityDbContext<User, Role, Guid>
     {
+
         public ShuryanDbContext(DbContextOptions<ShuryanDbContext> options)
         : base(options)
         {
         }
 
 		#region DbSets
+		/// <summary>
+		/// External Entities
+		/// </summary>
+
+
 		/// <summary>
 		/// External Entities
 		/// </summary>
@@ -94,12 +102,12 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<Notification> Notifications { get; set; }
 		#endregion
 
-
 		protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
             builder.ApplyConfigurationsFromAssembly(typeof(ShuryanDbContext).Assembly);
-        }
-    }
+		}
+
+	}
 }
