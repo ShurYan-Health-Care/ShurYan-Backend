@@ -8,13 +8,16 @@ using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Entities.External.Clinic;
 using Shuryan.Core.Enums.Identity;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
 {
-    public class ClinicEntityConfiguration : IEntityTypeConfiguration<Clinic>
+    public class ClinicEntityConfiguration : AuditableEntityConfiguration<Clinic>
     {
-        public void Configure(EntityTypeBuilder<Clinic> builder)
+        public override void Configure(EntityTypeBuilder<Clinic> builder)
         {
+            base.Configure(builder);
+
             builder.HasKey(c => c.Id);
 
             builder.Property(c => c.Name)
@@ -29,7 +32,6 @@ namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
 			builder.Property(c => c.FacilityVideoUrl)
 				   .HasMaxLength(500);
 
-			builder.Property(c => c.CreatedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 
 			// Relationships
 			builder.HasOne(c => c.Doctor)

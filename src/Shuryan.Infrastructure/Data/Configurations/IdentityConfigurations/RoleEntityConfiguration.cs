@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Identity;
 
-namespace Shuryan.Infrastructure.Data.Configurations.Identity
+namespace Shuryan.Infrastructure.Data.Configurations.IdentityConfigurations
 {
     public class RoleEntityConfiguration : IEntityTypeConfiguration<Role>
     {

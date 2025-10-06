@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.External.Laboratories;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
-    public class LaboratoryWorkingHoursEntityConfiguration : IEntityTypeConfiguration<LabWorkingHours>
+    public class LaboratoryWorkingHoursEntityConfiguration : AuditableEntityConfiguration<LabWorkingHours>
     {
-        public void Configure(EntityTypeBuilder<LabWorkingHours> builder)
+		public override void Configure(EntityTypeBuilder<LabWorkingHours> builder)
         {
+            base.Configure(builder);
+
             builder.HasKey(wh => wh.Id);
 
             builder.Property(wh => wh.Day)

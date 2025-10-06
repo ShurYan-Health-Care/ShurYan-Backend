@@ -5,12 +5,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.External.Clinic
 {
-    public class ClinicPhoto
-    {
-        public Guid Id { get; set; }
+    public class ClinicPhoto : AuditableEntity
+	{
 
         [Required, MaxLength(500)]
         [RegularExpression(@"^https?://.*", ErrorMessage = "Must be a valid URL")]

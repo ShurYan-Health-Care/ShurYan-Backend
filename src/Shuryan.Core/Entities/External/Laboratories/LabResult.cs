@@ -4,12 +4,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.External.Laboratories
 {
-    public class LabResult
-    {
-        public Guid Id { get; set; }
+    public class LabResult : AuditableEntity
+	{
 
         [ForeignKey("LabOrder")]
         public Guid LabOrderId { get; set; } // النتيجة دي خاصة بأي Order ؟ (الطلب اللي المعمل استلمه)
@@ -21,8 +21,6 @@ namespace Shuryan.Core.Entities.External.Laboratories
         public string? ResultFileUrl { get; set; } // رابط ملف PDF بالنتيجة
 
         public string? LabNotes { get; set; } // ملاحظات من المعمل
-
-        public DateTime RecordedAt { get; set; }
 
         // Navigation Properties
         public virtual LabOrder LabOrder { get; set; } = null!;

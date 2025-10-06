@@ -4,13 +4,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.External.Laboratories
 {
     // كل عنصر (تحليل) موجود فالروشته
-    public class LabPrescriptionItem
-    {
-        public Guid Id { get; set; }
+    public class LabPrescriptionItem : AuditableEntity
+	{
 
         [ForeignKey("LabPrescription")]
         public Guid LabPrescriptionId { get; set; } // التحليل ده يخص أي روشتة؟
@@ -19,8 +19,6 @@ namespace Shuryan.Core.Entities.External.Laboratories
         public Guid LabTestId { get; set; } // التحليل نفسه من جدول التحاليل الموجوده فالسيستم
 
         public string? DoctorNotes { get; set; } // ملاحظات خاصة بهذا التحليل من الدكتور
-
-        public DateTime CreatedAt { get; set; }  // التحليل ده اتضاف امته فالروشته ؟
 
         // Navigation Properties
         public virtual LabPrescription LabPrescription { get; set; } = null!;

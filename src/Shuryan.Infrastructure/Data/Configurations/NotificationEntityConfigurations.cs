@@ -7,20 +7,19 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.System;
 using Shuryan.Core.Enums.Notifications;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
-	public class NotificationEntityConfiguration : IEntityTypeConfiguration<Notification>
+	public class NotificationEntityConfiguration : AuditableEntityConfiguration<Notification>
 	{
-		public void Configure(EntityTypeBuilder<Notification> builder)
+		public override void Configure(EntityTypeBuilder<Notification> builder)
 		{
+			base.Configure(builder);
+
 			builder.HasKey(n => n.Id);
 
 			// Properties
-			builder.Property(n => n.CreatedAt)
-				.IsRequired()
-				.HasDefaultValueSql("GETUTCDATE()");
-
 			builder.Property(n => n.Title)
                 .IsRequired()
 				.HasMaxLength(100);

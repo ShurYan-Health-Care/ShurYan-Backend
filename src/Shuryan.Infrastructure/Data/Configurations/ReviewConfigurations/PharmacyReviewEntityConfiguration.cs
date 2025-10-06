@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.System.Review;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
-namespace Shuryan.Infrastructure.Data.Configurations.Review
+namespace Shuryan.Infrastructure.Data.Configurations.ReviewConfigurations
 {
-	public class PharmacyReviewEntityConfiguration : IEntityTypeConfiguration<PharmacyReview>
+	public class PharmacyReviewEntityConfiguration : AuditableEntityConfiguration<PharmacyReview>
 	{
-		public void Configure(EntityTypeBuilder<PharmacyReview> builder)
+		public override void Configure(EntityTypeBuilder<PharmacyReview> builder)
 		{
+			base.Configure(builder);
+
 			builder.HasKey(pr => pr.Id);
 
 			// Properties

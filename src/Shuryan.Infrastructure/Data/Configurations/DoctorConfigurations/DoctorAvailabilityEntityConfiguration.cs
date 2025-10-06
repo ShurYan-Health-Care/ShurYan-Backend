@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Medical.Schedules;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
 {
-    public class DoctorAvailabilityEntityConfiguration : IEntityTypeConfiguration<DoctorAvailability>
+    public class DoctorAvailabilityEntityConfiguration : SoftDeletableEntityConfiguration<DoctorAvailability>
     {
-        public void Configure(EntityTypeBuilder<DoctorAvailability> builder)
+        public override void Configure(EntityTypeBuilder<DoctorAvailability> builder)
         {
+            base.Configure(builder);
+
             builder.HasKey(da => da.Id);
 
             builder.Property(da => da.DayOfWeek)
@@ -24,10 +27,6 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
 
 			builder.Property(da => da.EndTime)
 				   .IsRequired();
-
-			builder.Property(da => da.IsActive)
-				   .IsRequired()
-				   .HasDefaultValue(true);
 
 			// Relationships
 			builder.HasOne(da => da.Doctor)

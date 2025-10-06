@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.External.Laboratories;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
-    public class LabTestEntityConfiguration : IEntityTypeConfiguration<LabTest>
+    public class LabTestEntityConfiguration : AuditableEntityConfiguration<LabTest>
 	{
-		public void Configure(EntityTypeBuilder<LabTest> builder)
+		public override void Configure(EntityTypeBuilder<LabTest> builder)
 		{
+			base.Configure(builder);
+
 			builder.HasKey(lt => lt.Id);
 
 			builder.Property(lt => lt.Name)
@@ -30,11 +33,6 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 			builder.Property(lt => lt.SpecialInstructions)
 				   .HasMaxLength(500);
 
-			builder.Property(lt => lt.IsActive)
-				   .IsRequired()
-				   .HasDefaultValue(true);
-
-			builder.Property(lt => lt.CreatedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 
 			// Relationships
 			builder.HasMany(lt => lt.LabServices)

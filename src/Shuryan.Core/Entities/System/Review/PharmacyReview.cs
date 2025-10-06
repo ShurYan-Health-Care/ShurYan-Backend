@@ -7,12 +7,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.System.Review
 {
-    public class PharmacyReview
+    public class PharmacyReview : AuditableEntity
 	{
-		public Guid Id { get; set; }
 
 		[ForeignKey("PharmacyOrder")]
 		public Guid PharmacyOrderId { get; set; }
@@ -38,8 +38,6 @@ namespace Shuryan.Core.Entities.System.Review
 		[Range(1, 5)]
 		public int ValueForMoney { get; set; } // القيمة مقابل السعر
 
-		public DateTime CreatedAt { get; set; }
-		public DateTime? UpdatedAt { get; set; }
 		public bool IsEdited { get; set; } = false;
 
 		// Navigation Properties

@@ -11,7 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shuryan.Infrastructure", "S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shuryan.Shared", "Shuryan.Shared\Shuryan.Shared.csproj", "{37D3D678-D5BF-4A7E-8560-93464C3AD420}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shuryan.API", "Shuryan.API\Shuryan.API.csproj", "{45CD9B0E-BA65-48BF-B079-BE5FF9CD813F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shuryan.API", "Shuryan.API\Shuryan.API.csproj", "{45CD9B0E-BA65-48BF-B079-BE5FF9CD813F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6AED7889-D2B8-4E7C-B647-332DFA37C2B8}"
+	ProjectSection(SolutionItems) = preProject
+		Class Diagram.cd = Class Diagram.cd
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
