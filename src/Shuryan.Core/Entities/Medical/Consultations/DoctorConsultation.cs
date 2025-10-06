@@ -4,12 +4,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
 
 namespace Shuryan.Core.Entities.Medical.Consultations
 {
     public class DoctorConsultation
-    {
+	{
         public decimal ConsultationFee { get; set; }
         public int SessionDurationMinutes { get; set; }
 

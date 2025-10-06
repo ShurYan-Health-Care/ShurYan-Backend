@@ -4,12 +4,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.Medical.Appointments
 {
-    public class ConsultationRecord
-    {
-        public Guid Id { get; set; }
+    public class ConsultationRecord : AuditableEntity
+	{
 
         [ForeignKey("Appointment")]
         public Guid AppointmentId { get; set; }
@@ -23,9 +23,6 @@ namespace Shuryan.Core.Entities.Medical.Appointments
         public string Diagnosis { get; set; } = string.Empty; // التشخيص: نزلة شعبية حادة.
 
         public string ManagementPlan { get; set; } = string.Empty; // الخطة العلاجية: راحة تامة، سوائل دافئة، علاج موسع للشعب الهوائية، متابعة بعد 3 أيام
-
-        public DateTime RecordedAt { get; set; }
-        public DateTime? LastUpdatedAt { get; set; }
 
         // Navigation Properties
         public virtual Appointment Appointment { get; set; } = null!;

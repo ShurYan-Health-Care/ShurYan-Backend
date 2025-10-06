@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Enums;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,24 +11,23 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Infrastructure.Data.Configurations.PharmacyConfigurations
 {
-    public class PharmacyDocumentEntityConfiguration : IEntityTypeConfiguration<PharmacyDocument>
+    public class PharmacyDocumentEntityConfiguration : AuditableEntityConfiguration<PharmacyDocument>
     {
-        public void Configure(EntityTypeBuilder<PharmacyDocument> builder)
+        public override void Configure(EntityTypeBuilder<PharmacyDocument> builder)
         {
-            builder.HasKey(pd => pd.Id);
+            base.Configure(builder);
 
-            builder.Property(pd => pd.UploadedAt).IsRequired()
-                .HasDefaultValueSql("GETUTCDATE()");
+            builder.HasKey(pd => pd.Id);
 
             builder.Property(pd => pd.DocumentUrl)
                 .IsRequired();
 
             builder.Property(pd => pd.Type)
-                .HasConversion<string>()
+                .HasConversion<int>()
                 .HasMaxLength(60);
 
             builder.Property(pd => pd.Status)
-                .HasConversion<string>()
+                .HasConversion<int>()
                 .HasMaxLength(50);
 
             builder.HasOne(pd => pd.Pharmacy)

@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.External;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.System.Review;
@@ -11,9 +12,8 @@ using Shuryan.Core.Enums.Laboratory;
 
 namespace Shuryan.Core.Entities.External.Laboratories
 {
-    public class LabOrder
-    {
-        public Guid Id { get; set; }
+    public class LabOrder : AuditableEntity
+	{
 
         [ForeignKey("LabPrescription")]
         public Guid LabPrescriptionId { get; set; } // الروشته ال مطلوب ليها تحاليل
@@ -32,9 +32,6 @@ namespace Shuryan.Core.Entities.External.Laboratories
         // التكلفة
         public decimal TestsTotalCost { get; set; } // مجموع أسعار التحاليل نفسها
         public decimal SampleCollectionDeliveryCost { get; set; } = 0; // تكلفة جمع العينة من البيت لو موجودة
-
-        [NotMapped]
-        public decimal TotalCost => TestsTotalCost + SampleCollectionDeliveryCost;
 
         // التأكيد
         public DateTime? ConfirmedByLabAt { get; set; }

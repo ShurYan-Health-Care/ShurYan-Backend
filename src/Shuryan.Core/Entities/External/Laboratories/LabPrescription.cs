@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.Medical.Appointments;
 
@@ -14,9 +15,8 @@ namespace Shuryan.Core.Entities.External.Laboratories
     /// بتكون مرتبطة ب Appointment (كشف/سيشن) 
     /// وبيكون فيها لستة بالتحاليل المطلوبة
     /// </summary>
-    public class LabPrescription
-    {
-        public Guid Id { get; set; }
+    public class LabPrescription : AuditableEntity
+	{
 
         [ForeignKey("Appointment")]
         public Guid AppointmentId { get; set; } // الروشتة دي اتكتبت فين؟ مرتبطة بكشف أو سيشن معينة.
@@ -28,8 +28,6 @@ namespace Shuryan.Core.Entities.External.Laboratories
         public Guid PatientId { get; set; } // الروشتة دي تخص أي مريض؟
 
         public string? GeneralNotes { get; set; } // ملاحظات عامة من الدكتور علي الروشته كامله
-
-        public DateTime CreatedAt { get; set; }  // الروشته اتعملت امته ؟
 
         // Navigation Properties
         public virtual Appointment Appointment { get; set; } = null!; // علاقة One-to-One: الروشتة دي مرتبطة بحجز واحد بس.

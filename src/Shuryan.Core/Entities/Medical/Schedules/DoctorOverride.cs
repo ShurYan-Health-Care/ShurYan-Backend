@@ -4,15 +4,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums.Appointments;
 
 namespace Shuryan.Core.Entities.Medical.Schedules
 {
     // الكلاس د ال هتبقى مسؤولة عن اضافة او حذف مواعيد استثنائية ف ايام معينة
-    public class DoctorOverride
-    {
-        public Guid Id { get; set; }
+    public class DoctorOverride : AuditableEntity
+	{
 
         [ForeignKey("Doctor")]
         public Guid DoctorId { get; set; }

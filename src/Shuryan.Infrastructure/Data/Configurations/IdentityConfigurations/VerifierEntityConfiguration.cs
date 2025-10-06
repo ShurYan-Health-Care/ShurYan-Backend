@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.Identity;
 
-namespace Shuryan.Infrastructure.Data.Configurations.Identity
+namespace Shuryan.Infrastructure.Data.Configurations.IdentityConfigurations
 {
     public class VerifierEntityConfiguration : IEntityTypeConfiguration<Verifier>
     {

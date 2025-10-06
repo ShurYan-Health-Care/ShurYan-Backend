@@ -7,13 +7,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Enums;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
 {
-    public class DoctorDocumentEntityConfiguration : IEntityTypeConfiguration<DoctorDocument>
+    public class DoctorDocumentEntityConfiguration : AuditableEntityConfiguration<DoctorDocument>
     {
-        public void Configure(EntityTypeBuilder<DoctorDocument> builder)
+        public override void Configure(EntityTypeBuilder<DoctorDocument> builder)
         {
+            base.Configure(builder);
+
             builder.HasKey(dd => dd.Id);
 
 			builder.Property(dd => dd.DocumentUrl)
@@ -32,7 +35,6 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
 			builder.Property(dd => dd.RejectionReason)
 				   .HasMaxLength(500);
 
-			builder.Property(dd => dd.UploadedAt).IsRequired().HasDefaultValueSql("GETUTCDATE()");
 
 			// Relationships
 			builder.HasOne(dd => dd.Doctor)

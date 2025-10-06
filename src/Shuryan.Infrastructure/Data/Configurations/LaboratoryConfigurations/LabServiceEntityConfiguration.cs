@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.External.Laboratories;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
-    public class LabServiceEntityConfiguration : IEntityTypeConfiguration<LabService>
+    public class LabServiceEntityConfiguration : AuditableEntityConfiguration<LabService>
     {
-        public void Configure(EntityTypeBuilder<LabService> builder)
+		public override void Configure(EntityTypeBuilder<LabService> builder)
         {
+			base.Configure(builder);
+
 			builder.HasKey(ls => ls.Id);
 
 			builder.Property(ls => ls.Price)

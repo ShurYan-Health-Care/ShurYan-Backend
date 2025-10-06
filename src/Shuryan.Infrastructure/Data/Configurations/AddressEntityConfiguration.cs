@@ -8,14 +8,15 @@ using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.External;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
-    public class AddressEntityConfiguration : IEntityTypeConfiguration<Address>
+    public class AddressEntityConfiguration : SoftDeletableEntityConfiguration<Address>
 	{
-		public void Configure(EntityTypeBuilder<Address> builder)
+		public override void Configure(EntityTypeBuilder<Address> builder)
 		{
-			builder.HasKey(a => a.Id);
+			base.Configure(builder);
 
 			builder.Property(a => a.Street)
 				   .IsRequired()

@@ -9,17 +9,16 @@ using Shuryan.Core.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using Shuryan.Core.Enums.Doctor;
+using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.Common
 {
-    public class DoctorDocument
-    {
-        public Guid Id { get; set; }
+    public class DoctorDocument : AuditableEntity
+	{
 		[Required, MaxLength(500)]
 		[RegularExpression(@"^https?://.*", ErrorMessage = "Must be a valid URL")]
 		public string DocumentUrl { get; set; } = string.Empty;
         public DoctorDocumentType Type { get; set; }
-        public DateTime UploadedAt { get; set; }
         public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.Pending;
         public string? RejectionReason { get; set; }
 

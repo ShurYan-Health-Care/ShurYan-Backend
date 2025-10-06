@@ -5,13 +5,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Enums.Clinic;
 
 namespace Shuryan.Core.Entities.External.Clinic
 {
-    public class ClinicPhoneNumber
-    {
-        public Guid Id { get; set; }
+    public class ClinicPhoneNumber : AuditableEntity
+	{
 
         [Required, Phone, MaxLength(20)]
         public string Number { get; set; } = string.Empty;

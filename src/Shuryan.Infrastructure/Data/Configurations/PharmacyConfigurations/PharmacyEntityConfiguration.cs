@@ -28,7 +28,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.PharmacyConfigurations
             builder.HasOne(p => p.Verifier)
                 .WithMany(v => v.VerifiedPharmacies)
                 .HasForeignKey(p => p.VerifierId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasMany(p => p.VerificationDocuments)
                 .WithOne(d => d.Pharmacy)
