@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Entities.Identity;
 
 namespace Shuryan.Core.Interfaces.Repositories
 {
-	internal class IDoctorRepository
+	public interface IDoctorRepository : IGenericRepository<Doctor>
 	{
+
 	}
 }
