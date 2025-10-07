@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Data\Migrations\" />
     <Folder Include="Data\Seeders\" />
-    <Folder Include="Repositories\" />
     <Folder Include="ExternalServices\" />
     <Folder Include="Identity\" />
   </ItemGroup>
