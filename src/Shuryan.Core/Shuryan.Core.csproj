@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Common\" />
     <Folder Include="Interfaces\Services\" />
-    <Folder Include="Interfaces\Repositories\" />
   </ItemGroup>
 
   <ItemGroup>
