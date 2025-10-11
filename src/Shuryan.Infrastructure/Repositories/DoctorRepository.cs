@@ -15,151 +15,176 @@ namespace Shuryan.Infrastructure.Repositories
 {
     public class DoctorRepository : GenericRepository<Doctor>, IDoctorRepository
     {
-        private readonly ShuryanDbContext _context;
-
-        public DoctorRepository(ShuryanDbContext context) : base(context)
-        {
-            _context = context;
-        }
+        public DoctorRepository(ShuryanDbContext context) : base(context) { }
 
         public async Task<Doctor?> GetByEmailAsync(string email)
         {
-            return await _context.Doctors
-                .FirstOrDefaultAsync(d => d.Email.ToLower() == email.ToLower());
+            return await _dbSet
+                .FirstOrDefaultAsync(d => d.Email == email && !d.IsDeleted);
         }
 
         public async Task<IEnumerable<Doctor>> GetBySpecialtyAsync(MedicalSpecialty specialty)
         {
-            return await _context.Doctors
-                .Where(d => d.MedicalSpecialty == specialty)
+            return await _dbSet
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.Address)
+                .Include(d => d.Consultations)
+                    .ThenInclude(dc => dc.ConsultationType)
+                .Where(d => d.MedicalSpecialty == specialty
+                    && d.VerificationStatus == VerificationStatus.Verified
+                    && !d.IsDeleted)
                 .ToListAsync();
         }
 
         public async Task<Doctor?> GetByIdWithAvailabilitiesAsync(Guid id)
         {
-            return await _context.Doctors
-                .Include(d => d.Availabilities)
+            return await _dbSet
+                .Include(d => d.Availabilities.Where(a => !a.IsDeleted))
                 .Include(d => d.Overrides)
-                .FirstOrDefaultAsync(d => d.Id == id);
+                .Include(d => d.Consultations)
+                    .ThenInclude(dc => dc.ConsultationType)
+                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
         }
 
         public async Task<Doctor?> GetByIdWithClinicAsync(Guid id)
         {
-            return await _context.Doctors
+            return await _dbSet
                 .Include(d => d.Clinic)
                     .ThenInclude(c => c.Address)
-                .FirstOrDefaultAsync(d => d.Id == id);
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.Photos)
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.PhoneNumbers)
+                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
         }
 
         public async Task<Doctor?> GetByIdWithDetailsAsync(Guid id)
         {
-            return await _context.Doctors
-                .Include(d => d.Clinic).ThenInclude(c => c != null ? c.Address : null)
-                .Include(d => d.Availabilities)
-                .Include(d => d.Overrides)
+            return await _dbSet
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.Address)
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.Photos)
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.PhoneNumbers)
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.OfferedServices)
                 .Include(d => d.Consultations)
+                    .ThenInclude(dc => dc.ConsultationType)
                 .Include(d => d.VerificationDocuments)
-                .FirstOrDefaultAsync(d => d.Id == id);
+                .Include(d => d.Availabilities.Where(a => !a.IsDeleted))
+                .Include(d => d.DoctorReviews)
+                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
         }
 
         public async Task<IEnumerable<Doctor>> GetDoctorsByGovernorateAsync(Governorate governorate)
         {
-            return await _context.Doctors
-                .Where(d => d.Clinic != null && d.Clinic.Address.Governorate == governorate)
-                .Include(d => d.Clinic.Address)
+            return await _dbSet
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.Address)
+                .Include(d => d.Consultations)
+                    .ThenInclude(dc => dc.ConsultationType)
+                .Where(d => d.Clinic != null
+                    && d.Clinic.Address.Governorate == governorate
+                    && d.VerificationStatus == VerificationStatus.Verified
+                    && !d.IsDeleted)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Doctor>> GetVerifiedDoctorsAsync()
         {
-            return await _context.Doctors
-                .Where(d => d.VerificationStatus == VerificationStatus.Verified)
+            return await _dbSet
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.Address)
+                .Include(d => d.Consultations)
+                .Where(d => d.VerificationStatus == VerificationStatus.Verified && !d.IsDeleted)
                 .ToListAsync();
         }
 
         public async Task<bool> IsAvailableAtAsync(Guid doctorId, DateTime dateTime)
         {
-            var dayOfWeek = (SysDayOfWeek)dateTime.DayOfWeek;
-            var time = TimeOnly.FromDateTime(dateTime);
+            var doctor = await _dbSet
+                .Include(d => d.Availabilities.Where(a => !a.IsDeleted))
+                .Include(d => d.Overrides)
+                .FirstOrDefaultAsync(d => d.Id == doctorId && !d.IsDeleted);
 
-            var isUnavailableOverride = await _context.DoctorOverride
-                .AnyAsync(o => o.DoctorId == doctorId &&
-                               o.Type == OverrideType.Unavailable &&
-                               dateTime >= o.StartTime && dateTime < o.EndTime);
-            if (isUnavailableOverride)
-            {
-                return false;
-            }
+            if (doctor == null) return false;
 
-            var isAvailableOverride = await _context.DoctorOverride
-                .AnyAsync(o => o.DoctorId == doctorId &&
-                               o.Type == OverrideType.Available &&
-                               dateTime >= o.StartTime && dateTime < o.EndTime);
-            if (isAvailableOverride)
-            {
-                return true; 
-            }
+            var dayOfWeek = (SysDayOfWeek)((int)dateTime.DayOfWeek + 1);
+            var timeOnly = TimeOnly.FromDateTime(dateTime);
 
-            var isInRegularSchedule = await _context.DoctorAvailability
-                .AnyAsync(a => a.DoctorId == doctorId &&
-                               a.DayOfWeek == dayOfWeek &&
-                               time >= a.StartTime && time < a.EndTime);
+            // Check Overrides first
+            var overrideAtTime = doctor.Overrides
+                .FirstOrDefault(o => dateTime >= o.StartTime && dateTime <= o.EndTime);
 
-            return isInRegularSchedule;
+            if (overrideAtTime != null)
+                return overrideAtTime.Type == Shuryan.Core.Enums.Appointments.OverrideType.Available;
+
+            // Check Regular Availability
+            var availability = doctor.Availabilities
+                .FirstOrDefault(a => a.DayOfWeek == dayOfWeek
+                    && timeOnly >= a.StartTime
+                    && timeOnly <= a.EndTime);
+
+            return availability != null;
         }
 
-        public async Task<IEnumerable<Doctor>> SearchDoctorsAsync(string? searchTerm = null,
-                                    MedicalSpecialty? specialty = null,
-                                    Governorate? governorate = null,
-                                    int? minYearsOfExperience = null,
-                                    decimal? maxConsultationFee = null,
-                                    double? minRating = null)
+        public async Task<IEnumerable<Doctor>> SearchDoctorsAsync(
+            string? searchTerm = null,
+            MedicalSpecialty? specialty = null,
+            Governorate? governorate = null,
+            int? minYearsOfExperience = null,
+            decimal? maxConsultationFee = null,
+            double? minRating = null)
         {
-            var query = _context.Doctors.Include(d => d.Clinic).ThenInclude(c => c.Address).Include(d => d.DoctorReviews).AsQueryable();
+            IQueryable<Doctor> query = _dbSet
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.Address)
+                .Include(d => d.Consultations)
+                    .ThenInclude(dc => dc.ConsultationType)
+                .Include(d => d.DoctorReviews)
+                .Where(d => d.VerificationStatus == VerificationStatus.Verified && !d.IsDeleted);
 
+            // Search Term
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                var lowerSearchTerm = searchTerm.Trim().ToLower();
+                var lowerSearch = searchTerm.ToLower();
                 query = query.Where(d =>
-                    d.FirstName.ToLower().Contains(lowerSearchTerm) ||
-                    d.LastName.ToLower().Contains(lowerSearchTerm) ||
-                    (d.Clinic != null && d.Clinic.Name.ToLower().Contains(lowerSearchTerm))
-                );
+                    d.FirstName.ToLower().Contains(lowerSearch)
+                    || d.LastName.ToLower().Contains(lowerSearch)
+                    || (d.Biography != null && d.Biography.ToLower().Contains(lowerSearch)));
             }
 
+            // Specialty Filter
             if (specialty.HasValue)
-            {
                 query = query.Where(d => d.MedicalSpecialty == specialty.Value);
-            }
 
+            // Governorate Filter
             if (governorate.HasValue)
-            {
                 query = query.Where(d => d.Clinic != null && d.Clinic.Address.Governorate == governorate.Value);
-            }
 
+            // Years of Experience Filter
             if (minYearsOfExperience.HasValue)
-            {
                 query = query.Where(d => d.YearsOfExperience >= minYearsOfExperience.Value);
-            }
 
+            // Consultation Fee Filter
             if (maxConsultationFee.HasValue)
-            {
                 query = query.Where(d => d.Consultations.Any(c => c.ConsultationFee <= maxConsultationFee.Value));
-            }
+
+            var doctors = await query.ToListAsync();
+
+            // Rating Filter (in memory because it's computed)
             if (minRating.HasValue)
             {
-                query = query.Where(d =>
-                    d.DoctorReviews.Any() && 
-                    d.DoctorReviews.Average(r =>
-                        (r.OverallSatisfaction +
-                         r.WaitingTime +
-                         r.CommunicationQuality +
-                         r.ClinicCleanliness +
-                         r.ValueForMoney) / 5.0
-                    ) >= minRating.Value
-                );
+                doctors = doctors.Where(d =>
+                {
+                    if (!d.DoctorReviews.Any()) return false;
+                    var avgRating = d.DoctorReviews.Average(r => r.AverageRating);
+                    return avgRating >= minRating.Value;
+                }).ToList();
             }
-            return await query.ToListAsync();
+
+            return doctors;
         }
     }
 }

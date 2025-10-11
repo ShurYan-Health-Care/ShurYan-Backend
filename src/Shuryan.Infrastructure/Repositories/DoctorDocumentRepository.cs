@@ -12,34 +12,33 @@ namespace Shuryan.Infrastructure.Repositories
 {
     public class DoctorDocumentRepository : GenericRepository<DoctorDocument>, IDoctorDocumentRepository
     {
-        private readonly ShuryanDbContext _context;
-
-        public DoctorDocumentRepository(ShuryanDbContext context) : base(context)
-        {
-            _context = context;
-        }
+        public DoctorDocumentRepository(ShuryanDbContext context) : base(context) { }
 
         public async Task<IEnumerable<DoctorDocument>> GetByDoctorIdAsync(Guid doctorId)
         {
-            return await _context.DoctorDocument
-                .Where(d => d.DoctorId == doctorId)
-                .OrderBy(d => d.Type)
-                .ThenByDescending(d => d.CreatedAt)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<DoctorDocument>> GetByStatusAsync(VerificationDocumentStatus status)
-        {
-            return await _context.DoctorDocument
-                .Include(d => d.Doctor)
-                .Where(d => d.Status == status)
-                .OrderBy(d => d.CreatedAt)
+            return await _dbSet
+                .Include(dd => dd.Doctor)
+                .Where(dd => dd.DoctorId == doctorId)
+                .OrderByDescending(dd => dd.CreatedAt)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<DoctorDocument>> GetPendingDocumentsAsync()
         {
-            return await GetByStatusAsync(VerificationDocumentStatus.Pending);
+            return await _dbSet
+                .Include(dd => dd.Doctor)
+                .Where(dd => dd.Status == VerificationDocumentStatus.Pending)
+                .OrderBy(dd => dd.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<DoctorDocument>> GetByStatusAsync(VerificationDocumentStatus status)
+        {
+            return await _dbSet
+                .Include(dd => dd.Doctor)
+                .Where(dd => dd.Status == status)
+                .OrderByDescending(dd => dd.CreatedAt)
+                .ToListAsync();
         }
     }
 }
