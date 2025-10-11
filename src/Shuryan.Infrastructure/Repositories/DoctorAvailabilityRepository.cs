@@ -12,29 +12,23 @@ namespace Shuryan.Infrastructure.Repositories
 {
     public class DoctorAvailabilityRepository : GenericRepository<DoctorAvailability>, IDoctorAvailabilityRepository
     {
-        private readonly ShuryanDbContext _context;
-
-        public DoctorAvailabilityRepository(ShuryanDbContext context) : base(context)
-        {
-            _context = context;
-        }
+        public DoctorAvailabilityRepository(ShuryanDbContext context) : base(context) { }
 
         public async Task<IEnumerable<DoctorAvailability>> GetByDoctorIdAsync(Guid doctorId)
         {
-            return await _context.DoctorAvailability
-                .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
-                .OrderBy(d => d.DayOfWeek)
-                .ThenBy(d => d.StartTime)
+            return await _dbSet
+                .Include(da => da.Doctor)
+                .Where(da => da.DoctorId == doctorId && !da.IsDeleted)
+                .OrderBy(da => da.DayOfWeek)
+                .ThenBy(da => da.StartTime)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<DoctorAvailability>> GetByDoctorIdAndDayAsync(Guid doctorId, SysDayOfWeek day)
         {
-            return await _context.DoctorAvailability
-                .Where(d => d.DoctorId == doctorId &&
-                           d.DayOfWeek == day &&
-                           !d.IsDeleted)
-                .OrderBy(d => d.StartTime)
+            return await _dbSet
+                .Where(da => da.DoctorId == doctorId && da.DayOfWeek == day && !da.IsDeleted)
+                .OrderBy(da => da.StartTime)
                 .ToListAsync();
         }
 
@@ -45,20 +39,16 @@ namespace Shuryan.Infrastructure.Repositories
             TimeOnly endTime,
             Guid? excludeId = null)
         {
-            var query = _context.DoctorAvailability
-                .Where(d => d.DoctorId == doctorId &&
-                           d.DayOfWeek == day &&
-                           !d.IsDeleted);
+            var query = _dbSet.Where(da =>
+                da.DoctorId == doctorId
+                && da.DayOfWeek == day
+                && !da.IsDeleted
+                && ((da.StartTime < endTime && da.EndTime > startTime)));
 
             if (excludeId.HasValue)
-            {
-                query = query.Where(d => d.Id != excludeId.Value);
-            }
+                query = query.Where(da => da.Id != excludeId.Value);
 
-            var hasOverlap = await query.AnyAsync(d =>
-                startTime < d.EndTime && endTime > d.StartTime);
-
-            return hasOverlap;
+            return await query.AnyAsync();
         }
     }
 }

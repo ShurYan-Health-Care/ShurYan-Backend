@@ -12,28 +12,22 @@ namespace Shuryan.Infrastructure.Repositories
 {
     public class MedicalHistoryItemRepository : GenericRepository<MedicalHistoryItem>, IMedicalHistoryItemRepository
     {
-        private readonly ShuryanDbContext _context;
-
-        public MedicalHistoryItemRepository(ShuryanDbContext context) : base(context)
-        {
-            _context = context;
-        }
+        public MedicalHistoryItemRepository(ShuryanDbContext context) : base(context) { }
 
         public async Task<IEnumerable<MedicalHistoryItem>> GetByPatientIdAsync(Guid patientId)
         {
-            return await _context.MedicalHistoryItems
-                .Where(m => m.PatientId == patientId)
-                .OrderBy(m => m.Type)
-                .ThenByDescending(m => m.CreatedAt)
+            return await _dbSet
+                .Include(mhi => mhi.Patient)
+                .Where(mhi => mhi.PatientId == patientId)
+                .OrderByDescending(mhi => mhi.CreatedAt)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<MedicalHistoryItem>> GetByTypeAsync(Guid patientId, MedicalHistoryType type)
         {
-            return await _context.MedicalHistoryItems
-                .Where(m => m.PatientId == patientId &&
-                           m.Type == type)
-                .OrderByDescending(m => m.CreatedAt)
+            return await _dbSet
+                .Where(mhi => mhi.PatientId == patientId && mhi.Type == type)
+                .OrderByDescending(mhi => mhi.CreatedAt)
                 .ToListAsync();
         }
     }
