@@ -12,34 +12,31 @@ namespace Shuryan.Infrastructure.Repositories
 {
     public class VerifierRepository : GenericRepository<Verifier>, IVerifierRepository
     {
-        private readonly ShuryanDbContext _context;
-
-        public VerifierRepository(ShuryanDbContext context) : base(context)
-        {
-            _context = context;
-        }
+        public VerifierRepository(ShuryanDbContext context) : base(context) { }
 
         public async Task<Verifier?> GetByIdWithVerifiedEntitiesAsync(Guid id)
         {
-            return await _context.Verifiers
+            return await _dbSet
                 .Include(v => v.VerifiedDoctors)
+                    .ThenInclude(d => d.Clinic)
                 .Include(v => v.VerifiedLabors)
+                    .ThenInclude(l => l.Address)
                 .Include(v => v.VerifiedPharmacies)
+                    .ThenInclude(p => p.Address)
                 .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
         }
 
         public async Task<Verifier?> GetByEmailAsync(string email)
         {
-            return await _context.Verifiers
-               .FirstOrDefaultAsync(v => v.Email.ToLower() == email.ToLower() && !v.IsDeleted);
+            return await _dbSet
+                .FirstOrDefaultAsync(v => v.Email == email && !v.IsDeleted);
         }
 
         public async Task<int> GetVerifiedDoctorsCountAsync(Guid verifierId)
         {
-            return await _context.Doctors
-                .Where(d => d.VerifierId == verifierId && 
-                           d.VerificationStatus == VerificationStatus.Verified &&
-                           !d.IsDeleted)
+            return await _dbSet
+                .Where(v => v.Id == verifierId && !v.IsDeleted)
+                .SelectMany(v => v.VerifiedDoctors)
                 .CountAsync();
         }
     }

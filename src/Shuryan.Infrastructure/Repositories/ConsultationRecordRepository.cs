@@ -9,21 +9,15 @@ namespace Shuryan.Infrastructure.Repositories
 {
     public class ConsultationRecordRepository : GenericRepository<ConsultationRecord>, IConsultationRecordRepository
     {
-        private readonly ShuryanDbContext _context;
-
-        public ConsultationRecordRepository(ShuryanDbContext context) : base(context)
-        {
-            _context = context;
-        }
-        //هنا هعرض سجل الكشف مع بيانات المريض والطبيب
+        public ConsultationRecordRepository(ShuryanDbContext context) : base(context) { }
         public async Task<ConsultationRecord?> GetByAppointmentIdAsync(Guid appointmentId)
         {
-            return await _context.ConsultationRecords
-                .Include(c => c.Appointment)
-                    .ThenInclude(a => a.Doctor)
-                .Include(c => c.Appointment)
+            return await _dbSet
+                .Include(cr => cr.Appointment)
                     .ThenInclude(a => a.Patient)
-                .FirstOrDefaultAsync(c => c.AppointmentId == appointmentId);
+                .Include(cr => cr.Appointment)
+                    .ThenInclude(a => a.Doctor)
+                .FirstOrDefaultAsync(cr => cr.AppointmentId == appointmentId);
         }
     }
 }
