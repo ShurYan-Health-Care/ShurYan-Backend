@@ -1,4 +1,4 @@
-﻿using Shuryan.Application.DTOs.Base;
+﻿using Shuryan.Application.DTOs.Common.Base;
 using System;
 using System.Collections.Generic;
 using System.Linq;
