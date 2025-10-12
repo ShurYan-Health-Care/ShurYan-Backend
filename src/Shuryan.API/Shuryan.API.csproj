@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Shuryan.Application\Shuryan.Application.csproj" />
     <ProjectReference Include="..\Shuryan.Core\Shuryan.Core.csproj" />
     <ProjectReference Include="..\Shuryan.Infrastructure\Shuryan.Infrastructure.csproj" />
     <ProjectReference Include="..\Shuryan.Shared\Shuryan.Shared.csproj" />
