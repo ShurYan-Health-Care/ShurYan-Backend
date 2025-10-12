@@ -7,8 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\Response\" />
-    <Folder Include="DTOs\Request\" />
+    <Compile Remove="DTOs\Request\**" />
+    <Compile Remove="DTOs\Response\**" />
+    <EmbeddedResource Remove="DTOs\Request\**" />
+    <EmbeddedResource Remove="DTOs\Response\**" />
+    <None Remove="DTOs\Request\**" />
+    <None Remove="DTOs\Response\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Extensions\" />
     <Folder Include="Mappers\" />
     <Folder Include="Services\" />
