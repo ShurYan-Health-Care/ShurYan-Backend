@@ -1,11 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Medical.Appointments;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
 using System;
 using System.Threading.Tasks;
 
-namespace Shuryan.Infrastructure.Repositories
+namespace Shuryan.Infrastructure.Repositories.Medical
 {
     public class ConsultationRecordRepository : GenericRepository<ConsultationRecord>, IConsultationRecordRepository
     {
@@ -21,3 +21,4 @@ namespace Shuryan.Infrastructure.Repositories
         }
     }
 }
+

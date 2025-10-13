@@ -13,7 +13,7 @@ namespace Shuryan.Application.DTOs.Doctor
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string FullName => $"{FirstName} {LastName}";
-        public MedicalSpecialty MedicalSpecialty { get; set; } = string.Empty;
+        public MedicalSpecialty MedicalSpecialty { get; set; }
         public string? ProfileImageUrl { get; set; }
         public double? AverageRating { get; set; }
     }
