@@ -3,11 +3,18 @@ using Microsoft.EntityFrameworkCore;
 using Shuryan.Infrastructure.Data;
 using Shuryan.Shared.Configurations;
 using Shuryan.Shared.Extensions;
+using Shuryan.Application.Extensions;
+using FluentValidation.AspNetCore;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDatabaseConfiguration(builder.Configuration);
 builder.Services.AddCorsConfiguration(builder.Configuration);
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
