@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Doctor;
@@ -11,7 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Shuryan.Core.Enums.Identity;
 
-namespace Shuryan.Infrastructure.Repositories
+namespace Shuryan.Infrastructure.Repositories.Doctors
 {
     public class DoctorRepository : GenericRepository<Doctor>, IDoctorRepository
     {
@@ -188,3 +188,4 @@ namespace Shuryan.Infrastructure.Repositories
         }
     }
 }
+

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Medical.Schedules;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Interfaces.Repositories;
@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Shuryan.Infrastructure.Repositories
+namespace Shuryan.Infrastructure.Repositories.Doctors
 {
     public class DoctorAvailabilityRepository : GenericRepository<DoctorAvailability>, IDoctorAvailabilityRepository
     {
@@ -52,3 +52,4 @@ namespace Shuryan.Infrastructure.Repositories
         }
     }
 }
+

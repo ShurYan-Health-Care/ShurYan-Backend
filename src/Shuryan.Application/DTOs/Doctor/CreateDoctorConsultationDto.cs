@@ -9,7 +9,7 @@ namespace Shuryan.Application.DTOs.Doctor
 {
     public class CreateDoctorConsultationDto
     {
-        public ConsultationTypeEnum ConsultationType { get; set; } = string.Empty;
+        public ConsultationTypeEnum ConsultationType { get; set; }
         public decimal ConsultationFee { get; set; }
         public int SessionDurationMinutes { get; set; }
     }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums.Identity;
 using Shuryan.Core.Interfaces.Repositories;
@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Shuryan.Infrastructure.Repositories
+namespace Shuryan.Infrastructure.Repositories.Shared
 {
     public class VerifierRepository : GenericRepository<Verifier>, IVerifierRepository
     {
@@ -41,3 +41,4 @@ namespace Shuryan.Infrastructure.Repositories
         }
     }
 }
+
