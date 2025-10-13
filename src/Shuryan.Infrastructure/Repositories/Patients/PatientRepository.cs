@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +8,7 @@ using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
 
-namespace Shuryan.Infrastructure.Repositories
+namespace Shuryan.Infrastructure.Repositories.Patients
 {
     public class PatientRepository : GenericRepository<Patient>, IPatientRepository
     {
@@ -47,3 +47,4 @@ namespace Shuryan.Infrastructure.Repositories
         }
     }
 }
+
