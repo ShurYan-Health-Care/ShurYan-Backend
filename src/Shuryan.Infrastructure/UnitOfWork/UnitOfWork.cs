@@ -5,8 +5,21 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Storage;
 using Shuryan.Core.Interfaces.Repositories;
+using Shuryan.Core.Interfaces.Repositories.ClinicRepositories;
+using Shuryan.Core.Interfaces.Repositories.Pharmacies;
+using Shuryan.Core.Interfaces.Repositories.LaboratoryRepositories;
+using Shuryan.Core.Interfaces.Repositories.ReviewRepositories;
+using Shuryan.Core.Interfaces.Repositories.MedicationRepositories;
 using Shuryan.Infrastructure.Data;
-using Shuryan.Infrastructure.Repositories;
+using Shuryan.Infrastructure.Repositories.Doctors;
+using Shuryan.Infrastructure.Repositories.Patients;
+using Shuryan.Infrastructure.Repositories.Medical;
+using Shuryan.Infrastructure.Repositories.Clinics;
+using Shuryan.Infrastructure.Repositories.Pharmacies;
+using Shuryan.Infrastructure.Repositories.Laboratories;
+using Shuryan.Infrastructure.Repositories.Reviews;
+using Shuryan.Infrastructure.Repositories.Medications;
+using Shuryan.Infrastructure.Repositories.Shared;
 using Shuryan.Core.Interfaces.UnitOfWork;
 
 namespace Shuryan.Infrastructure.UnitOfWork
@@ -16,35 +29,88 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private readonly ShuryanDbContext _context;
         private IDbContextTransaction? _transaction;
 
-        // Lazy Initialization Fields - مش هنعمل Instance إلا لما نحتاجه
+        // ==================== Doctor Related Fields ====================
         private IDoctorRepository? _doctors;
+        private IDoctorAvailabilityRepository? _doctorAvailabilities;
+        private IDoctorConsultationRepository? _doctorConsultations;
+        private IDoctorOverrideRepository? _doctorOverrides;
+        private IDoctorDocumentRepository? _doctorDocuments;
+
+        // ==================== Patient Related Fields ====================
         private IPatientRepository? _patients;
-        private IVerifierRepository? _verifiers;
+        private IMedicalHistoryItemRepository? _medicalHistoryItems;
+
+        // ==================== Medical/Appointment Related Fields ====================
         private IAppointmentRepository? _appointments;
         private IConsultationRecordRepository? _consultationRecords;
         private IConsultationTypeRepository? _consultationTypes;
-        private IDoctorConsultationRepository? _doctorConsultations;
-        private IDoctorAvailabilityRepository? _doctorAvailabilities;
-        private IDoctorOverrideRepository? _doctorOverrides;
+
+        // ==================== Clinic Related Fields ====================
+        private IClinicRepository? _clinics;
+        private IClinicPhoneNumberRepository? _clinicPhoneNumbers;
+        private IClinicPhotosRepository? _clinicPhotos;
+        private IClinicServiceRepository? _clinicServices;
+
+        // ==================== Pharmacy Related Fields ====================
+        private IPharmacyRepository? _pharmacies;
+        private IPharmacyOrderRepository? _pharmacyOrders;
+        private IPrescriptionRepository? _prescriptions;
+        private IPharmacyDocumentRepository? _pharmacyDocuments;
+
+        // ==================== Laboratory Related Fields ====================
+        private ILaboratoryRepository? _laboratories;
+        private ILabOrderRepository? _labOrders;
+        private ILabPrescriptionRepository? _labPrescriptions;
+        private ILabPrescriptionItemRepository? _labPrescriptionItems;
+        private ILabServiceRepository? _labServices;
+        private ILabTestRepository? _labTests;
+        private ILabResultRepository? _labResults;
+        private ILabWorkingHoursRepository? _labWorkingHours;
+        private ILaboratoryDocumentRepository? _laboratoryDocuments;
+
+        // ==================== Medication Related Fields ====================
+        private IMedicationRepository? _medications;
+        private IPrescribedMedicationRepository? _prescribedMedications;
+
+        // ==================== Review Related Fields ====================
+        private IDoctorReviewRepository? _doctorReviews;
+        private ILaboratoryReviewRepository? _laboratoryReviews;
+        private IPharmacyReviewRepository? _pharmacyReviews;
+
+        // ==================== Shared Fields ====================
         private IAddressRepository? _addresses;
-        private IDoctorDocumentRepository? _doctorDocuments;
-        private IMedicalHistoryItemRepository? _medicalHistoryItems;
+        private IVerifierRepository? _verifiers;
+        private INotificationRepository? _notifications;
 
         public UnitOfWork(ShuryanDbContext context)
         {
             _context = context;
         }
 
-        // كل Property بيعمل Lazy Initialization للـ Repository المطلوب
-
+        // ==================== Doctor Related Properties ====================
         public IDoctorRepository Doctors
             => _doctors ??= new DoctorRepository(_context);
 
+        public IDoctorAvailabilityRepository DoctorAvailabilities
+            => _doctorAvailabilities ??= new DoctorAvailabilityRepository(_context);
+
+        public IDoctorConsultationRepository DoctorConsultations
+            => _doctorConsultations ??= new DoctorConsultationRepository(_context);
+
+        public IDoctorOverrideRepository DoctorOverrides
+            => _doctorOverrides ??= new DoctorOverrideRepository(_context);
+
+        public IDoctorDocumentRepository DoctorDocuments
+            => _doctorDocuments ??= new DoctorDocumentRepository(_context);
+
+        // ==================== Patient Related Properties ====================
         public IPatientRepository Patients
             => _patients ??= new PatientRepository(_context);
 
-        public IVerifierRepository Verifiers
-            => _verifiers ??= new VerifierRepository(_context);
+        public IMedicalHistoryItemRepository MedicalHistoryItems
+            => _medicalHistoryItems ??= new MedicalHistoryItemRepository(_context);
+
+        // ==================== Medical/Appointment Related Properties ====================
         public IAppointmentRepository Appointments
             => _appointments ??= new AppointmentRepository(_context);
 
@@ -54,21 +120,86 @@ namespace Shuryan.Infrastructure.UnitOfWork
         public IConsultationTypeRepository ConsultationTypes
             => _consultationTypes ??= new ConsultationTypeRepository(_context);
 
-        public IDoctorConsultationRepository DoctorConsultations
-            => _doctorConsultations ??= new DoctorConsultationRepository(_context);
+        // ==================== Clinic Related Properties ====================
+        public IClinicRepository Clinics
+            => _clinics ??= new ClinicRepository(_context);
 
-        public IDoctorAvailabilityRepository DoctorAvailabilities
-            => _doctorAvailabilities ??= new DoctorAvailabilityRepository(_context);
+        public IClinicPhoneNumberRepository ClinicPhoneNumbers
+            => _clinicPhoneNumbers ??= new ClinicPhoneNumberRepository(_context);
 
-        public IDoctorOverrideRepository DoctorOverrides
-            => _doctorOverrides ??= new DoctorOverrideRepository(_context);
+        public IClinicPhotosRepository ClinicPhotos
+            => _clinicPhotos ??= new ClinicPhotosRepository(_context);
+
+        public IClinicServiceRepository ClinicServices
+            => _clinicServices ??= new ClinicServiceRepository(_context);
+
+        // ==================== Pharmacy Related Properties ====================
+        public IPharmacyRepository Pharmacies
+            => _pharmacies ??= new PharmacyRepository(_context);
+
+        public IPharmacyOrderRepository PharmacyOrders
+            => _pharmacyOrders ??= new PharmacyOrderRepository(_context);
+
+        public IPrescriptionRepository Prescriptions
+            => _prescriptions ??= new PrescriptionRepository(_context);
+
+        public IPharmacyDocumentRepository PharmacyDocuments
+            => _pharmacyDocuments ??= new PharmacyDocumentRepository(_context);
+
+        // ==================== Laboratory Related Properties ====================
+        public ILaboratoryRepository Laboratories
+            => _laboratories ??= new LaboratoryRepository(_context);
+
+        public ILabOrderRepository LabOrders
+            => _labOrders ??= new LabOrderRepository(_context);
+
+        public ILabPrescriptionRepository LabPrescriptions
+            => _labPrescriptions ??= new LabPrescriptionRepository(_context);
+
+        public ILabPrescriptionItemRepository LabPrescriptionItems
+            => _labPrescriptionItems ??= new LabPrescriptionItemRepository(_context);
+
+        public ILabServiceRepository LabServices
+            => _labServices ??= new LabServiceRepository(_context);
+
+        public ILabTestRepository LabTests
+            => _labTests ??= new LabTestRepository(_context);
+
+        public ILabResultRepository LabResults
+            => _labResults ??= new LabResultRepository(_context);
+
+        public ILabWorkingHoursRepository LabWorkingHours
+            => _labWorkingHours ??= new LabWorkingHoursRepository(_context);
+
+        public ILaboratoryDocumentRepository LaboratoryDocuments
+            => _laboratoryDocuments ??= new LaboratoryDocumentRepository(_context);
+
+        // ==================== Medication Related Properties ====================
+        public IMedicationRepository Medications
+            => _medications ??= new MedicationRepository(_context);
+
+        public IPrescribedMedicationRepository PrescribedMedications
+            => _prescribedMedications ??= new PrescribedMedicationRepository(_context);
+
+        // ==================== Review Related Properties ====================
+        public IDoctorReviewRepository DoctorReviews
+            => _doctorReviews ??= new DoctorReviewRepository(_context);
+
+        public ILaboratoryReviewRepository LaboratoryReviews
+            => _laboratoryReviews ??= new LaboratoryReviewRepository(_context);
+
+        public IPharmacyReviewRepository PharmacyReviews
+            => _pharmacyReviews ??= new PharmacyReviewRepository(_context);
+
+        // ==================== Shared Properties ====================
         public IAddressRepository Addresses
             => _addresses ??= new AddressRepository(_context);
-        public IDoctorDocumentRepository DoctorDocuments
-            => _doctorDocuments ??= new DoctorDocumentRepository(_context);
 
-        public IMedicalHistoryItemRepository MedicalHistoryItems
-            => _medicalHistoryItems ??= new MedicalHistoryItemRepository(_context);
+        public IVerifierRepository Verifiers
+            => _verifiers ??= new VerifierRepository(_context);
+
+        public INotificationRepository Notifications
+            => _notifications ??= new NotificationRepository(_context);
 
         // ==================== Transaction Methods ====================
 

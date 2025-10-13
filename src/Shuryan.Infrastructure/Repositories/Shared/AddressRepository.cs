@@ -1,15 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
-using Shuryan.Infrastructure.Repositories;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-// تأكد من أن الـ namespace صحيح حسب هيكل مشروعك
-namespace Shuryan.Infrastructure.Repositories
+namespace Shuryan.Infrastructure.Repositories.Shared
 {
     public class AddressRepository : GenericRepository<Address>, IAddressRepository
     {
@@ -32,3 +30,4 @@ namespace Shuryan.Infrastructure.Repositories
         }
     }
 }
+

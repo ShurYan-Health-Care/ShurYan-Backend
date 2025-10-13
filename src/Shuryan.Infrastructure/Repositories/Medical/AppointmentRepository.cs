@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +9,7 @@ using Shuryan.Core.Enums.Appointments;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
 
-namespace Shuryan.Infrastructure.Repositories
+namespace Shuryan.Infrastructure.Repositories.Medical
 {
     public class AppointmentRepository : GenericRepository<Appointment>, IAppointmentRepository
     {
@@ -131,3 +131,4 @@ namespace Shuryan.Infrastructure.Repositories
         }
     }
 }
+
