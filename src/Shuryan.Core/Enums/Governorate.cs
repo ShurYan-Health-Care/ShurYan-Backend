@@ -73,7 +73,7 @@ namespace Shuryan.Core.Enums
 		Aswan = 21,
 
 		[Description("أسيوط")]
-		Asyut = 22,
+        Assiut = 22,
 
 		[Description("بني سويف")]
 		BeniSuef = 23,

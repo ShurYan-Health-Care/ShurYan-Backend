@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -20,6 +20,9 @@ namespace Shuryan.Core.Interfaces.Repositories
 
 		// Checking for a record
 		Task<bool> ExistsAsync(Expression<Func<T, bool>> filter);
+
+		// Get queryable for complex LINQ queries
+		IQueryable<T> GetQueryable();
 
 		// ========================
 

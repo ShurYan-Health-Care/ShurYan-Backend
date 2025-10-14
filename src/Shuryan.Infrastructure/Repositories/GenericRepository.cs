@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -89,6 +89,15 @@ namespace Shuryan.Infrastructure.Repositories
 			}
 
 			return await query.AnyAsync(filter);
+		}
+
+		public virtual IQueryable<T> GetQueryable()
+		{
+			IQueryable<T> query = _dbSet;
+
+			// Note: Soft delete filtering is not applied here to allow controllers
+			// to have full control over querying and filtering
+			return query;
 		}
 
 		public virtual async Task<T> AddAsync(T entity)
