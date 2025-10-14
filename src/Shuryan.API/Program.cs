@@ -6,12 +6,14 @@ using Shuryan.Shared.Extensions;
 using Shuryan.Application.Extensions;
 using FluentValidation.AspNetCore;
 using FluentValidation;
+using Shuryan.Core.Interfaces.UnitOfWork;
+using Shuryan.Infrastructure.UnitOfWork;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDatabaseConfiguration(builder.Configuration);
 builder.Services.AddCorsConfiguration(builder.Configuration);
-
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 
@@ -27,6 +29,12 @@ if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
 	app.UseSwaggerUI();
+
+    // ==================== DATABASE SEEDING ====================
+     await app.SeedDatabaseAsync();
+
+    // To clear the database (USE WITH CAUTION!)
+     //await app.ClearDatabaseAsync();
 }
 
 app.UseHttpsRedirection();
