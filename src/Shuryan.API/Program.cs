@@ -8,13 +8,24 @@ using FluentValidation.AspNetCore;
 using FluentValidation;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.UnitOfWork;
+using Shuryan.Core.Interfaces.Services;
+using Shuryan.Infrastructure.Services;
+using Shuryan.Application.Services;
+using Shuryan.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDatabaseConfiguration(builder.Configuration);
 builder.Services.AddCorsConfiguration(builder.Configuration);
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Register Services
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<IDoctorApplicationService, DoctorApplicationService>();
+
+// Register FluentValidation from Application assembly
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddValidatorsFromAssemblyContaining<DoctorApplicationService>();
 
 
 

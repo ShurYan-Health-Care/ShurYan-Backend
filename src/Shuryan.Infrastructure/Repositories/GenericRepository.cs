@@ -11,7 +11,7 @@ using Shuryan.Infrastructure.Data;
 
 namespace Shuryan.Infrastructure.Repositories
 {
-	public class GenericRepository<T> : IGenericRepository<T> where T : class
+    public class GenericRepository<T> : IGenericRepository<T> where T : class
 	{
 		protected readonly ShuryanDbContext _context;
 		protected readonly DbSet<T> _dbSet;
@@ -133,5 +133,21 @@ namespace Shuryan.Infrastructure.Repositories
 				_dbSet.Remove(entity);
 			}
 		}
-	}
+
+        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.Where(predicate).ToListAsync();
+        }
+
+        public virtual async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.FirstOrDefaultAsync(predicate);
+        }
+
+        public virtual async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.AnyAsync(predicate);
+        }
+
+    }
 }
