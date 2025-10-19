@@ -24,11 +24,14 @@ namespace Shuryan.Core.Interfaces.Repositories
 		// Get queryable for complex LINQ queries
 		IQueryable<T> GetQueryable();
 
+        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
+        Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
+        Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
 		// ========================
 
 		Task<T> AddAsync(T entity);
 		Task DeleteByIdAsync(Guid id);
 		void Update(T entity);
 		void Delete(T entity);
-	}
+    }
 }
