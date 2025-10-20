@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Shuryan.Shared.Configurations;
 
-namespace Shuryan.Application.Services.Auth
+namespace Shuryan.Application.Services.Token
 {
     /// <summary>
     /// Implementation of JWT token generation and validation service

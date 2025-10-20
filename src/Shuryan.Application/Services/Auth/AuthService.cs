@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Auth;
 using Shuryan.Application.DTOs.Responses.Auth;
+using Shuryan.Application.Services.Token;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums.Identity;
