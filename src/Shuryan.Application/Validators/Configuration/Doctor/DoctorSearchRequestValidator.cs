@@ -17,11 +17,6 @@ namespace Shuryan.Application.Validators.Configuration.Doctor
                 .When(x => !string.IsNullOrEmpty(x.SearchTerm))
                 .WithMessage("Search term must be between 2 and 100 characters");
 
-            RuleFor(x => x.Governorate)
-                .Length(2, 100)
-                .When(x => !string.IsNullOrEmpty(x.Governorate))
-                .WithMessage("Governorate must be between 2 and 100 characters");
-
             RuleFor(x => x.MinYearsOfExperience)
                 .GreaterThanOrEqualTo(0)
                 .LessThanOrEqualTo(70)

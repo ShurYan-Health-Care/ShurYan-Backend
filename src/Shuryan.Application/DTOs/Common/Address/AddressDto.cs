@@ -1,10 +1,11 @@
-﻿using Shuryan.Application.DTOs.Common.Base;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Application.DTOs.Common.Base;
+using Shuryan.Core.Enums;
 
 namespace Shuryan.Application.DTOs.Common.Address
 {
@@ -20,7 +21,7 @@ namespace Shuryan.Application.DTOs.Common.Address
 
         [Required(ErrorMessage = "Governorate is required")]
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Governorate must be between 2-100 characters")]
-        public string Governorate { get; set; } = string.Empty;
+        public Governorate Governorate { get; set; }
 
         [StringLength(20, ErrorMessage = "Building number cannot exceed 20 characters")]
         public string? BuildingNumber { get; set; }
