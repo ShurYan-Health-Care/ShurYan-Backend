@@ -10,6 +10,10 @@ using Shuryan.Infrastructure.Data;
 using Shuryan.Infrastructure.UnitOfWork;
 using Shuryan.Shared.Configurations;
 using Shuryan.Shared.Extensions;
+using Shuryan.Core.Interfaces.Services;
+using Shuryan.Infrastructure.Services;
+using Shuryan.Application.Services;
+using Shuryan.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +34,14 @@ builder.Services.AddAuthorizationPolicies();
 
 // ==================== Unit of Work ====================
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Register Services
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<IDoctorApplicationService, DoctorApplicationService>();
+
+// Register FluentValidation from Application assembly
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddValidatorsFromAssemblyContaining<DoctorApplicationService>();
 
 // ==================== Application Services ====================
 builder.Services.AddScoped<IAuthService, AuthService>();
