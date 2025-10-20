@@ -22,14 +22,6 @@ namespace Shuryan.Application.DTOs.Requests.Patient
         [EmailAddress(ErrorMessage = "Invalid email format")]
         [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters")]
         public string Email { get; set; } = string.Empty;
-
-        [Phone(ErrorMessage = "Invalid phone number format")]
-        [StringLength(20, MinimumLength = 10, ErrorMessage = "Phone number must be between 10-20 characters")]
-        public string? PhoneNumber { get; set; }
-
-        public DateTime? BirthDate { get; set; }
-
-        public Gender? Gender { get; set; }
     }
 }
 

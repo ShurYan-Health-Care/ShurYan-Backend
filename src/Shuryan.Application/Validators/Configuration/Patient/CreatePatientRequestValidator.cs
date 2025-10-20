@@ -29,21 +29,6 @@ namespace Shuryan.Application.Validators.Configuration.Patient
                 .EmailAddress()
                 .Length(5, 255)
                 .WithMessage("Email must be valid and between 5 and 255 characters");
-
-            RuleFor(x => x.PhoneNumber)
-                .Matches(@"^\+?[1-9]\d{1,14}$")
-                .When(x => !string.IsNullOrEmpty(x.PhoneNumber))
-                .WithMessage("Phone number must be in valid E.164 format");
-
-            RuleFor(x => x.BirthDate)
-                .LessThan(DateTime.Today)
-                .When(x => x.BirthDate.HasValue)
-                .WithMessage("Birth date must be in the past");
-
-            RuleFor(x => x.Gender)
-                .IsInEnum()
-                .When(x => x.Gender.HasValue)
-                .WithMessage("Invalid gender");
         }
     }
 }

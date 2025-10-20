@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,7 +30,13 @@ namespace Shuryan.Shared.Extensions
 				{
 					// Migration Assembly
 					sqlOptions.MigrationsAssembly("Shuryan.Infrastructure");
+					
+					// Command Timeout (in seconds) - increase for complex queries
+					sqlOptions.CommandTimeout(120); // 2 minutes instead of default 30 seconds
 				});
+				
+				// Enable split query by default to avoid cartesian explosion
+				options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
 			});
 
 			return services;

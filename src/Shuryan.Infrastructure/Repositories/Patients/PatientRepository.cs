@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
+using Shuryan.Infrastructure.Repositories.Patients;
 
 namespace Shuryan.Infrastructure.Repositories.Patients
 {
@@ -16,17 +17,16 @@ namespace Shuryan.Infrastructure.Repositories.Patients
 
         public async Task<Patient?> GetByIdWithDetailsAsync(Guid id)
         {
+            // Use AsSplitQuery to avoid cartesian explosion and improve performance
+            // Note: This will track the entity for updates
             return await _dbSet
+                .AsSplitQuery() // This splits the query into multiple SQL queries
                 .Include(p => p.Address)
                 .Include(p => p.MedicalHistory)
                 .Include(p => p.Appointments)
-                    .ThenInclude(a => a.Doctor)
                 .Include(p => p.LabOrders)
-                    .ThenInclude(lo => lo.Laboratory)
                 .Include(p => p.Prescriptions)
-                    .ThenInclude(pr => pr.Doctor)
                 .Include(p => p.PharmacyOrders)
-                    .ThenInclude(po => po.Pharmacy)
                 .Include(p => p.DoctorReviews)
                 .Include(p => p.LaboratoryReviews)
                 .Include(p => p.PharmacyReviews)
@@ -35,7 +35,9 @@ namespace Shuryan.Infrastructure.Repositories.Patients
 
         public async Task<Patient?> GetByEmailAsync(string email)
         {
-            return await _dbSet.FirstOrDefaultAsync(p => p.Email == email && !p.IsDeleted);
+            return await _dbSet
+                .AsNoTracking() // Don't track for read operations
+                .FirstOrDefaultAsync(p => p.Email == email && !p.IsDeleted);
         }
 
         public async Task<IEnumerable<Patient>> GetPatientsWithMedicalHistoryAsync()
@@ -45,6 +47,20 @@ namespace Shuryan.Infrastructure.Repositories.Patients
                 .Where(p => p.MedicalHistory.Any() && !p.IsDeleted)
                 .ToListAsync();
         }
+        public async Task RemoveAsync(Patient patient, bool softDelete = true)
+        {
+            if (softDelete)
+            {
+                patient.IsDeleted = true;
+                patient.DeletedAt = DateTime.UtcNow;
+                _dbSet.Update(patient);
+            }
+            else
+            {
+                _dbSet.Remove(patient);
+            }
+
+            await _context.SaveChangesAsync();
+        }
     }
 }
-

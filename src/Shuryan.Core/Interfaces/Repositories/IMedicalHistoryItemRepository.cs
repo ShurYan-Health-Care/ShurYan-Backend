@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Enums;
 
 namespace Shuryan.Core.Interfaces.Repositories

@@ -21,7 +21,7 @@ namespace Shuryan.Application.DTOs.Responses.Laboratory
         public VerificationStatus VerificationStatus { get; set; }
         public DateTime? VerifiedAt { get; set; }
         public Guid? VerifierId { get; set; }
-        public AddressDto? Address { get; set; }
+        public AddressResponse? Address { get; set; }
         public IEnumerable<LabWorkingHoursResponse> WorkingHours { get; set; } = new List<LabWorkingHoursResponse>();
         public IEnumerable<LabServiceResponse> LabServices { get; set; } = new List<LabServiceResponse>();
         public double? AverageRating { get; set; }

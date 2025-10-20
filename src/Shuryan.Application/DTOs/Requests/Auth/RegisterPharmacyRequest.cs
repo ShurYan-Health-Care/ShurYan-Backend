@@ -44,6 +44,6 @@ namespace Shuryan.Application.DTOs.Requests.Auth
         public bool OffersDelivery { get; set; } = true;
 
         [Required(ErrorMessage = "Address is required")]
-        public CreateAddressDto Address { get; set; } = null!;
+        public CreateAddressRequest Address { get; set; } = null!;
     }
 }

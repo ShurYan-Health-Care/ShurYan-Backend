@@ -17,7 +17,7 @@ namespace Shuryan.Application.DTOs.Responses.Clinic
         public Guid DoctorId { get; set; }
         public Guid AddressId { get; set; }
 
-        public AddressDto? Address { get; set; }
+        public AddressResponse? Address { get; set; }
         public IEnumerable<ClinicPhotoResponse> Photos { get; set; } = new List<ClinicPhotoResponse>();
         public IEnumerable<ClinicPhoneNumberResponse> PhoneNumbers { get; set; } = new List<ClinicPhoneNumberResponse>();
         public IEnumerable<ClinicServiceResponse> OfferedServices { get; set; } = new List<ClinicServiceResponse>();

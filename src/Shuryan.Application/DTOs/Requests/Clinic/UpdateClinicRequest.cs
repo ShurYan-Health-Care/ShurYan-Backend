@@ -16,6 +16,6 @@ namespace Shuryan.Application.DTOs.Requests.Clinic
         [Url(ErrorMessage = "Invalid facility video URL format")]
         public string? FacilityVideoUrl { get; set; }
 
-        public UpdateAddressDto? Address { get; set; }
+        public UpdateAddressRequest? Address { get; set; }
     }
 }

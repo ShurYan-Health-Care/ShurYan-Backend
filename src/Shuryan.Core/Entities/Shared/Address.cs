@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -9,7 +9,7 @@ using Shuryan.Core.Entities.External;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums;
 
-namespace Shuryan.Core.Entities.Common
+namespace Shuryan.Core.Entities.Shared
 {
     public class Address : SoftDeletableEntity
 	{

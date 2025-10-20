@@ -9,6 +9,7 @@ using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.External;
 using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
+using Shuryan.Core.Entities.Shared;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
