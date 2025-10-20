@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Core.Enums;
 
 namespace Shuryan.Application.DTOs.Common.Address
 {
@@ -16,7 +17,7 @@ namespace Shuryan.Application.DTOs.Common.Address
         public string? City { get; set; }
 
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Governorate must be between 2-100 characters")]
-        public string? Governorate { get; set; }
+        public Governorate? Governorate { get; set; }
 
         [StringLength(20, ErrorMessage = "Building number cannot exceed 20 characters")]
         public string? BuildingNumber { get; set; }

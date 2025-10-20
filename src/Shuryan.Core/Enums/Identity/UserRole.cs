@@ -22,6 +22,9 @@ namespace Shuryan.Core.Enums.Identity
         Verifier = 4,
 
         [Description("معمل تحاليل")]
-        Laboratory = 5
+        Laboratory = 5,
+
+        [Description("صيدلية")]
+        Pharmacy = 6
     }
 }
