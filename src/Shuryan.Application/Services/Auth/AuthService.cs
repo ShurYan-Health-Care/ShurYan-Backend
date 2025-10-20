@@ -1,16 +1,20 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Auth;
 using Shuryan.Application.DTOs.Responses.Auth;
+using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.Identity;
+using Shuryan.Core.Entities.Shared;
+using Shuryan.Core.Entities.System;
 using Shuryan.Core.Enums.Identity;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Shared.Configurations;
@@ -23,37 +27,56 @@ namespace Shuryan.Application.Services.Auth
         private readonly SignInManager<User> _signInManager;
         private readonly RoleManager<Role> _roleManager;
         private readonly ITokenService _tokenService;
+        private readonly IOtpService _otpService;
+        private readonly IEmailService _emailService;
+        private readonly IGoogleOAuthService _googleOAuthService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly JwtSettings _jwtSettings;
+        private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
             RoleManager<Role> roleManager,
             ITokenService tokenService,
+            IOtpService otpService,
+            IEmailService emailService,
+            IGoogleOAuthService googleOAuthService,
             IUnitOfWork unitOfWork,
-            IOptions<JwtSettings> jwtSettings)
+            IOptions<JwtSettings> jwtSettings,
+            ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _tokenService = tokenService;
+            _otpService = otpService;
+            _emailService = emailService;
+            _googleOAuthService = googleOAuthService;
             _unitOfWork = unitOfWork;
             _jwtSettings = jwtSettings.Value;
+            _logger = logger;
         }
 
-        public async Task<ApiResponse<AuthResponseDto>> RegisterPatientAsync(RegisterPatientRequest dto, string? ipAddress = null)
+        #region Registration
+
+        public async Task<ApiResponse<AuthResponseDto>> RegisterPatientAsync(
+            RegisterPatientRequest dto,
+            string? ipAddress = null)
         {
             try
             {
-                // Check if email already exists
+                // Check if email exists
                 var existingUser = await _userManager.FindByEmailAsync(dto.Email);
                 if (existingUser != null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Email already registered", new[] { "A user with this email already exists" }, 400);
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Email already registered",
+                        new[] { "A user with this email already exists" },
+                        400);
                 }
 
-                // Create Patient entity
+                // Create Patient
                 var patient = new Patient
                 {
                     Id = Guid.NewGuid(),
@@ -61,7 +84,7 @@ namespace Shuryan.Application.Services.Auth
                     LastName = dto.LastName,
                     Email = dto.Email,
                     UserName = dto.Email,
-                    EmailConfirmed = false, // Set to true if not using email confirmation
+                    EmailConfirmed = false,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -70,38 +93,63 @@ namespace Shuryan.Application.Services.Auth
 
                 if (!result.Succeeded)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Registration failed", result.Errors.Select(e => e.Description), 400);
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Registration failed",
+                        result.Errors.Select(e => e.Description),
+                        400);
                 }
 
-                // Ensure Patient role exists
-                await EnsureRoleExistsAsync(UserRole.Patient);
-
                 // Assign Patient role
+                await EnsureRoleExistsAsync(UserRole.Patient);
                 await _userManager.AddToRoleAsync(patient, UserRole.Patient.ToString());
 
-                // Generate tokens
+                // Generate and send OTP
+                var otpCode = await _otpService.GenerateAndStoreOtpAsync(
+                    patient.Id,
+                    patient.Email,
+                    VerificationTypes.EmailVerification,
+                    ipAddress);
+
+                await _emailService.SendVerificationOtpAsync(
+                    patient.Email,
+                    patient.FirstName,
+                    otpCode);
+
+                _logger.LogInformation("Patient registered successfully: {Email}", patient.Email);
+
+                // Generate tokens (user can use app but with limited access until verified)
                 var authResponse = await GenerateAuthResponseAsync(patient, ipAddress);
 
-                return ApiResponse<AuthResponseDto>.Success(authResponse, "Patient registered successfully", 201);
+                return ApiResponse<AuthResponseDto>.Success(
+                    authResponse,
+                    "Registration successful! Please check your email for the verification code.",
+                    201);
             }
             catch (Exception ex)
             {
-                return ApiResponse<AuthResponseDto>.Failure("An error occurred during registration", new[] { ex.Message }, 500);
+                _logger.LogError(ex, "Error during patient registration");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during registration",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
-        public async Task<ApiResponse<AuthResponseDto>> RegisterDoctorAsync(RegisterDoctorRequest dto, string? ipAddress = null)
+        public async Task<ApiResponse<AuthResponseDto>> RegisterDoctorAsync(
+            RegisterDoctorRequest dto,
+            string? ipAddress = null)
         {
             try
             {
-                // Check if email already exists
                 var existingUser = await _userManager.FindByEmailAsync(dto.Email);
                 if (existingUser != null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Email already registered", new[] { "A user with this email already exists" }, 400);
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Email already registered",
+                        new[] { "A user with this email already exists" },
+                        400);
                 }
 
-                // Create Doctor entity
                 var doctor = new Doctor
                 {
                     Id = Guid.NewGuid(),
@@ -110,50 +158,71 @@ namespace Shuryan.Application.Services.Auth
                     Email = dto.Email,
                     UserName = dto.Email,
                     MedicalSpecialty = dto.MedicalSpecialty,
-                    VerificationStatus = VerificationStatus.Unverified, // Requires verification
+                    VerificationStatus = VerificationStatus.Unverified,
                     EmailConfirmed = false,
                     CreatedAt = DateTime.UtcNow
                 };
 
-                // Create user with password
                 var result = await _userManager.CreateAsync(doctor, dto.Password);
 
                 if (!result.Succeeded)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Registration failed", result.Errors.Select(e => e.Description), 400);
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Registration failed",
+                        result.Errors.Select(e => e.Description),
+                        400);
                 }
 
-                // Ensure Doctor role exists
                 await EnsureRoleExistsAsync(UserRole.Doctor);
-
-                // Assign Doctor role
                 await _userManager.AddToRoleAsync(doctor, UserRole.Doctor.ToString());
 
-                // Generate tokens
+                // Send verification OTP
+                var otpCode = await _otpService.GenerateAndStoreOtpAsync(
+                    doctor.Id,
+                    doctor.Email,
+                    VerificationTypes.EmailVerification,
+                    ipAddress);
+
+                await _emailService.SendVerificationOtpAsync(
+                    doctor.Email,
+                    doctor.FirstName,
+                    otpCode);
+
+                _logger.LogInformation("Doctor registered successfully: {Email}", doctor.Email);
+
                 var authResponse = await GenerateAuthResponseAsync(doctor, ipAddress);
 
-                return ApiResponse<AuthResponseDto>.Success(authResponse, "Doctor registered successfully. Please submit verification documents.", 201);
+                return ApiResponse<AuthResponseDto>.Success(
+                    authResponse,
+                    "Registration successful! Please verify your email and submit verification documents.",
+                    201);
             }
             catch (Exception ex)
             {
-                return ApiResponse<AuthResponseDto>.Failure("An error occurred during registration", new[] { ex.Message }, 500);
+                _logger.LogError(ex, "Error during doctor registration");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during registration",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
-        public async Task<ApiResponse<AuthResponseDto>> RegisterLaboratoryAsync(RegisterLaboratoryRequest dto, string? ipAddress = null)
+        public async Task<ApiResponse<AuthResponseDto>> RegisterLaboratoryAsync(
+            RegisterLaboratoryRequest dto,
+            string? ipAddress = null)
         {
-            await using var transaction = await _unitOfWork.BeginTransactionAsync();
-
             try
             {
-                // Check if email already exists
                 var existingUser = await _userManager.FindByEmailAsync(dto.Email);
                 if (existingUser != null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Email already registered", new[] { "A user with this email already exists" }, 400);
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Email already registered",
+                        new[] { "A user with this email already exists" },
+                        400);
                 }
 
-                // Create Address
+                // Create address first
                 var address = new Address
                 {
                     Id = Guid.NewGuid(),
@@ -168,12 +237,9 @@ namespace Shuryan.Application.Services.Auth
 
                 await _unitOfWork.Addresses.AddAsync(address);
 
-                // Create Laboratory entity
                 var laboratory = new Laboratory
                 {
                     Id = Guid.NewGuid(),
-                    FirstName = "Lab", // Laboratory doesn't have FirstName/LastName, using placeholder
-                    LastName = dto.Name,
                     Name = dto.Name,
                     Email = dto.Email,
                     UserName = dto.Email,
@@ -184,59 +250,77 @@ namespace Shuryan.Application.Services.Auth
                     OffersHomeSampleCollection = dto.OffersHomeSampleCollection,
                     HomeSampleCollectionFee = dto.HomeSampleCollectionFee,
                     AddressId = address.Id,
-                    LaboratoryStatus = Status.Active,
                     VerificationStatus = VerificationStatus.Unverified,
                     EmailConfirmed = false,
                     CreatedAt = DateTime.UtcNow
                 };
 
-                // Create user with password
                 var result = await _userManager.CreateAsync(laboratory, dto.Password);
 
                 if (!result.Succeeded)
                 {
-                    await transaction.RollbackAsync();
+                    // Rollback address creation
+                    _unitOfWork.Addresses.Delete(address);
+                    await _unitOfWork.SaveChangesAsync();
+
                     return ApiResponse<AuthResponseDto>.Failure(
                         "Registration failed",
                         result.Errors.Select(e => e.Description),
                         400);
                 }
 
-                // Ensure Laboratory role exists
                 await EnsureRoleExistsAsync(UserRole.Laboratory);
-
-                // Assign Laboratory role
                 await _userManager.AddToRoleAsync(laboratory, UserRole.Laboratory.ToString());
 
-                await _unitOfWork.SaveChangesAsync();
-                await transaction.CommitAsync();
+                // Send verification OTP
+                var otpCode = await _otpService.GenerateAndStoreOtpAsync(
+                    laboratory.Id,
+                    laboratory.Email,
+                    VerificationTypes.EmailVerification,
+                    ipAddress);
 
-                // Generate tokens
+                await _emailService.SendVerificationOtpAsync(
+                    laboratory.Email,
+                    laboratory.Name,
+                    otpCode);
+
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Laboratory registered successfully: {Email}", laboratory.Email);
+
                 var authResponse = await GenerateAuthResponseAsync(laboratory, ipAddress);
 
-                return ApiResponse<AuthResponseDto>.Success(authResponse, "Laboratory registered successfully. Please submit verification documents.", 201);
+                return ApiResponse<AuthResponseDto>.Success(
+                    authResponse,
+                    "Registration successful! Please verify your email and submit verification documents.",
+                    201);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                return ApiResponse<AuthResponseDto>.Failure("An error occurred during registration", new[] { ex.Message }, 500);
+                _logger.LogError(ex, "Error during laboratory registration");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during registration",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
-        public async Task<ApiResponse<AuthResponseDto>> RegisterPharmacyAsync(RegisterPharmacyRequest dto, string? ipAddress = null)
+        public async Task<ApiResponse<AuthResponseDto>> RegisterPharmacyAsync(
+            RegisterPharmacyRequest dto,
+            string? ipAddress = null)
         {
-            await using var transaction = await _unitOfWork.BeginTransactionAsync();
-
             try
             {
-                // Check if email already exists
                 var existingUser = await _userManager.FindByEmailAsync(dto.Email);
                 if (existingUser != null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Email already registered", new[] { "A user with this email already exists" }, 400);
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Email already registered",
+                        new[] { "A user with this email already exists" },
+                        400);
                 }
 
-                // Create Address
+                // Create address first
                 var address = new Address
                 {
                     Id = Guid.NewGuid(),
@@ -251,12 +335,9 @@ namespace Shuryan.Application.Services.Auth
 
                 await _unitOfWork.Addresses.AddAsync(address);
 
-                // Create Pharmacy entity
                 var pharmacy = new Pharmacy
                 {
                     Id = Guid.NewGuid(),
-                    FirstName = "Pharmacy", // Pharmacy doesn't have FirstName/LastName, using placeholder
-                    LastName = dto.Name,
                     Name = dto.Name,
                     Email = dto.Email,
                     UserName = dto.Email,
@@ -266,41 +347,54 @@ namespace Shuryan.Application.Services.Auth
                     Website = dto.Website,
                     OffersDelivery = dto.OffersDelivery,
                     AddressId = address.Id,
-                    PharmacyStatus = Status.Active,
                     VerificationStatus = VerificationStatus.Unverified,
                     EmailConfirmed = false,
                     CreatedAt = DateTime.UtcNow
                 };
 
-                // Create user with password
                 var result = await _userManager.CreateAsync(pharmacy, dto.Password);
 
                 if (!result.Succeeded)
                 {
-                    await transaction.RollbackAsync();
-                    return ApiResponse<AuthResponseDto>.Failure("Registration failed", result.Errors.Select(e => e.Description), 400);
+                    // Rollback address creation
+                    _unitOfWork.Addresses.Delete(address);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Registration failed",
+                        result.Errors.Select(e => e.Description),
+                        400);
                 }
 
-                // Ensure Pharmacy role exists
                 await EnsureRoleExistsAsync(UserRole.Pharmacy);
-
-                // Assign Pharmacy role
                 await _userManager.AddToRoleAsync(pharmacy, UserRole.Pharmacy.ToString());
 
-                await _unitOfWork.SaveChangesAsync();
-                await transaction.CommitAsync();
+                // Send verification OTP
+                var otpCode = await _otpService.GenerateAndStoreOtpAsync(
+                    pharmacy.Id,
+                    pharmacy.Email,
+                    VerificationTypes.EmailVerification,
+                    ipAddress);
 
-                // Generate tokens
+                await _emailService.SendVerificationOtpAsync(
+                    pharmacy.Email,
+                    pharmacy.Name,
+                    otpCode);
+
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Pharmacy registered successfully: {Email}", pharmacy.Email);
+
                 var authResponse = await GenerateAuthResponseAsync(pharmacy, ipAddress);
 
                 return ApiResponse<AuthResponseDto>.Success(
                     authResponse,
-                    "Pharmacy registered successfully. Please submit verification documents.",
+                    "Registration successful! Please verify your email and submit verification documents.",
                     201);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error during pharmacy registration");
                 return ApiResponse<AuthResponseDto>.Failure(
                     "An error occurred during registration",
                     new[] { ex.Message },
@@ -308,56 +402,517 @@ namespace Shuryan.Application.Services.Auth
             }
         }
 
-        public async Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginRequest dto, string? ipAddress = null)
+        #endregion
+
+        #region Email Verification
+
+        public async Task<ApiResponse<bool>> VerifyEmailAsync(VerifyEmailRequest dto)
         {
             try
             {
-                // Find user by email
+                // Validate OTP
+                var isValid = await _otpService.ValidateOtpAsync(
+                    dto.Email,
+                    dto.OtpCode,
+                    VerificationTypes.EmailVerification);
+
+                if (!isValid)
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Invalid or expired OTP code",
+                        new[] { "Please check your code or request a new one" },
+                        400);
+                }
+
+                // Find user and mark email as confirmed
+                var user = await _userManager.FindByEmailAsync(dto.Email);
+                if (user == null)
+                {
+                    return ApiResponse<bool>.Failure("User not found", null, 404);
+                }
+
+                user.EmailConfirmed = true;
+                user.EmailVerifiedAt = DateTime.UtcNow;
+                await _userManager.UpdateAsync(user);
+
+                // Send welcome email
+                await _emailService.SendWelcomeEmailAsync(user.Email, user.FirstName);
+
+                _logger.LogInformation("Email verified successfully for user: {Email}", dto.Email);
+
+                return ApiResponse<bool>.Success(
+                    true,
+                    "Email verified successfully! Welcome to Shuryan Healthcare.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during email verification");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred during verification",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
+        public async Task<ApiResponse<bool>> ResendVerificationOtpAsync(ResendOtpRequest dto)
+        {
+            try
+            {
+                // Check rate limiting
+                var canResend = await _otpService.CanResendOtpAsync(dto.Email);
+                if (!canResend)
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Too many requests",
+                        new[] { "Please wait before requesting another code" },
+                        429);
+                }
+
+                var user = await _userManager.FindByEmailAsync(dto.Email);
+                if (user == null)
+                {
+                    // Don't reveal if user exists
+                    return ApiResponse<bool>.Success(
+                        true,
+                        "If your email exists, you'll receive a verification code");
+                }
+
+                if (user.EmailConfirmed)
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Email already verified",
+                        null,
+                        400);
+                }
+
+                // Generate new OTP
+                var otpCode = await _otpService.GenerateAndStoreOtpAsync(
+                    user.Id,
+                    user.Email,
+                    VerificationTypes.EmailVerification);
+
+                await _emailService.SendVerificationOtpAsync(
+                    user.Email,
+                    user.FirstName,
+                    otpCode);
+
+                _logger.LogInformation("Verification OTP resent to: {Email}", dto.Email);
+
+                return ApiResponse<bool>.Success(
+                    true,
+                    "Verification code sent! Please check your email.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resending verification OTP");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
+        #endregion
+
+        #region Login
+
+        public async Task<ApiResponse<AuthResponseDto>> LoginAsync(
+            LoginRequest dto,
+            string? ipAddress = null)
+        {
+            try
+            {
                 var user = await _userManager.FindByEmailAsync(dto.Email);
 
                 if (user == null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Invalid credentials", new[] { "Email or password is incorrect" }, 401);
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Invalid credentials",
+                        new[] { "Email or password is incorrect" },
+                        401);
                 }
 
-                // Check if user is deleted (soft delete)
+                // Check soft delete
                 if (user.IsDeleted)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Account deactivated", new[] { "This account has been deactivated" }, 403);
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Account deactivated",
+                        new[] { "This account has been deactivated" },
+                        403);
                 }
 
-                // Check if account is locked
+                // Check lockout
                 if (await _userManager.IsLockedOutAsync(user))
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Account locked", new[] { "Account is temporarily locked due to multiple failed login attempts" }, 403);
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Account locked",
+                        new[] { "Too many failed attempts. Please try again later." },
+                        403);
                 }
 
-                // Attempt sign in
-                var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
+                // Verify password
+                var result = await _signInManager.CheckPasswordSignInAsync(
+                    user,
+                    dto.Password,
+                    lockoutOnFailure: true);
 
                 if (!result.Succeeded)
                 {
                     if (result.IsLockedOut)
                     {
-                        return ApiResponse<AuthResponseDto>.Failure("Account locked", new[] { "Account is temporarily locked due to multiple failed login attempts" }, 403);
+                        return ApiResponse<AuthResponseDto>.Failure(
+                            "Account locked",
+                            new[] { "Too many failed attempts. Account locked for 15 minutes." },
+                            403);
                     }
-                    return ApiResponse<AuthResponseDto>.Failure("Invalid credentials", new[] { "Email or password is incorrect" }, 401);
+
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Invalid credentials",
+                        new[] { "Email or password is incorrect" },
+                        401);
                 }
+
+                // Successful login - update tracking
+                user.LastLoginAt = DateTime.UtcNow;
+                user.LastLoginIp = ipAddress;
+                await _userManager.UpdateAsync(user);
 
                 // Generate tokens
                 var authResponse = await GenerateAuthResponseAsync(user, ipAddress);
 
-                return ApiResponse<AuthResponseDto>.Success(authResponse, "Login successful", 200);
+                _logger.LogInformation("User logged in successfully: {Email}", user.Email);
+
+                return ApiResponse<AuthResponseDto>.Success(
+                    authResponse,
+                    "Login successful",
+                    200);
             }
             catch (Exception ex)
             {
-                return ApiResponse<AuthResponseDto>.Failure("An error occurred during login", new[] { ex.Message }, 500);
+                _logger.LogError(ex, "Error during login");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during login",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
+        #endregion
+
+        #region Google OAuth
+
+        public async Task<ApiResponse<AuthResponseDto>> GoogleLoginAsync(
+            GoogleLoginRequest dto,
+            string? ipAddress = null)
+        {
+            try
+            {
+                // Validate Google token
+                var googleUser = await _googleOAuthService.ValidateGoogleTokenAsync(dto.IdToken);
+                if (googleUser == null)
+                {
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Invalid Google token",
+                        new[] { "Unable to verify Google credentials" },
+                        401);
+                }
+
+                // Check if user exists
+                var user = await _userManager.FindByEmailAsync(googleUser.Email);
+
+                if (user != null)
+                {
+                    // Existing user - login
+                    if (user.IsDeleted)
+                    {
+                        return ApiResponse<AuthResponseDto>.Failure(
+                            "Account deactivated",
+                            new[] { "This account has been deactivated" },
+                            403);
+                    }
+
+                    // Update OAuth info if not set
+                    if (!user.IsOAuthAccount)
+                    {
+                        user.IsOAuthAccount = true;
+                        user.OAuthProvider = "Google";
+                        user.OAuthProviderId = googleUser.Sub;
+                        user.ProfilePictureUrl = googleUser.Picture;
+                    }
+
+                    // Update login tracking
+                    user.LastLoginAt = DateTime.UtcNow;
+                    user.LastLoginIp = ipAddress;
+                    user.EmailConfirmed = true; // Google emails are verified
+                    user.EmailVerifiedAt ??= DateTime.UtcNow;
+
+                    await _userManager.UpdateAsync(user);
+
+                    var authResponse = await GenerateAuthResponseAsync(user, ipAddress);
+
+                    _logger.LogInformation("User logged in via Google: {Email}", user.Email);
+
+                    return ApiResponse<AuthResponseDto>.Success(
+                        authResponse,
+                        "Login successful",
+                        200);
+                }
+                else
+                {
+                    // New user - register
+                    var userRole = string.IsNullOrEmpty(dto.UserRole)
+                        ? UserRole.Patient
+                        : Enum.Parse<UserRole>(dto.UserRole, true);
+
+                    User newUser = userRole switch
+                    {
+                        UserRole.Doctor => new Doctor
+                        {
+                            Id = Guid.NewGuid(),
+                            FirstName = googleUser.GivenName,
+                            LastName = googleUser.FamilyName,
+                            Email = googleUser.Email,
+                            UserName = googleUser.Email,
+                            EmailConfirmed = true,
+                            EmailVerifiedAt = DateTime.UtcNow,
+                            IsOAuthAccount = true,
+                            OAuthProvider = "Google",
+                            OAuthProviderId = googleUser.Sub,
+                            ProfilePictureUrl = googleUser.Picture,
+                            VerificationStatus = VerificationStatus.Unverified,
+                            CreatedAt = DateTime.UtcNow
+                        },
+                        _ => new Patient
+                        {
+                            Id = Guid.NewGuid(),
+                            FirstName = googleUser.GivenName,
+                            LastName = googleUser.FamilyName,
+                            Email = googleUser.Email,
+                            UserName = googleUser.Email,
+                            EmailConfirmed = true,
+                            EmailVerifiedAt = DateTime.UtcNow,
+                            IsOAuthAccount = true,
+                            OAuthProvider = "Google",
+                            OAuthProviderId = googleUser.Sub,
+                            ProfilePictureUrl = googleUser.Picture,
+                            CreatedAt = DateTime.UtcNow
+                        }
+                    };
+
+                    // Create user without password (OAuth account)
+                    var result = await _userManager.CreateAsync(newUser);
+                    if (!result.Succeeded)
+                    {
+                        return ApiResponse<AuthResponseDto>.Failure(
+                            "Registration failed",
+                            result.Errors.Select(e => e.Description),
+                            400);
+                    }
+
+                    // Assign role
+                    await EnsureRoleExistsAsync(userRole);
+                    await _userManager.AddToRoleAsync(newUser, userRole.ToString());
+
+                    // Send welcome email
+                    await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.FirstName);
+
+                    var authResponse = await GenerateAuthResponseAsync(newUser, ipAddress);
+
+                    _logger.LogInformation("New user registered via Google: {Email}", newUser.Email);
+
+                    return ApiResponse<AuthResponseDto>.Success(
+                        authResponse,
+                        "Registration successful! Welcome to Shuryan Healthcare.",
+                        201);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during Google OAuth");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during Google login",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
+        #endregion
+
+        #region Password Reset
+
+        public async Task<ApiResponse<bool>> ForgotPasswordAsync(ForgotPasswordRequest dto)
+        {
+            try
+            {
+                // Check rate limiting
+                var canResend = await _otpService.CanResendOtpAsync(dto.Email);
+                if (!canResend)
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Too many requests",
+                        new[] { "Please wait before requesting another code" },
+                        429);
+                }
+
+                var user = await _userManager.FindByEmailAsync(dto.Email);
+
+                // Don't reveal if user exists (security best practice)
+                if (user == null || user.IsDeleted)
+                {
+                    return ApiResponse<bool>.Success(
+                        true,
+                        "If your email exists, you'll receive a password reset code");
+                }
+
+                // Generate and send OTP
+                var otpCode = await _otpService.GenerateAndStoreOtpAsync(
+                    user.Id,
+                    user.Email,
+                    VerificationTypes.PasswordReset);
+
+                await _emailService.SendPasswordResetOtpAsync(
+                    user.Email,
+                    user.FirstName,
+                    otpCode);
+
+                _logger.LogInformation("Password reset OTP sent to: {Email}", dto.Email);
+
+                return ApiResponse<bool>.Success(
+                    true,
+                    "If your email exists, you'll receive a password reset code");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during forgot password");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
+        public async Task<ApiResponse<bool>> VerifyResetOtpAndResetPasswordAsync(
+            VerifyResetOtpRequest dto)
+        {
+            try
+            {
+                // Validate OTP
+                var isValid = await _otpService.ValidateOtpAsync(
+                    dto.Email,
+                    dto.OtpCode,
+                    VerificationTypes.PasswordReset);
+
+                if (!isValid)
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Invalid or expired OTP code",
+                        new[] { "Please check your code or request a new one" },
+                        400);
+                }
+
+                var user = await _userManager.FindByEmailAsync(dto.Email);
+                if (user == null)
+                {
+                    return ApiResponse<bool>.Failure("User not found", null, 404);
+                }
+
+                // Reset password
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+
+                if (!result.Succeeded)
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Password reset failed",
+                        result.Errors.Select(e => e.Description),
+                        400);
+                }
+
+                // Revoke all refresh tokens for security
+                await _unitOfWork.RefreshTokens.RevokeAllUserTokensAsync(
+                    user.Id,
+                    "Password reset");
+
+                // Send confirmation email
+                await _emailService.SendPasswordChangedNotificationAsync(
+                    user.Email,
+                    user.FirstName);
+
+                _logger.LogInformation("Password reset successfully for: {Email}", dto.Email);
+
+                return ApiResponse<bool>.Success(
+                    true,
+                    "Password reset successfully! You can now login with your new password.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during password reset");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred during password reset",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
+        public async Task<ApiResponse<bool>> ChangePasswordAsync(
+            Guid userId,
+            ChangePasswordRequest dto)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId.ToString());
+
+                if (user == null || user.IsDeleted)
+                {
+                    return ApiResponse<bool>.Failure("User not found", null, 404);
+                }
+
+                var result = await _userManager.ChangePasswordAsync(
+                    user,
+                    dto.CurrentPassword,
+                    dto.NewPassword);
+
+                if (!result.Succeeded)
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Password change failed",
+                        result.Errors.Select(e => e.Description),
+                        400);
+                }
+
+                // Revoke all refresh tokens for security
+                await _unitOfWork.RefreshTokens.RevokeAllUserTokensAsync(
+                    userId,
+                    "Password changed");
+
+                // Send notification email
+                await _emailService.SendPasswordChangedNotificationAsync(
+                    user.Email,
+                    user.FirstName);
+
+                _logger.LogInformation("Password changed for user: {UserId}", userId);
+
+                return ApiResponse<bool>.Success(
+                    true,
+                    "Password changed successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during password change");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred while changing password",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
+        #endregion
+
+        #region Token Management
+
         public async Task<ApiResponse<AuthResponseDto>> RefreshTokenAsync(
-    RefreshTokenRequest dto,
-    string? ipAddress = null)
+            RefreshTokenRequest dto,
+            string? ipAddress = null)
         {
             try
             {
@@ -372,7 +927,7 @@ namespace Shuryan.Application.Services.Auth
                         401);
                 }
 
-                // Find refresh token in database
+                // Find refresh token
                 var refreshToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(dto.RefreshToken);
 
                 if (refreshToken == null || refreshToken.UserId != userId)
@@ -383,25 +938,24 @@ namespace Shuryan.Application.Services.Auth
                         401);
                 }
 
-                // Check if refresh token is active
+                // Check if active
                 if (!refreshToken.IsActive)
                 {
                     if (refreshToken.IsRevoked)
                     {
-                        // Possible security breach - revoke all user tokens
+                        // Possible token reuse attack - revoke all user tokens
                         await _unitOfWork.RefreshTokens.RevokeAllUserTokensAsync(
                             userId.Value,
                             "Attempted reuse of revoked token");
 
-                        return ApiResponse<AuthResponseDto>.Failure(
-                            "Invalid refresh token",
-                            new[] { "This refresh token has been revoked" },
-                            401);
+                        _logger.LogWarning(
+                            "Possible token reuse attack detected for user {UserId}",
+                            userId);
                     }
 
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Expired refresh token",
-                        new[] { "Refresh token has expired" },
+                        "Invalid refresh token",
+                        new[] { "This refresh token is no longer valid" },
                         401);
                 }
 
@@ -425,6 +979,8 @@ namespace Shuryan.Application.Services.Auth
                 // Generate new tokens
                 var authResponse = await GenerateAuthResponseAsync(user, ipAddress);
 
+                _logger.LogInformation("Tokens refreshed for user: {UserId}", userId);
+
                 return ApiResponse<AuthResponseDto>.Success(
                     authResponse,
                     "Token refreshed successfully",
@@ -432,6 +988,7 @@ namespace Shuryan.Application.Services.Auth
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error during token refresh");
                 return ApiResponse<AuthResponseDto>.Failure(
                     "An error occurred while refreshing token",
                     new[] { ex.Message },
@@ -439,12 +996,74 @@ namespace Shuryan.Application.Services.Auth
             }
         }
 
-        private async Task<AuthResponseDto> GenerateAuthResponseAsync(
-    User user,
-    string? ipAddress = null,
-    bool rememberMe = false)
+        public async Task<ApiResponse<bool>> LogoutAsync(
+            string refreshToken,
+            string? ipAddress = null)
         {
-            // Get user roles
+            try
+            {
+                await _unitOfWork.RefreshTokens.RevokeTokenAsync(
+                    refreshToken,
+                    "User logout",
+                    ipAddress);
+
+                return ApiResponse<bool>.Success(true, "Logged out successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during logout");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred during logout",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
+        #endregion
+
+        #region User Info
+
+        public async Task<ApiResponse<UserInfoDto>> GetCurrentUserAsync(Guid userId)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId.ToString());
+
+                if (user == null || user.IsDeleted)
+                {
+                    return ApiResponse<UserInfoDto>.Failure(
+                        "User not found",
+                        new[] { "User account not found" },
+                        404);
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+                var userInfo = await BuildUserInfoAsync(user, roles);
+
+                return ApiResponse<UserInfoDto>.Success(
+                    userInfo,
+                    "User retrieved successfully",
+                    200);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user info");
+                return ApiResponse<UserInfoDto>.Failure(
+                    "An error occurred while retrieving user",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private async Task<AuthResponseDto> GenerateAuthResponseAsync(
+            User user,
+            string? ipAddress = null,
+            bool rememberMe = false)
+        {
             var roles = await _userManager.GetRolesAsync(user);
 
             // Generate access token
@@ -456,12 +1075,13 @@ namespace Shuryan.Application.Services.Auth
             // Generate refresh token
             var refreshTokenString = _tokenService.GenerateRefreshToken();
 
-            // Calculate expiration times
-            var accessTokenExpiration = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes);
+            // Calculate expiration
+            var accessTokenExpiration = DateTime.UtcNow.AddMinutes(
+                _jwtSettings.AccessTokenExpirationMinutes);
             var refreshTokenExpiration = DateTime.UtcNow.AddDays(
                 rememberMe ? _jwtSettings.RefreshTokenExpirationDays * 2 : _jwtSettings.RefreshTokenExpirationDays);
 
-            // Store refresh token in database
+            // Store refresh token
             var refreshToken = new RefreshToken
             {
                 Id = Guid.NewGuid(),
@@ -497,43 +1117,37 @@ namespace Shuryan.Application.Services.Auth
                 Email = user.Email!,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Roles = roles
+                Roles = roles,
+                AdditionalInfo = new Dictionary<string, object>
+                {
+                    { "EmailVerified", user.EmailConfirmed },
+                    { "IsOAuthAccount", user.IsOAuthAccount }
+                }
             };
 
-            // Add user type-specific information
+            // Add type-specific info
             if (user is Doctor doctor)
             {
-                userInfo.AdditionalInfo = new Dictionary<string, object>
-                {
-                    { "MedicalSpecialty", doctor.MedicalSpecialty.ToString() },
-                    { "VerificationStatus", doctor.VerificationStatus.ToString() }
-                };
+                userInfo.AdditionalInfo.Add("MedicalSpecialty", doctor.MedicalSpecialty.ToString());
+                userInfo.AdditionalInfo.Add("VerificationStatus", doctor.VerificationStatus.ToString());
+                userInfo.AdditionalInfo.Add("YearsOfExperience", doctor.YearsOfExperience);
             }
             else if (user is Laboratory lab)
             {
-                userInfo.AdditionalInfo = new Dictionary<string, object>
-                {
-                    { "Name", lab.Name },
-                    { "VerificationStatus", lab.VerificationStatus.ToString() },
-                    { "OffersHomeSampleCollection", lab.OffersHomeSampleCollection }
-                };
+                userInfo.AdditionalInfo.Add("Name", lab.Name);
+                userInfo.AdditionalInfo.Add("VerificationStatus", lab.VerificationStatus.ToString());
+                userInfo.AdditionalInfo.Add("OffersHomeSampleCollection", lab.OffersHomeSampleCollection);
             }
             else if (user is Pharmacy pharmacy)
             {
-                userInfo.AdditionalInfo = new Dictionary<string, object>
-                {
-                    { "Name", pharmacy.Name },
-                    { "VerificationStatus", pharmacy.VerificationStatus.ToString() },
-                    { "OffersDelivery", pharmacy.OffersDelivery }
-                };
+                userInfo.AdditionalInfo.Add("Name", pharmacy.Name);
+                userInfo.AdditionalInfo.Add("VerificationStatus", pharmacy.VerificationStatus.ToString());
+                userInfo.AdditionalInfo.Add("OffersDelivery", pharmacy.OffersDelivery);
             }
             else if (user is Patient patient)
             {
-                userInfo.AdditionalInfo = new Dictionary<string, object>
-                {
-                    { "BirthDate", patient.BirthDate?.ToString("yyyy-MM-dd") ?? "N/A" },
-                    { "Gender", patient.Gender?.ToString() ?? "N/A" }
-                };
+                userInfo.AdditionalInfo.Add("BirthDate", patient.BirthDate?.ToString("yyyy-MM-dd") ?? "N/A");
+                userInfo.AdditionalInfo.Add("Gender", patient.Gender?.ToString() ?? "N/A");
             }
 
             return userInfo;
@@ -555,169 +1169,6 @@ namespace Shuryan.Application.Services.Auth
             }
         }
 
-        public async Task<ApiResponse<bool>> ChangePasswordAsync(Guid userId, ChangePasswordRequest dto)
-        {
-            try
-            {
-                var user = await _userManager.FindByIdAsync(userId.ToString());
-
-                if (user == null || user.IsDeleted)
-                {
-                    return ApiResponse<bool>.Failure(
-                        "User not found",
-                        new[] { "User account not found" },
-                        404);
-                }
-
-                var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
-
-                if (!result.Succeeded)
-                {
-                    return ApiResponse<bool>.Failure(
-                        "Password change failed",
-                        result.Errors.Select(e => e.Description),
-                        400);
-                }
-
-                // Optionally revoke all refresh tokens for security
-                await _unitOfWork.RefreshTokens.RevokeAllUserTokensAsync(userId, "Password changed");
-
-                return ApiResponse<bool>.Success(true, "Password changed successfully");
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<bool>.Failure(
-                    "An error occurred while changing password",
-                    new[] { ex.Message },
-                    500);
-            }
-        }
-
-        public async Task<ApiResponse<bool>> ForgotPasswordAsync(ForgotPasswordRequest dto)
-        {
-            try
-            {
-                var user = await _userManager.FindByEmailAsync(dto.Email);
-
-                // Don't reveal whether user exists or not (security)
-                if (user == null)
-                {
-                    return ApiResponse<bool>.Success(
-                        true,
-                        "If your email exists in our system, you will receive a password reset link");
-                }
-
-                // Generate password reset token
-                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-                // TODO: Send email with reset link
-                // await _emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
-
-                return ApiResponse<bool>.Success(
-                    true,
-                    "If your email exists in our system, you will receive a password reset link");
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<bool>.Failure(
-                    "An error occurred while processing your request",
-                    new[] { ex.Message },
-                    500);
-            }
-        }
-
-        public async Task<ApiResponse<bool>> ResetPasswordAsync(ResetPasswordRequest dto)
-        {
-            try
-            {
-                var user = await _userManager.FindByEmailAsync(dto.Email);
-
-                if (user == null)
-                {
-                    return ApiResponse<bool>.Failure(
-                        "Invalid request",
-                        new[] { "Invalid email or token" },
-                        400);
-                }
-
-                var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
-
-                if (!result.Succeeded)
-                {
-                    return ApiResponse<bool>.Failure(
-                        "Password reset failed",
-                        result.Errors.Select(e => e.Description),
-                        400);
-                }
-
-                // Revoke all refresh tokens
-                await _unitOfWork.RefreshTokens.RevokeAllUserTokensAsync(user.Id, "Password reset");
-
-                return ApiResponse<bool>.Success(true, "Password reset successfully");
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<bool>.Failure(
-                    "An error occurred while resetting password",
-                    new[] { ex.Message },
-                    500);
-            }
-        }
-
-        public async Task<ApiResponse<bool>> LogoutAsync(string refreshToken, string? ipAddress = null)
-        {
-            try
-            {
-                await _unitOfWork.RefreshTokens.RevokeTokenAsync(
-                    refreshToken,
-                    "User logout",
-                    ipAddress);
-
-                return ApiResponse<bool>.Success(true, "Logged out successfully");
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<bool>.Failure(
-                    "An error occurred during logout",
-                    new[] { ex.Message },
-                    500);
-            }
-        }
-
-        // Pseudocode / Plan:
-        // 1. Try to find the user by the provided userId using _userManager.FindByIdAsync.
-        // 2. If user is null -> return ApiResponse<UserInfoDto>.Failure with 404 ("User not found").
-        // 3. If user.IsDeleted -> return ApiResponse<UserInfoDto>.Failure with 404 (consistent with other methods).
-        // 4. Retrieve roles for the user via _userManager.GetRolesAsync.
-        // 5. Build UserInfoDto by calling the existing BuildUserInfoAsync(user, roles).
-        // 6. Return ApiResponse<UserInfoDto>.Success with the built user info and status 200.
-        // 7. Wrap in try/catch and return a 500 failure with exception message on unexpected errors.
-        public async Task<ApiResponse<UserInfoDto>> GetCurrentUserAsync(Guid userId)
-        {
-            try
-            {
-                var user = await _userManager.FindByIdAsync(userId.ToString());
-
-                if (user == null)
-                {
-                    return ApiResponse<UserInfoDto>.Failure("User not found", new[] { "User account not found" }, 404);
-                }
-
-                if (user.IsDeleted)
-                {
-                    return ApiResponse<UserInfoDto>.Failure("User not found", new[] { "User account not found or deactivated" }, 404);
-                }
-
-                var roles = await _userManager.GetRolesAsync(user);
-
-                var userInfo = await BuildUserInfoAsync(user, roles);
-
-                return ApiResponse<UserInfoDto>.Success(userInfo, "User retrieved successfully", 200);
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<UserInfoDto>.Failure("An error occurred while retrieving user", new[] { ex.Message }, 500);
-            }
-        }
+        #endregion
     }
 }

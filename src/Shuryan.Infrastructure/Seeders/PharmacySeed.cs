@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Entities.Identity;
+using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Identity;
 using Shuryan.Infrastructure.Data;

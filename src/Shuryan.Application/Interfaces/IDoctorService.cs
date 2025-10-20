@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Shuryan.Application.Interfaces
 {
-    public interface IDoctorApplicationService
+    public interface IDoctorService
     {
         // ==================== DOCTOR CRUD ====================
 

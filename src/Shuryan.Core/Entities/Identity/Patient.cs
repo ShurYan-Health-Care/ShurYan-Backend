@@ -2,6 +2,7 @@
 using Shuryan.Core.Entities.External.Laboratories;
 using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Entities.System.Review;
 using System;
 using System.Collections.Generic;

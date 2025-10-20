@@ -2,20 +2,27 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Shuryan.Application.Extensions;
+using Shuryan.Application.Interfaces;
+using Shuryan.Application.Services;
 using Shuryan.Application.Services.Auth;
+using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
+using Shuryan.Core.Interfaces.Repositories;
+using Shuryan.Core.Interfaces.Services;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.Data;
+using Shuryan.Infrastructure.Repositories.Patients;
+using Shuryan.Infrastructure.Services;
 using Shuryan.Infrastructure.UnitOfWork;
 using Shuryan.Shared.Configurations;
 using Shuryan.Shared.Extensions;
-using Shuryan.Core.Interfaces.Services;
-using Shuryan.Infrastructure.Services;
-using Shuryan.Application.Services;
-using Shuryan.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load local configuration file (not committed to Git)
+builder.Configuration.AddJsonFile("appsettings.Development.Local.json", optional: true, reloadOnChange: true);
 
 // ==================== Database Configuration ====================
 builder.Services.AddDatabaseConfiguration(builder.Configuration);
@@ -32,23 +39,40 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 // ==================== Authorization Policies ====================
 builder.Services.AddAuthorizationPolicies();
 
+// ==================== Repositories ====================
+builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+
 // ==================== Unit of Work ====================
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// Register Services
-builder.Services.AddScoped<IDoctorService, DoctorService>();
-builder.Services.AddScoped<IDoctorApplicationService, DoctorApplicationService>();
+builder.Services.AddAutoMapper(typeof(Shuryan.Application.Mappers.MappingProfile));
+
+
+// ==================== Application Services ====================
+//builder.Services.AddScoped<Shuryan.Core.Interfaces.Services.IDoctorService, Shuryan.Infrastructure.Services.DoctorService>();
+//builder.Services.AddScoped<Shuryan.Application.Interfaces.IDoctorService, Shuryan.Application.Services.DoctorService>();
+builder.Services.AddScoped<IPatientService, PatientService>();
+
 
 // Register FluentValidation from Application assembly
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-builder.Services.AddValidatorsFromAssemblyContaining<DoctorApplicationService>();
+//builder.Services.AddValidatorsFromAssemblyContaining<Shuryan.Application.Services.DoctorService>();
 
 // ==================== Application Services ====================
+// Configure settings from appsettings.json
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<OAuthSettings>(builder.Configuration.GetSection("OAuthSettings"));
+
+// Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
 
 // ==================== FluentValidation ====================
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
 
 // ==================== Controllers ====================
 builder.Services.AddControllers();

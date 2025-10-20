@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -101,6 +101,8 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<PharmacyReview> PharmacyReviews { get; set; }
 		// Notification
 		public DbSet<Notification> Notifications { get; set; }
+		// Email Verification
+		public DbSet<EmailVerification> EmailVerifications { get; set; }
 		#endregion
 
 		protected override void OnModelCreating(ModelBuilder builder)

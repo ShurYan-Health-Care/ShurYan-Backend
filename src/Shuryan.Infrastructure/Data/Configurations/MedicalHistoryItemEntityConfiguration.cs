@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
+using Shuryan.Core.Entities.Shared;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {

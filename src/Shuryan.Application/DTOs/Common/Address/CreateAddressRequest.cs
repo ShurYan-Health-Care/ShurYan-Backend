@@ -4,12 +4,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Core.Enums;
 
 namespace Shuryan.Application.DTOs.Common.Address
 {
-    public class AddressDto : BaseSoftDeletableDto
+    public class CreateAddressRequest
     {
         [Required(ErrorMessage = "Street is required")]
         [StringLength(200, MinimumLength = 2, ErrorMessage = "Street must be between 2-200 characters")]
