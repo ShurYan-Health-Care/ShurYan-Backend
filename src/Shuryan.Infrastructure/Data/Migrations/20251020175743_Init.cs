@@ -66,6 +66,13 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     DeletedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    OAuthProvider = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    OAuthProviderId = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    ProfilePictureUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsOAuthAccount = table.Column<bool>(type: "bit", nullable: false),
+                    EmailVerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastLoginAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastLoginIp = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -241,6 +248,35 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "EmailVerifications",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    OtpCode = table.Column<string>(type: "nchar(6)", fixedLength: true, maxLength: 6, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsUsed = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AttemptCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    RequestedFromIp = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    VerificationType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "EmailVerification")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmailVerifications", x => x.Id);
+                    table.CheckConstraint("CK_EmailVerification_AttemptCount", "[AttemptCount] >= 0 AND [AttemptCount] <= 10");
+                    table.CheckConstraint("CK_EmailVerification_ExpiresAt", "[ExpiresAt] > [CreatedAt]");
+                    table.ForeignKey(
+                        name: "FK_EmailVerifications_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Notifications",
                 columns: table => new
                 {
@@ -289,6 +325,33 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     table.ForeignKey(
                         name: "FK_ProfileUser_AspNetUsers_Id",
                         column: x => x.Id,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RefreshTokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Token = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsRevoked = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedByIp = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    RevokedByIp = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    RevocationReason = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefreshTokens", x => x.Id);
+                    table.CheckConstraint("CK_RefreshToken_Expiration", "[ExpiresAt] > [CreatedAt]");
+                    table.ForeignKey(
+                        name: "FK_RefreshTokens_AspNetUsers_UserId",
+                        column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1469,6 +1532,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "VerifierId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_EmailVerifications_UserId",
+                table: "EmailVerifications",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Laboratories_AddressId",
                 table: "Laboratories",
                 column: "AddressId",
@@ -1674,6 +1742,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 name: "IX_Prescriptions_PatientId",
                 table: "Prescriptions",
                 column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_UserId",
+                table: "RefreshTokens",
+                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -1722,6 +1795,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 name: "DoctorReviews");
 
             migrationBuilder.DropTable(
+                name: "EmailVerifications");
+
+            migrationBuilder.DropTable(
                 name: "LaboratoryDocuments");
 
             migrationBuilder.DropTable(
@@ -1756,6 +1832,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "PrescribedMedications");
+
+            migrationBuilder.DropTable(
+                name: "RefreshTokens");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

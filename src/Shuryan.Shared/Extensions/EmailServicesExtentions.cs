@@ -18,10 +18,10 @@ namespace Shuryan.Shared.Extensions
             var emailSettings = configuration.GetSection("EmailSettings").Get<EmailSettings>()!;
 
             services.AddFluentEmail(emailSettings.FromEmail)
-                .AddSmtpSender(new SmtpClient(emailSettings.SmtpServer)
+                .AddSmtpSender(new SmtpClient(emailSettings.SmtpHost)
                 {
                     Port = emailSettings.SmtpPort,
-                    Credentials = new NetworkCredential(emailSettings.Username, emailSettings.Password),
+                    Credentials = new NetworkCredential(emailSettings.SmtpUsername, emailSettings.SmtpPassword),
                     EnableSsl = emailSettings.EnableSsl
                 });
 

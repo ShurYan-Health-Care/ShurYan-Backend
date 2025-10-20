@@ -18,7 +18,7 @@ namespace Shuryan.Application.DTOs.Requests.Clinic
         public string? FacilityVideoUrl { get; set; }
 
         [Required(ErrorMessage = "Address is required")]
-        public CreateAddressDto Address { get; set; } = null!;
+        public CreateAddressRequest Address { get; set; } = null!;
 
         public IEnumerable<string> PhoneNumbers { get; set; } = new List<string>();
 

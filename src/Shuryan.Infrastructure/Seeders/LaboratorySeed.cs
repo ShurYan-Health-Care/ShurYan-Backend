@@ -10,6 +10,7 @@ using Shuryan.Core.Enums.Identity;
 using Shuryan.Core.Enums;
 using Shuryan.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Shuryan.Core.Entities.Shared;
 
 namespace Shuryan.Infrastructure.Seeders
 {

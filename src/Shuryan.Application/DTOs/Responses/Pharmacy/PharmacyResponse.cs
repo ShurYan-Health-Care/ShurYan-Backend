@@ -20,7 +20,7 @@ namespace Shuryan.Application.DTOs.Responses.Pharmacy
         public VerificationStatus VerificationStatus { get; set; }
         public DateTime? VerifiedAt { get; set; }
         public Guid? VerifierId { get; set; }
-        public AddressDto? Address { get; set; }
+        public AddressResponse? Address { get; set; }
         public IEnumerable<PharmacyWorkingHoursResponse> WorkingHours { get; set; } = new List<PharmacyWorkingHoursResponse>();
         public double? AverageRating { get; set; }
         public int TotalReviewsCount { get; set; }

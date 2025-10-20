@@ -19,25 +19,7 @@ namespace Shuryan.API.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Login with email and password
-        /// </summary>
-        [HttpPost("login")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> Login([FromBody] LoginRequest dto)
-        {
-            var ipAddress = GetIpAddress();
-            var result = await _authService.LoginAsync(dto, ipAddress);
-
-            if (!result.IsSuccess)
-            {
-                return StatusCode(result.StatusCode ?? 401, result);
-            }
-
-            return Ok(result);
-        }
+        #region Registration
 
         /// <summary>
         /// Register a new patient account
@@ -78,108 +60,6 @@ namespace Shuryan.API.Controllers
         }
 
         /// <summary>
-        /// Refresh access token using refresh token
-        /// </summary>
-        [HttpPost("refresh-token")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest dto)
-        {
-            var ipAddress = GetIpAddress();
-            var result = await _authService.RefreshTokenAsync(dto, ipAddress);
-
-            if (!result.IsSuccess)
-            {
-                return StatusCode(result.StatusCode ?? 401, result);
-            }
-
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Change password for authenticated user
-        /// </summary>
-        [Authorize]
-        [HttpPost("change-password")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest dto)
-        {
-            var userId = GetCurrentUserId();
-
-            if (userId == Guid.Empty)
-            {
-                return Unauthorized(new { message = "User not authenticated" });
-            }
-
-            var result = await _authService.ChangePasswordAsync(userId, dto);
-
-            if (!result.IsSuccess)
-            {
-                return StatusCode(result.StatusCode ?? 400, result);
-            }
-
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Request password reset (sends reset email)
-        /// </summary>
-        [HttpPost("forgot-password")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest dto)
-        {
-            var result = await _authService.ForgotPasswordAsync(dto);
-
-            if (!result.IsSuccess)
-            {
-                return StatusCode(result.StatusCode ?? 400, result);
-            }
-
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Reset password using reset token
-        /// </summary>
-        [HttpPost("reset-password")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest dto)
-        {
-            var result = await _authService.ResetPasswordAsync(dto);
-
-            if (!result.IsSuccess)
-            {
-                return StatusCode(result.StatusCode ?? 400, result);
-            }
-
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Logout (revoke refresh token)
-        /// </summary>
-        [Authorize]
-        [HttpPost("logout")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest dto)
-        {
-            var ipAddress = GetIpAddress();
-            var result = await _authService.LogoutAsync(dto.RefreshToken, ipAddress);
-
-            if (!result.IsSuccess)
-            {
-                return StatusCode(result.StatusCode ?? 400, result);
-            }
-
-            return Ok(result);
-        }
-
-        /// <summary>
         /// Register a new laboratory account
         /// </summary>
         [HttpPost("register/laboratory")]
@@ -217,31 +97,203 @@ namespace Shuryan.API.Controllers
             return StatusCode(201, result);
         }
 
+        #endregion
+
+        #region Email Verification
+
         /// <summary>
-        /// Logout from all devices (revoke all refresh tokens)
+        /// Verify email with OTP code
         /// </summary>
-        //[Authorize]
-        //[HttpPost("logout-all")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        //public async Task<IActionResult> LogoutFromAllDevices()
-        //{
-        //    var userId = GetCurrentUserId();
+        [HttpPost("verify-email")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest dto)
+        {
+            var result = await _authService.VerifyEmailAsync(dto);
 
-        //    if (userId == Guid.Empty)
-        //    {
-        //        return Unauthorized(new { message = "User not authenticated" });
-        //    }
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 400, result);
+            }
 
-        //    var result = await _authService.LogoutFromAllDevicesAsync(userId);
+            return Ok(result);
+        }
 
-        //    if (!result.IsSuccess)
-        //    {
-        //        return StatusCode(result.StatusCode ?? 400, result);
-        //    }
+        /// <summary>
+        /// Resend email verification OTP
+        /// </summary>
+        [HttpPost("resend-verification")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+        public async Task<IActionResult> ResendVerificationOtp([FromBody] ResendOtpRequest dto)
+        {
+            var result = await _authService.ResendVerificationOtpAsync(dto);
 
-        //    return Ok(result);
-        //}
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 400, result);
+            }
+
+            return Ok(result);
+        }
+
+        #endregion
+
+        #region Login
+
+        /// <summary>
+        /// Login with email and password
+        /// </summary>
+        [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Login([FromBody] LoginRequest dto)
+        {
+            var ipAddress = GetIpAddress();
+            var result = await _authService.LoginAsync(dto, ipAddress);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 401, result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Login or register with Google OAuth
+        /// </summary>
+        [HttpPost("google-login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest dto)
+        {
+            var ipAddress = GetIpAddress();
+            var result = await _authService.GoogleLoginAsync(dto, ipAddress);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 401, result);
+            }
+
+            return StatusCode(result.StatusCode ?? 200, result);
+        }
+
+        #endregion
+
+        #region Password Management
+
+        /// <summary>
+        /// Request password reset OTP
+        /// </summary>
+        [HttpPost("forgot-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest dto)
+        {
+            var result = await _authService.ForgotPasswordAsync(dto);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 400, result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Verify OTP and reset password
+        /// </summary>
+        [HttpPost("reset-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ResetPassword([FromBody] VerifyResetOtpRequest dto)
+        {
+            var result = await _authService.VerifyResetOtpAndResetPasswordAsync(dto);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 400, result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Change password for authenticated user
+        /// </summary>
+        [Authorize]
+        [HttpPost("change-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest dto)
+        {
+            var userId = GetCurrentUserId();
+
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
+            var result = await _authService.ChangePasswordAsync(userId, dto);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 400, result);
+            }
+
+            return Ok(result);
+        }
+
+        #endregion
+
+        #region Token Management
+
+        /// <summary>
+        /// Refresh access token using refresh token
+        /// </summary>
+        [HttpPost("refresh-token")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest dto)
+        {
+            var ipAddress = GetIpAddress();
+            var result = await _authService.RefreshTokenAsync(dto, ipAddress);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 401, result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Logout (revoke refresh token)
+        /// </summary>
+        [Authorize]
+        [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest dto)
+        {
+            var ipAddress = GetIpAddress();
+            var result = await _authService.LogoutAsync(dto.RefreshToken, ipAddress);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 400, result);
+            }
+
+            return Ok(result);
+        }
+
+        #endregion
+
+        #region User Info
 
         /// <summary>
         /// Get current authenticated user information
@@ -269,6 +321,8 @@ namespace Shuryan.API.Controllers
             return Ok(result);
         }
 
+        #endregion
+
         #region Helper Methods
 
         /// <summary>
@@ -291,13 +345,11 @@ namespace Shuryan.API.Controllers
         /// </summary>
         private string? GetIpAddress()
         {
-            // Check for X-Forwarded-For header (if behind proxy/load balancer)
             if (Request.Headers.ContainsKey("X-Forwarded-For"))
             {
                 return Request.Headers["X-Forwarded-For"].FirstOrDefault();
             }
 
-            // Otherwise, get the remote IP address
             return HttpContext.Connection.RemoteIpAddress?.ToString();
         }
 

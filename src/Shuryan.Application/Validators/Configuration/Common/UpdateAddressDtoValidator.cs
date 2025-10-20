@@ -8,7 +8,7 @@ using Shuryan.Application.DTOs.Common.Address;
 
 namespace Shuryan.Application.Validators.Configuration.Common
 {
-    public class UpdateAddressDtoValidator : AbstractValidator<UpdateAddressDto>
+    public class UpdateAddressDtoValidator : AbstractValidator<UpdateAddressRequest>
     {
         public UpdateAddressDtoValidator()
         {

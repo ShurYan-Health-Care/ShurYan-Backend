@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
