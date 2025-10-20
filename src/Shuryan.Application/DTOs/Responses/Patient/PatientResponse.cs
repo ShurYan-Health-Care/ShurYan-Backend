@@ -19,7 +19,7 @@ namespace Shuryan.Application.DTOs.Responses.Patient
         public DateTime? BirthDate { get; set; }
         public Gender? Gender { get; set; }
         public string? ProfileImageUrl { get; set; }
-        public AddressDto? Address { get; set; }
+        public AddressResponse? Address { get; set; }
         public IEnumerable<MedicalHistoryItemResponse> MedicalHistory { get; set; } = new List<MedicalHistoryItemResponse>();
     }
 }

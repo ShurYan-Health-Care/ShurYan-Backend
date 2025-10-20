@@ -8,7 +8,7 @@ using Shuryan.Core.Enums;
 
 namespace Shuryan.Application.DTOs.Common.Address
 {
-    public class UpdateAddressDto
+    public class UpdateAddressRequest
     {
         [StringLength(200, MinimumLength = 2, ErrorMessage = "Street must be between 2-200 characters")]
         public string? Street { get; set; }

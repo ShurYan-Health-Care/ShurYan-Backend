@@ -16,6 +16,7 @@ namespace Shuryan.Application.DTOs.Responses.Doctor
         public MedicalSpecialty MedicalSpecialty { get; set; }
         public string? ProfileImageUrl { get; set; }
         public double? AverageRating { get; set; }
+        public int YearsOfExperience { get; set; }
     }
 }
 

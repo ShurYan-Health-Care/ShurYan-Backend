@@ -9,6 +9,7 @@ using Shuryan.Core.Enums.Clinic;
 using Shuryan.Core.Enums;
 using Shuryan.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Shuryan.Core.Entities.Shared;
 
 namespace Shuryan.Infrastructure.Seeders
 {

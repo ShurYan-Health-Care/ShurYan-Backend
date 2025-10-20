@@ -1,10 +1,12 @@
-using Shuryan.Core.Enums.Identity;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Application.DTOs.Common.Address;
+using Shuryan.Application.DTOs.Responses.Patient;
+using Shuryan.Core.Enums.Identity;
 
 namespace Shuryan.Application.DTOs.Requests.Patient
 {
@@ -26,6 +28,8 @@ namespace Shuryan.Application.DTOs.Requests.Patient
 
         [Url(ErrorMessage = "Invalid profile image URL format")]
         public string? ProfileImageUrl { get; set; }
+
+        public UpdateAddressRequest? Address { get; set; }
     }
 }
 

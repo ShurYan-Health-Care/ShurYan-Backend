@@ -1,14 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums;
 
-namespace Shuryan.Core.Entities.Common
+namespace Shuryan.Core.Entities.Shared
 {
 	public class MedicalHistoryItem : AuditableEntity
 	{

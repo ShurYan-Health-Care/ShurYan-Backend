@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.Identity;
+using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Identity;
 

@@ -30,7 +30,7 @@ namespace Shuryan.Application.DTOs.Requests.Laboratory
         public decimal? HomeSampleCollectionFee { get; set; }
 
         [Required(ErrorMessage = "Address is required")]
-        public CreateAddressDto Address { get; set; } = null!;
+        public CreateAddressRequest Address { get; set; } = null!;
     }
 }
 

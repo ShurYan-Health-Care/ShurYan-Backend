@@ -12,5 +12,6 @@ namespace Shuryan.Core.Interfaces.Repositories
 		Task<Patient?> GetByIdWithDetailsAsync(Guid id);
 		Task<Patient?> GetByEmailAsync(string email);
 		Task<IEnumerable<Patient>> GetPatientsWithMedicalHistoryAsync();
-	}
+        Task RemoveAsync(Patient patient, bool softDelete = true);
+    }
 }
