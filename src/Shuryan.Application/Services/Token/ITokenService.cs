@@ -5,7 +5,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Shuryan.Application.Services.Auth
+namespace Shuryan.Application.Services.Token
 {
     /// <summary>
     /// Service for generating and validating JWT tokens

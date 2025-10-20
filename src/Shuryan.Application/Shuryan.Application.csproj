@@ -20,7 +20,6 @@
     <Folder Include="Validators\Controllers\" />
     <Folder Include="Validators\Filters\" />
     <Folder Include="Validators\Middleware\" />
-    <Folder Include="Validators\NewFolder\" />
   </ItemGroup>
 
   <ItemGroup>

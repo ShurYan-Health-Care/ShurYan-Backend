@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Application.Extensions;
 using Shuryan.Application.Services.Auth;
+using Shuryan.Application.Services.Token;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.Data;
 using Shuryan.Infrastructure.UnitOfWork;
