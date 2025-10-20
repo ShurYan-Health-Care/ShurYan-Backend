@@ -68,12 +68,13 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<Role> Roles { get; set; }
 		public DbSet<User> Users { get; set; }
         public DbSet<Verifier> Verifiers { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
-		/// <summary>
-		/// Medical Entities
-		/// </summary>
-		// Appointments
-		public DbSet<Appointment> Appointments { get; set; }
+        /// <summary>
+        /// Medical Entities
+        /// </summary>
+        // Appointments
+        public DbSet<Appointment> Appointments { get; set; }
 		public DbSet<ConsultationRecord> ConsultationRecords { get; set; }
 		// Consultations
 		public DbSet<ConsultationType> ConsultationTypes { get; set; }
