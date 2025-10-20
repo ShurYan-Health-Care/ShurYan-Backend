@@ -1,11 +1,12 @@
-using Shuryan.Application.DTOs.Common.Pagination;
-using Shuryan.Core.Enums.Doctor;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shuryan.Application.DTOs.Common.Pagination;
+using Shuryan.Core.Enums;
+using Shuryan.Core.Enums.Doctor;
 
 namespace Shuryan.Application.DTOs.Requests.Doctor
 {
@@ -17,7 +18,7 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
         public MedicalSpecialty? Specialty { get; set; }
 
         [StringLength(100, ErrorMessage = "Governorate cannot exceed 100 characters")]
-        public string? Governorate { get; set; }
+        public Governorate? Governorate { get; set; }
 
         [Range(0, 70, ErrorMessage = "Minimum years of experience must be between 0-70")]
         public int? MinYearsOfExperience { get; set; }

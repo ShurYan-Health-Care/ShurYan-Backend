@@ -21,6 +21,7 @@ using Shuryan.Infrastructure.Repositories.Reviews;
 using Shuryan.Infrastructure.Repositories.Medications;
 using Shuryan.Infrastructure.Repositories.Shared;
 using Shuryan.Core.Interfaces.UnitOfWork;
+using Shuryan.Infrastructure.Repositories;
 
 namespace Shuryan.Infrastructure.UnitOfWork
 {
@@ -81,6 +82,8 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private IAddressRepository? _addresses;
         private IVerifierRepository? _verifiers;
         private INotificationRepository? _notifications;
+        private IRefreshTokenRepository? _refreshTokens;
+
 
         public UnitOfWork(ShuryanDbContext context)
         {
@@ -200,6 +203,9 @@ namespace Shuryan.Infrastructure.UnitOfWork
 
         public INotificationRepository Notifications
             => _notifications ??= new NotificationRepository(_context);
+
+        public IRefreshTokenRepository RefreshTokens => _refreshTokens ??= new RefreshTokenRepository(_context);
+
 
         // ==================== Transaction Methods ====================
 

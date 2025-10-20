@@ -22,10 +22,6 @@ namespace Shuryan.Application.Validators.Configuration.Common
                 .When(x => !string.IsNullOrEmpty(x.City))
                 .WithMessage("City must be between 2 and 100 characters");
 
-            RuleFor(x => x.Governorate)
-                .Length(2, 100)
-                .When(x => !string.IsNullOrEmpty(x.Governorate))
-                .WithMessage("Governorate must be between 2 and 100 characters");
 
             RuleFor(x => x.BuildingNumber)
                 .Length(0, 20)
