@@ -14,6 +14,7 @@ using Shuryan.Core.Interfaces.Services;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.Data;
 using Shuryan.Infrastructure.Repositories.Patients;
+using Shuryan.Infrastructure.Repositories.Pharmacies;
 using Shuryan.Infrastructure.Services;
 using Shuryan.Infrastructure.UnitOfWork;
 using Shuryan.Shared.Configurations;
@@ -41,6 +42,7 @@ builder.Services.AddAuthorizationPolicies();
 
 // ==================== Repositories ====================
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
 // ==================== Unit of Work ====================
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -52,6 +54,7 @@ builder.Services.AddAutoMapper(typeof(Shuryan.Application.Mappers.MappingProfile
 //builder.Services.AddScoped<Shuryan.Core.Interfaces.Services.IDoctorService, Shuryan.Infrastructure.Services.DoctorService>();
 //builder.Services.AddScoped<Shuryan.Application.Interfaces.IDoctorService, Shuryan.Application.Services.DoctorService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
 
 
 // Register FluentValidation from Application assembly
@@ -91,7 +94,7 @@ if (app.Environment.IsDevelopment())
 
     // ==================== DATABASE SEEDING ====================
      await app.SeedDatabaseAsync();
-
+    
     // To clear the database (USE WITH CAUTION!)
      //await app.ClearDatabaseAsync();
 }

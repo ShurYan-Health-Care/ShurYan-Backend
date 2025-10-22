@@ -1,0 +1,974 @@
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Shuryan.Application.DTOs.Common.Pagination;
+using Shuryan.Application.DTOs.Requests.Prescription;
+using Shuryan.Application.DTOs.Responses.Prescription;
+using Shuryan.Application.Interfaces;
+using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Core.Interfaces.UnitOfWork;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Shuryan.Application.Services
+{
+    public partial class PrescriptionService : IPrescriptionService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        private readonly ILogger<PrescriptionService> _logger;
+
+        public PrescriptionService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            ILogger<PrescriptionService> logger)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+            _logger = logger;
+        }
+
+        // ==================== Basic CRUD Operations ====================
+
+        public async Task<PrescriptionResponse?> GetPrescriptionByIdAsync(Guid id)
+        {
+            try
+            {
+                var prescription = await _unitOfWork.Prescriptions.GetPrescriptionWithDetailsAsync(id);
+
+                if (prescription == null)
+                {
+                    _logger.LogWarning("Prescription with ID {PrescriptionId} not found", id);
+                    return null;
+                }
+
+                return _mapper.Map<PrescriptionResponse>(prescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescription with ID {PrescriptionId}", id);
+                throw;
+            }
+        }
+
+        public async Task<PrescriptionResponse> CreatePrescriptionAsync(CreatePrescriptionRequest request)
+        {
+            try
+            {
+                // Validate that patient exists
+                // TODO: Fix Patient Repository soft delete issue
+                // var patient = await _unitOfWork.Patients.GetByIdAsync(request.PatientId);
+                // if (patient == null)
+                // {
+                //     throw new ArgumentException($"Patient with ID {request.PatientId} not found");
+                // }
+
+                // Validate that doctor exists
+                // TODO: Fix Doctor Repository soft delete issue
+                // var doctor = await _unitOfWork.Doctors.GetByIdAsync(request.DoctorId);
+                // if (doctor == null)
+                // {
+                //     throw new ArgumentException($"Doctor with ID {request.DoctorId} not found");
+                // }
+
+                // Validate that appointment exists
+                // TODO: Fix Appointment Repository soft delete issue
+                // var appointment = await _unitOfWork.Appointments.GetByIdAsync(request.AppointmentId);
+                // if (appointment == null)
+                // {
+                //     throw new ArgumentException($"Appointment with ID {request.AppointmentId} not found");
+                // }
+
+                // Check if prescription number already exists
+                var existingPrescription = await _unitOfWork.Prescriptions
+                    .FindByPrescriptionNumberAsync(request.PrescriptionNumber);
+                if (existingPrescription != null)
+                {
+                    throw new InvalidOperationException($"Prescription number {request.PrescriptionNumber} already exists");
+                }
+
+                // Create prescription entity
+                var prescription = new Prescription
+                {
+                    Id = Guid.NewGuid(),
+                    PrescriptionNumber = request.PrescriptionNumber,
+                    DigitalSignature = request.DigitalSignature,
+                    AppointmentId = request.AppointmentId,
+                    DoctorId = request.DoctorId,
+                    PatientId = request.PatientId,
+                    GeneralInstructions = request.GeneralInstructions,
+                    FollowUpInstructions = request.FollowUpInstructions,
+                    IsDigitallyShared = false,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Add prescribed medications
+                foreach (var medicationRequest in request.PrescribedMedications)
+                {
+                    // Validate medication exists
+                    var medication = await _unitOfWork.Medications.GetByIdAsync(medicationRequest.MedicationId);
+                    if (medication == null)
+                    {
+                        throw new ArgumentException($"Medication with ID {medicationRequest.MedicationId} not found");
+                    }
+
+                    var prescribedMedication = new PrescribedMedication
+                    {
+                        MedicationPrescriptionId = prescription.Id,
+                        MedicationId = medicationRequest.MedicationId,
+                        Dosage = medicationRequest.Dosage,
+                        Frequency = medicationRequest.Frequency,
+                        DurationDays = medicationRequest.DurationDays,
+                        SpecialInstructions = medicationRequest.SpecialInstructions
+                    };
+
+                    prescription.PrescribedMedications.Add(prescribedMedication);
+                }
+
+                await _unitOfWork.Prescriptions.AddAsync(prescription);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Prescription {PrescriptionNumber} created successfully for patient {PatientId}",
+                    prescription.PrescriptionNumber, prescription.PatientId);
+
+                // Reload with details
+                var createdPrescription = await _unitOfWork.Prescriptions
+                    .GetPrescriptionWithDetailsAsync(prescription.Id);
+
+                return _mapper.Map<PrescriptionResponse>(createdPrescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating prescription");
+                throw;
+            }
+        }
+
+        public async Task<PrescriptionResponse> UpdatePrescriptionAsync(Guid id, UpdatePrescriptionRequest request)
+        {
+            try
+            {
+                var prescription = await _unitOfWork.Prescriptions.GetByIdAsync(id);
+
+                if (prescription == null)
+                {
+                    throw new ArgumentException($"Prescription with ID {id} not found");
+                }
+
+                // Update only the allowed fields
+                if (request.GeneralInstructions != null)
+                {
+                    prescription.GeneralInstructions = request.GeneralInstructions;
+                }
+
+                if (request.FollowUpInstructions != null)
+                {
+                    prescription.FollowUpInstructions = request.FollowUpInstructions;
+                }
+
+                prescription.UpdatedAt = DateTime.UtcNow;
+
+                _unitOfWork.Prescriptions.Update(prescription);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Prescription {PrescriptionId} updated successfully", id);
+
+                // Reload with details
+                var updatedPrescription = await _unitOfWork.Prescriptions
+                    .GetPrescriptionWithDetailsAsync(id);
+
+                return _mapper.Map<PrescriptionResponse>(updatedPrescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating prescription with ID {PrescriptionId}", id);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeletePrescriptionAsync(Guid id)
+        {
+            try
+            {
+                var prescription = await _unitOfWork.Prescriptions.GetByIdAsync(id);
+                if (prescription == null)
+                    return false;
+
+                // Hard delete (since we removed soft delete from AuditableEntity)
+                _unitOfWork.Prescriptions.Delete(prescription);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Prescription {PrescriptionId} deleted", id);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting prescription {PrescriptionId}", id);
+                throw;
+            }
+        }
+
+        // ==================== Query Operations ====================
+
+        public async Task<PaginatedResponse<PrescriptionResponse>> GetPaginatedPrescriptionsAsync(PaginationParams request)
+        {
+            try
+            {
+                var query = (await _unitOfWork.Prescriptions.GetAllAsync())
+                    .OrderByDescending(p => p.CreatedAt);
+
+                var totalCount = query.Count();
+                var prescriptions = query
+                    .Skip((request.PageNumber - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .ToList();
+
+                var prescriptionResponses = _mapper.Map<List<PrescriptionResponse>>(prescriptions);
+
+                return new PaginatedResponse<PrescriptionResponse>
+                {
+                    Data = prescriptionResponses,
+                    TotalCount = totalCount,
+                    PageNumber = request.PageNumber,
+                    PageSize = request.PageSize,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize),
+                    HasPreviousPage = request.PageNumber > 1,
+                    HasNextPage = request.PageNumber < (int)Math.Ceiling(totalCount / (double)request.PageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting paginated prescriptions");
+                throw;
+            }
+        }
+
+        public async Task<PrescriptionResponse?> GetPrescriptionByNumberAsync(string prescriptionNumber)
+        {
+            try
+            {
+                var prescription = await _unitOfWork.Prescriptions
+                    .FindByPrescriptionNumberAsync(prescriptionNumber);
+
+                if (prescription == null)
+                {
+                    _logger.LogWarning("Prescription with number {PrescriptionNumber} not found", prescriptionNumber);
+                    return null;
+                }
+
+                return _mapper.Map<PrescriptionResponse>(prescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescription by number {PrescriptionNumber}", prescriptionNumber);
+                throw;
+            }
+        }
+
+        public async Task<int> GetTotalPrescriptionsCountAsync()
+        {
+            try
+            {
+                var prescriptions = await _unitOfWork.Prescriptions.GetAllAsync();
+                return prescriptions.Count();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting total prescriptions count");
+                throw;
+            }
+        }
+
+        // ==================== Patient Related Operations ====================
+
+        public async Task<IEnumerable<PrescriptionResponse>> GetPatientPrescriptionsAsync(Guid patientId)
+        {
+            try
+            {
+                var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
+                if (patient == null || patient.IsDeleted)
+                {
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+                }
+
+                var prescriptions = (await _unitOfWork.Prescriptions.GetAllAsync())
+                    .Where(p => p.PatientId == patientId)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToList();
+
+                return _mapper.Map<IEnumerable<PrescriptionResponse>>(prescriptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescriptions for patient {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        public async Task<PaginatedResponse<PrescriptionResponse>> GetPaginatedPatientPrescriptionsAsync(Guid patientId,PaginationParams request)
+        {
+            try
+            {
+                var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
+                if (patient == null || patient.IsDeleted)
+                {
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+                }
+
+                var prescriptions = await _unitOfWork.Prescriptions
+                    .GetPagedPrescriptionsForPatientAsync(patientId, request.PageNumber, request.PageSize);
+
+                var prescriptionsList = prescriptions.ToList();
+                var totalCount = (await _unitOfWork.Prescriptions.GetAllAsync())
+                    .Count(p => p.PatientId == patientId);
+
+                var prescriptionResponses = _mapper.Map<List<PrescriptionResponse>>(prescriptionsList);
+
+                return new PaginatedResponse<PrescriptionResponse>
+                {
+                    Data = prescriptionResponses,
+                    TotalCount = totalCount,
+                    PageNumber = request.PageNumber,
+                    PageSize = request.PageSize,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize),
+                    HasPreviousPage = request.PageNumber > 1,
+                    HasNextPage = request.PageNumber < (int)Math.Ceiling(totalCount / (double)request.PageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting paginated prescriptions for patient {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<PrescriptionResponse>> GetActivePatientPrescriptionsAsync(Guid patientId)
+        {
+            try
+            {
+                var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
+                if (patient == null || patient.IsDeleted)
+                {
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+                }
+
+                var prescriptions = await _unitOfWork.Prescriptions
+                    .GetActivePrescriptionsForPatientAsync(patientId);
+
+                var activePrescriptions = prescriptions.ToList();
+
+                return _mapper.Map<IEnumerable<PrescriptionResponse>>(activePrescriptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting active prescriptions for patient {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        public async Task<int> GetPatientPrescriptionsCountAsync(Guid patientId)
+        {
+            try
+            {
+                var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
+                if (patient == null || patient.IsDeleted)
+                {
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+                }
+
+                var count = (await _unitOfWork.Prescriptions.GetAllAsync())
+                    .Count(p => p.PatientId == patientId);
+
+                return count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescriptions count for patient {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        // ==================== Doctor Related Operations ====================
+
+        public async Task<IEnumerable<PrescriptionResponse>> GetDoctorPrescriptionsAsync(Guid doctorId)
+        {
+            try
+            {
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null || doctor.IsDeleted)
+                {
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+                }
+
+                var prescriptions = (await _unitOfWork.Prescriptions.GetAllAsync())
+                    .Where(p => p.DoctorId == doctorId)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToList();
+
+                return _mapper.Map<IEnumerable<PrescriptionResponse>>(prescriptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescriptions for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        public async Task<PaginatedResponse<PrescriptionResponse>> GetPaginatedDoctorPrescriptionsAsync(Guid doctorId,PaginationParams request)
+        {
+            try
+            {
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null || doctor.IsDeleted)
+                {
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+                }
+
+                var query = (await _unitOfWork.Prescriptions.GetAllAsync())
+                    .Where(p => p.DoctorId == doctorId)
+                    .OrderByDescending(p => p.CreatedAt);
+
+                var totalCount = query.Count();
+                var prescriptions = query
+                    .Skip((request.PageNumber - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .ToList();
+
+                var prescriptionResponses = _mapper.Map<List<PrescriptionResponse>>(prescriptions);
+
+                return new PaginatedResponse<PrescriptionResponse>
+                {
+                    Data = prescriptionResponses,
+                    TotalCount = totalCount,
+                    PageNumber = request.PageNumber,
+                    PageSize = request.PageSize,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize),
+                    HasPreviousPage = request.PageNumber > 1,
+                    HasNextPage = request.PageNumber < (int)Math.Ceiling(totalCount / (double)request.PageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting paginated prescriptions for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        public async Task<int> GetDoctorPrescriptionsCountAsync(Guid doctorId)
+        {
+            try
+            {
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null || doctor.IsDeleted)
+                {
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+                }
+
+                var count = (await _unitOfWork.Prescriptions.GetAllAsync())
+                    .Count(p => p.DoctorId == doctorId);
+
+                return count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescriptions count for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        // ==================== Pharmacy Related Operations ====================
+
+        public async Task<IEnumerable<PrescriptionResponse>> GetPrescriptionsContainingMedicationAsync(Guid medicationId)
+        {
+            try
+            {
+                var medication = await _unitOfWork.Medications.GetByIdAsync(medicationId);
+                if (medication == null)
+                {
+                    throw new ArgumentException($"Medication with ID {medicationId} not found");
+                }
+
+                var prescriptions = await _unitOfWork.Prescriptions
+                    .GetPrescriptionsContainingMedicationAsync(medicationId);
+
+                var activePrescriptions = prescriptions.ToList();
+
+                return _mapper.Map<IEnumerable<PrescriptionResponse>>(activePrescriptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescriptions containing medication {MedicationId}", medicationId);
+                throw;
+            }
+        }
+
+        public async Task<bool> MarkPrescriptionAsSharedAsync(Guid prescriptionId)
+        {
+            try
+            {
+                var prescription = await _unitOfWork.Prescriptions.GetByIdAsync(prescriptionId);
+
+                if (prescription == null)
+                {
+                    _logger.LogWarning("Prescription with ID {PrescriptionId} not found", prescriptionId);
+                    return false;
+                }
+
+                prescription.IsDigitallyShared = true;
+                prescription.SharedAt = DateTime.UtcNow;
+                prescription.UpdatedAt = DateTime.UtcNow;
+
+                _unitOfWork.Prescriptions.Update(prescription);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Prescription {PrescriptionId} marked as shared", prescriptionId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking prescription {PrescriptionId} as shared", prescriptionId);
+                throw;
+            }
+        }
+
+        // ==================== Date Range & Analytics Operations ====================
+
+        public async Task<IEnumerable<PrescriptionResponse>> GetPrescriptionsByDateRangeAsync(DateTime startDate,DateTime endDate)
+        {
+            try
+            {
+                var prescriptions = await _unitOfWork.Prescriptions
+                    .GetPrescriptionsByDateRangeAsync(startDate, endDate);
+
+                var activePrescriptions = prescriptions.ToList();
+
+                return _mapper.Map<IEnumerable<PrescriptionResponse>>(activePrescriptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescriptions by date range");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<PrescriptionResponse>> GetDoctorPrescriptionsByDateRangeAsync(Guid doctorId,DateTime startDate,DateTime endDate)
+        {
+            try
+            {
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null || doctor.IsDeleted)
+                {
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+                }
+
+                var prescriptions = await _unitOfWork.Prescriptions
+                    .GetPrescriptionsByDateRangeAsync(startDate, endDate);
+
+                var doctorPrescriptions = prescriptions
+                    .Where(p => p.DoctorId == doctorId)
+                    .ToList();
+
+                return _mapper.Map<IEnumerable<PrescriptionResponse>>(doctorPrescriptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescriptions by date range for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<PrescriptionResponse>> GetPatientPrescriptionsByDateRangeAsync(Guid patientId,DateTime startDate,DateTime endDate)
+        {
+            try
+            {
+                var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
+                if (patient == null || patient.IsDeleted)
+                {
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+                }
+
+                var prescriptions = await _unitOfWork.Prescriptions
+                    .GetPrescriptionsByDateRangeAsync(startDate, endDate);
+
+                var patientPrescriptions = prescriptions
+                    .Where(p => p.PatientId == patientId)
+                    .ToList();
+
+                return _mapper.Map<IEnumerable<PrescriptionResponse>>(patientPrescriptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescriptions by date range for patient {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        // ==================== Appointment Related Operations ====================
+
+        public async Task<PrescriptionResponse?> GetPrescriptionByAppointmentIdAsync(Guid appointmentId)
+        {
+            try
+            {
+                var prescription = (await _unitOfWork.Prescriptions.GetAllAsync())
+                    .FirstOrDefault(p => p.AppointmentId == appointmentId);
+
+                if (prescription == null)
+                {
+                    _logger.LogWarning("No prescription found for appointment {AppointmentId}", appointmentId);
+                    return null;
+                }
+
+                // Get full details
+                var prescriptionWithDetails = await _unitOfWork.Prescriptions
+                    .GetPrescriptionWithDetailsAsync(prescription.Id);
+
+                return _mapper.Map<PrescriptionResponse>(prescriptionWithDetails);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescription for appointment {AppointmentId}", appointmentId);
+                throw;
+            }
+        }
+
+        public async Task<bool> AppointmentHasPrescriptionAsync(Guid appointmentId)
+        {
+            try
+            {
+                var prescription = (await _unitOfWork.Prescriptions.GetAllAsync())
+                    .Any(p => p.AppointmentId == appointmentId);
+
+                return prescription;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking if appointment {AppointmentId} has prescription", appointmentId);
+                throw;
+            }
+        }
+
+        // ==================== Advanced Query Operations ====================
+
+        public async Task<PrescriptionQueryResponse> GetPrescriptionsAsync(PrescriptionQueryParams queryParams)
+        {
+            try
+            {
+                var query = (await _unitOfWork.Prescriptions.GetAllAsync()).AsQueryable();
+
+                // Apply filters
+                if (queryParams.PatientId.HasValue)
+                    query = query.Where(p => p.PatientId == queryParams.PatientId.Value);
+
+                if (queryParams.DoctorId.HasValue)
+                    query = query.Where(p => p.DoctorId == queryParams.DoctorId.Value);
+
+                if (queryParams.AppointmentId.HasValue)
+                    query = query.Where(p => p.AppointmentId == queryParams.AppointmentId.Value);
+
+                if (queryParams.IsDigitallyShared.HasValue)
+                    query = query.Where(p => p.IsDigitallyShared == queryParams.IsDigitallyShared.Value);
+
+                if (queryParams.StartDate.HasValue)
+                    query = query.Where(p => p.CreatedAt >= queryParams.StartDate.Value);
+
+                if (queryParams.EndDate.HasValue)
+                    query = query.Where(p => p.CreatedAt <= queryParams.EndDate.Value);
+
+                if (!string.IsNullOrWhiteSpace(queryParams.SearchTerm))
+                {
+                    var searchLower = queryParams.SearchTerm.ToLower();
+                    query = query.Where(p => 
+                        p.PrescriptionNumber.ToLower().Contains(searchLower));
+                }
+
+                // Sorting
+                query = queryParams.SortBy?.ToLower() switch
+                {
+                    "createdat" => queryParams.SortDescending 
+                        ? query.OrderByDescending(p => p.CreatedAt)
+                        : query.OrderBy(p => p.CreatedAt),
+                    "updatedat" => queryParams.SortDescending
+                        ? query.OrderByDescending(p => p.UpdatedAt)
+                        : query.OrderBy(p => p.UpdatedAt),
+                    "prescriptionnumber" => queryParams.SortDescending
+                        ? query.OrderByDescending(p => p.PrescriptionNumber)
+                        : query.OrderBy(p => p.PrescriptionNumber),
+                    _ => query.OrderByDescending(p => p.CreatedAt)
+                };
+
+                // Pagination
+                var totalCount = query.Count();
+                var totalPages = (int)Math.Ceiling(totalCount / (double)queryParams.PageSize);
+
+                var prescriptions = query
+                    .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                    .Take(queryParams.PageSize)
+                    .ToList();
+
+                // Map to response with details
+                var prescriptionResponses = new List<PrescriptionResponse>();
+                foreach (var prescription in prescriptions)
+                {
+                    var details = await _unitOfWork.Prescriptions.GetPrescriptionWithDetailsAsync(prescription.Id);
+                    if (details != null)
+                    {
+                        prescriptionResponses.Add(new PrescriptionResponse
+                        {
+                            Id = details.Id,
+                            PrescriptionNumber = details.PrescriptionNumber,
+                            DigitalSignature = details.DigitalSignature,
+                            AppointmentId = details.AppointmentId,
+                            DoctorId = details.DoctorId,
+                            PatientId = details.PatientId,
+                            GeneralInstructions = details.GeneralInstructions,
+                            FollowUpInstructions = details.FollowUpInstructions,
+                            IsDigitallyShared = details.IsDigitallyShared,
+                            SharedAt = details.SharedAt,
+                            CreatedAt = details.CreatedAt,
+                            UpdatedAt = details.UpdatedAt,
+                            Doctor = details.Doctor != null ? new DTOs.Responses.Doctor.DoctorBasicResponse
+                            {
+                                Id = details.Doctor.Id,
+                                FirstName = details.Doctor.FirstName,
+                                LastName = details.Doctor.LastName,
+                                MedicalSpecialty = details.Doctor.MedicalSpecialty,
+                                ProfileImageUrl = details.Doctor.ProfileImageUrl,
+                                YearsOfExperience = details.Doctor.YearsOfExperience
+                            } : null,
+                            Patient = details.Patient != null ? new DTOs.Responses.Patient.PatientBasicResponse
+                            {
+                                Id = details.Patient.Id,
+                                FirstName = details.Patient.FirstName,
+                                LastName = details.Patient.LastName,
+                                PhoneNumber = details.Patient.PhoneNumber
+                            } : null,
+                            PrescribedMedications = details.PrescribedMedications?.Select(pm => new PrescribedMedicationResponse
+                            {
+                                MedicationId = pm.MedicationId,
+                                Medication = pm.Medication != null ? new MedicationResponse
+                                {
+                                    Id = pm.Medication.Id,
+                                    BrandName = pm.Medication.BrandName,
+                                    GenericName = pm.Medication.GenericName
+                                } : null,
+                                Dosage = pm.Dosage,
+                                Frequency = pm.Frequency,
+                                DurationDays = pm.DurationDays,
+                                SpecialInstructions = pm.SpecialInstructions
+                            }).ToList() ?? new List<PrescribedMedicationResponse>()
+                        });
+                    }
+                }
+
+                return new PrescriptionQueryResponse
+                {
+                    Prescriptions = prescriptionResponses,
+                    Page = queryParams.Page,
+                    PageSize = queryParams.PageSize,
+                    TotalCount = totalCount,
+                    TotalPages = totalPages,
+                    HasPreviousPage = queryParams.Page > 1,
+                    HasNextPage = queryParams.Page < totalPages,
+                    AppliedFilters = new Dictionary<string, object?>
+                    {
+                        ["PatientId"] = queryParams.PatientId,
+                        ["DoctorId"] = queryParams.DoctorId,
+                        ["SearchTerm"] = queryParams.SearchTerm,
+                        ["StartDate"] = queryParams.StartDate,
+                        ["EndDate"] = queryParams.EndDate
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prescriptions with query params");
+                throw;
+            }
+        }
+
+        // ==================== Prescription Lifecycle Operations ====================
+
+        public async Task<PrescriptionResponse> CancelPrescriptionAsync(Guid id, CancelPrescriptionRequest request)
+        {
+            try
+            {
+                var prescription = await _unitOfWork.Prescriptions.GetByIdAsync(id);
+                if (prescription == null)
+                    throw new ArgumentException($"Prescription with ID {id} not found");
+
+                if (prescription.Status == Core.Enums.PrescriptionStatus.Cancelled)
+                    throw new InvalidOperationException("Prescription is already cancelled");
+
+                // Update status
+                prescription.Status = Core.Enums.PrescriptionStatus.Cancelled;
+                prescription.CancellationReason = request.Reason;
+                prescription.CancelledAt = DateTime.UtcNow;
+
+                // Also add to instructions for backward compatibility
+                prescription.GeneralInstructions += $"\n\n[CANCELLED] Reason: {request.Reason}";
+                if (!string.IsNullOrWhiteSpace(request.Notes))
+                    prescription.GeneralInstructions += $"\nNotes: {request.Notes}";
+
+                _unitOfWork.Prescriptions.Update(prescription);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Prescription {PrescriptionId} cancelled", id);
+
+                return _mapper.Map<PrescriptionResponse>(prescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cancelling prescription {PrescriptionId}", id);
+                throw;
+            }
+        }
+
+        public async Task<PrescriptionResponse> RenewPrescriptionAsync(Guid id, RenewPrescriptionRequest request)
+        {
+            try
+            {
+                var originalPrescription = await _unitOfWork.Prescriptions
+                    .GetPrescriptionWithDetailsAsync(id);
+
+                if (originalPrescription == null)
+                    throw new ArgumentException($"Prescription with ID {id} not found");
+
+                var newPrescription = new Prescription
+                {
+                    PrescriptionNumber = GenerateUniquePrescriptionNumber(),
+                    PatientId = originalPrescription.PatientId,
+                    DoctorId = originalPrescription.DoctorId,
+                    AppointmentId = request.NewAppointmentId, // Don't copy old appointment (unique constraint)
+                    GeneralInstructions = request.GeneralInstructions ?? originalPrescription.GeneralInstructions,
+                    DigitalSignature = originalPrescription.DigitalSignature,
+                    IsDigitallyShared = false
+                };
+
+                newPrescription.GeneralInstructions += $"\n\n[RENEWED FROM: {originalPrescription.PrescriptionNumber}]";
+                if (!string.IsNullOrWhiteSpace(request.RenewalReason))
+                    newPrescription.GeneralInstructions += $"\nRenewal Reason: {request.RenewalReason}";
+
+                // Copy medications if requested
+                if (request.CopyAllMedications && originalPrescription.PrescribedMedications != null)
+                {
+                    foreach (var oldMed in originalPrescription.PrescribedMedications)
+                    {
+                        var newMed = new PrescribedMedication
+                        {
+                            MedicationPrescriptionId = newPrescription.Id,
+                            MedicationId = oldMed.MedicationId,
+                            Dosage = oldMed.Dosage,
+                            Frequency = oldMed.Frequency,
+                            DurationDays = request.DurationInDays > 0 ? request.DurationInDays : oldMed.DurationDays,
+                            SpecialInstructions = oldMed.SpecialInstructions
+                        };
+                        newPrescription.PrescribedMedications.Add(newMed);
+                    }
+                }
+
+                await _unitOfWork.Prescriptions.AddAsync(newPrescription);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Prescription {OriginalId} renewed as {NewId}", 
+                    id, newPrescription.Id);
+
+                return _mapper.Map<PrescriptionResponse>(newPrescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error renewing prescription {PrescriptionId}", id);
+                throw;
+            }
+        }
+
+        // ==================== Patient Medication Operations ====================
+
+        public async Task<IEnumerable<CurrentMedicationResponse>> GetCurrentMedicationsAsync(Guid patientId)
+        {
+            try
+            {
+                var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
+                if (patient == null)
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+
+                // Get all prescriptions for this patient (not cancelled)
+                var allPrescriptions = await _unitOfWork.Prescriptions.GetAllAsync();
+                var activePrescriptions = allPrescriptions
+                    .Where(p => p.PatientId == patientId && 
+                                p.Status != Core.Enums.PrescriptionStatus.Cancelled &&
+                                p.Status != Core.Enums.PrescriptionStatus.Expired)
+                    .ToList();
+
+                var currentMedications = new List<CurrentMedicationResponse>();
+                
+                foreach (var prescription in activePrescriptions)
+                {
+                    // Get prescription with details
+                    var prescriptionDetails = await _unitOfWork.Prescriptions.GetPrescriptionWithDetailsAsync(prescription.Id);
+                    if (prescriptionDetails?.PrescribedMedications == null)
+                        continue;
+
+                    foreach (var prescribedMed in prescriptionDetails.PrescribedMedications)
+                    {
+                        // Calculate if medication is still active
+                        var startDate = prescriptionDetails.CreatedAt;
+                        var endDate = startDate.AddDays(prescribedMed.DurationDays);
+                        var daysRemaining = (int)(endDate - DateTime.UtcNow).TotalDays;
+                        
+                        // Only include medications that haven't expired yet (or show all for debugging)
+                        if (endDate > DateTime.UtcNow || daysRemaining >= -30)  // Show medications from last 30 days
+                        {
+                            currentMedications.Add(new CurrentMedicationResponse
+                            {
+                                MedicationId = prescribedMed.MedicationId,
+                                MedicationName = prescribedMed.Medication?.BrandName ?? "Unknown",
+                                BrandName = prescribedMed.Medication?.BrandName,
+                                GenericName = prescribedMed.Medication?.GenericName,
+                                Strength = prescribedMed.Medication?.Strength,
+                                DosageForm = prescribedMed.Dosage ?? "N/A",
+                                PrescriptionId = prescriptionDetails.Id,
+                                PrescriptionNumber = prescriptionDetails.PrescriptionNumber,
+                                PrescribedDate = startDate,
+                                Dosage = prescribedMed.Dosage,
+                                Frequency = prescribedMed.Frequency,
+                                DurationInDays = prescribedMed.DurationDays,
+                                SpecialInstructions = prescribedMed.SpecialInstructions,
+                                DoctorId = prescriptionDetails.DoctorId,
+                                DoctorName = prescriptionDetails.Doctor != null 
+                                    ? $"{prescriptionDetails.Doctor.FirstName} {prescriptionDetails.Doctor.LastName}"
+                                    : null,
+                                DoctorSpecialization = null, // TODO: Add specialization if needed
+                                IsDispensed = prescriptionDetails.Status == Core.Enums.PrescriptionStatus.Dispensed,
+                                DispensedDate = prescriptionDetails.Status == Core.Enums.PrescriptionStatus.Dispensed 
+                                    ? prescriptionDetails.UpdatedAt 
+                                    : null,
+                                RemainingDays = daysRemaining > 0 ? daysRemaining : 0,
+                                StartDate = startDate,
+                                EndDate = endDate,
+                                DaysRemaining = daysRemaining
+                            });
+                        }
+                    }
+                }
+                
+                _logger.LogInformation("Retrieved {Count} current medications for patient {PatientId}", 
+                    currentMedications.Count, patientId);
+                
+                return currentMedications.OrderBy(m => m.EndDate);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current medications for patient {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        // Helper method
+        private string GenerateUniquePrescriptionNumber()
+        {
+            return $"RX-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+        }
+    }
+}
