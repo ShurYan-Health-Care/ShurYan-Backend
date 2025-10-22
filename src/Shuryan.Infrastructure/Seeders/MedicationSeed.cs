@@ -24,11 +24,11 @@ namespace Shuryan.Infrastructure.Seeders
 
             var medications = new List<Medication>
             {
-                // Pain Relief
-                new Medication { Id = Guid.NewGuid(), BrandName = "بانادول", GenericName = "باراسيتامول", Strength = "500 مجم", DosageForm = DosageForm.Tablet, CreatedAt = DateTime.UtcNow },
-                new Medication { Id = Guid.NewGuid(), BrandName = "بروفين", GenericName = "إيبوبروفين", Strength = "400 مجم", DosageForm = DosageForm.Tablet, CreatedAt = DateTime.UtcNow },
-                new Medication { Id = Guid.NewGuid(), BrandName = "كتافلام", GenericName = "ديكلوفيناك البوتاسيوم", Strength = "50 مجم", DosageForm = DosageForm.Tablet, CreatedAt = DateTime.UtcNow },
-                new Medication { Id = Guid.NewGuid(), BrandName = "فولتارين", GenericName = "ديكلوفيناك الصوديوم", Strength = "75 مجم", DosageForm = DosageForm.Injection, CreatedAt = DateTime.UtcNow },
+                // Pain Relief - Fixed GUIDs for testing
+                new Medication { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), BrandName = "بانادول", GenericName = "باراسيتامول", Strength = "500 مجم", DosageForm = DosageForm.Tablet, CreatedAt = DateTime.UtcNow },
+                new Medication { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), BrandName = "بروفين", GenericName = "إيبوبروفين", Strength = "400 مجم", DosageForm = DosageForm.Tablet, CreatedAt = DateTime.UtcNow },
+                new Medication { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), BrandName = "كتافلام", GenericName = "ديكلوفيناك البوتاسيوم", Strength = "50 مجم", DosageForm = DosageForm.Tablet, CreatedAt = DateTime.UtcNow },
+                new Medication { Id = Guid.Parse("44444444-4444-4444-4444-444444444444"), BrandName = "فولتارين", GenericName = "ديكلوفيناك الصوديوم", Strength = "75 مجم", DosageForm = DosageForm.Injection, CreatedAt = DateTime.UtcNow },
 
                 // Antibiotics
                 new Medication { Id = Guid.NewGuid(), BrandName = "أوجمنتين", GenericName = "أموكسيسيلين + حمض الكلافولانيك", Strength = "1 جم", DosageForm = DosageForm.Tablet, CreatedAt = DateTime.UtcNow },

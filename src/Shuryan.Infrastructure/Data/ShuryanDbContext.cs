@@ -21,13 +21,13 @@ using System.Linq.Expressions;
 
 namespace Shuryan.Infrastructure.Data
 {
-    public class ShuryanDbContext : IdentityDbContext<User, Role, Guid>
-    {
+	public class ShuryanDbContext : IdentityDbContext<User, Role, Guid>
+	{
 
-        public ShuryanDbContext(DbContextOptions<ShuryanDbContext> options)
-        : base(options)
-        {
-        }
+		public ShuryanDbContext(DbContextOptions<ShuryanDbContext> options)
+		: base(options)
+		{
+		}
 
 		#region DbSets
 		/// <summary>
@@ -57,6 +57,10 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<PharmacyWorkingHours> PharmacyWorkingHours { get; set; }
 		public DbSet<PrescribedMedication> PrescribedMedications { get; set; }
 		public DbSet<Prescription> Prescriptions { get; set; }
+		public DbSet<DispensingRecord> DispensingRecords { get; set; }
+		public DbSet<DispensedMedicationItem> DispensedMedicationItems { get; set; }
+		public DbSet<PrescriptionShare> PrescriptionShares { get; set; }
+		public DbSet<PrescriptionStatusHistory> PrescriptionStatusHistories { get; set; }
 
 		/// <summary>
 		/// Identity Entities
@@ -67,14 +71,14 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<Pharmacy> Pharmacies { get; set; }
 		public DbSet<Role> Roles { get; set; }
 		public DbSet<User> Users { get; set; }
-        public DbSet<Verifier> Verifiers { get; set; }
-        public DbSet<RefreshToken> RefreshTokens { get; set; }
+		public DbSet<Verifier> Verifiers { get; set; }
+		public DbSet<RefreshToken> RefreshTokens { get; set; }
 
-        /// <summary>
-        /// Medical Entities
-        /// </summary>
-        // Appointments
-        public DbSet<Appointment> Appointments { get; set; }
+		/// <summary>
+		/// Medical Entities
+		/// </summary>
+		// Appointments
+		public DbSet<Appointment> Appointments { get; set; }
 		public DbSet<ConsultationRecord> ConsultationRecords { get; set; }
 		// Consultations
 		public DbSet<ConsultationType> ConsultationTypes { get; set; }
@@ -106,10 +110,10 @@ namespace Shuryan.Infrastructure.Data
 		#endregion
 
 		protected override void OnModelCreating(ModelBuilder builder)
-        {
-            base.OnModelCreating(builder);
+		{
+			base.OnModelCreating(builder);
 
-            builder.ApplyConfigurationsFromAssembly(typeof(ShuryanDbContext).Assembly);
+			builder.ApplyConfigurationsFromAssembly(typeof(ShuryanDbContext).Assembly);
 		}
 
 	}

@@ -13,7 +13,7 @@ namespace Shuryan.Application.DTOs.Responses.Prescription
     {
         public string PrescriptionNumber { get; set; } = string.Empty;
         public string DigitalSignature { get; set; } = string.Empty;
-        public Guid AppointmentId { get; set; }
+        public Guid? AppointmentId { get; set; }
         public Guid DoctorId { get; set; }
         public Guid PatientId { get; set; }
         public string? GeneralInstructions { get; set; }
