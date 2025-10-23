@@ -11,7 +11,7 @@ using Shuryan.Core.Entities.System;
 using Shuryan.Infrastructure.Data;
 using Shuryan.Shared.Configurations;
 
-namespace Shuryan.Application.Services.Auth
+namespace Shuryan.Application.Interfaces
 {
     public interface IOtpService
     {

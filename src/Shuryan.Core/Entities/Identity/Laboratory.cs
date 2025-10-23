@@ -33,12 +33,12 @@ namespace Shuryan.Core.Entities.Identity
 		public Guid? VerifierId { get; set; }
 
 		[ForeignKey("Address")]
-		public Guid AddressId { get; set; }
+		public Guid? AddressId { get; set; }
 
 		// Navigation Properties
 		public virtual Verifier? Verifier { get; set; }
-		public virtual Address Address { get; set; } = null!;
-		public virtual ICollection<LaboratoryDocument> VerificationDocuments { get; set; } = new HashSet<LaboratoryDocument>();
+        public virtual Address? Address { get; set; }
+        public virtual ICollection<LaboratoryDocument> VerificationDocuments { get; set; } = new HashSet<LaboratoryDocument>();
 		public virtual ICollection<LabWorkingHours> WorkingHours { get; set; } = new HashSet<LabWorkingHours>();
 		public virtual ICollection<LabService> LabServices { get; set; } = new HashSet<LabService>();
 		public virtual ICollection<LabOrder> LabOrders { get; set; } = new HashSet<LabOrder>();

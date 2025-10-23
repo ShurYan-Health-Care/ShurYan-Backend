@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -42,6 +42,7 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
         IPharmacyOrderRepository PharmacyOrders { get; }
         IPrescriptionRepository Prescriptions { get; }
         IPharmacyDocumentRepository PharmacyDocuments { get; }
+        IPharmacyWorkingHoursRepository PharmacyWorkingHours { get; }
 
         // ==================== Laboratory Related Repositories ====================
         ILaboratoryRepository Laboratories { get; }

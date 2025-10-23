@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Shuryan.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class Inti : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -443,7 +443,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     VerificationStatus = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     VerifierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    AddressId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AddressId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     VerifierId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -489,7 +489,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     VerificationStatus = table.Column<int>(type: "int", nullable: false),
                     VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     VerifierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    AddressId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    AddressId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -848,7 +848,10 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {

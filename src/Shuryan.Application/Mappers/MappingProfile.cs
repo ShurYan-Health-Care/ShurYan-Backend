@@ -1,40 +1,31 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using AutoMapper;
-using Shuryan.Application.DTOs.Common.Address;
-using Shuryan.Application.DTOs.Requests.Patient;
-using Shuryan.Application.DTOs.Responses.Patient;
-using Shuryan.Core.Entities.Common;
-using Shuryan.Core.Entities.Identity;
-using Shuryan.Core.Entities.Shared;
 
 namespace Shuryan.Application.Mappers
 {
+    /// <summary>
+    /// Master AutoMapper Profile - All mappings are organized into separate profile files
+    /// AutoMapper automatically discovers all Profile classes in the assembly
+    /// 
+    /// Mapping Profiles Organization:
+    /// - CommonMappingProfile: Address and common DTOs
+    /// - PatientMappingProfile: Patient and Medical History mappings
+    /// - DoctorMappingProfile: Doctor, Availability, Consultation, and Document mappings
+    /// - PharmacyMappingProfile: Pharmacy, Orders, Working Hours, and Document mappings
+    /// - LaboratoryMappingProfile: Laboratory, Lab Orders, Tests, Results, and Services
+    /// - ClinicMappingProfile: Clinic, Services, Phone Numbers, and Photos
+    /// - AppointmentMappingProfile: Appointments and Consultation Records
+    /// - PrescriptionMappingProfile: Prescriptions, Medications, and Prescribed Medications
+    /// - ReviewMappingProfile: Doctor, Pharmacy, and Laboratory Reviews
+    /// - NotificationMappingProfile: Notification mappings
+    /// - ConsultationMappingProfile: Consultation Type mappings
+    /// </summary>
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
-            // Patient Mappings
-            CreateMap<Patient, PatientResponse>();
-            CreateMap<Patient, PatientBasicResponse>();
-            CreateMap<CreatePatientRequest, Patient>();
-            CreateMap<UpdatePatientRequest, Patient>()
-                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
-
-            // Address Mappings
-            CreateMap<Address, AddressResponse>();
-            CreateMap<CreateAddressRequest, Address>();
-            CreateMap<UpdateAddressRequest, Address>()
-                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
-
-            // Medical History Mappings
-            CreateMap<MedicalHistoryItem, MedicalHistoryItemResponse>();
-            CreateMap<CreateMedicalHistoryItemRequest, MedicalHistoryItem>();
-            CreateMap<UpdateMedicalHistoryItemRequest, MedicalHistoryItem>()
-                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            // This profile is kept for backward compatibility and documentation
+            // All actual mappings are in their respective domain-specific profile files
+            // AutoMapper will automatically discover and register all Profile classes
         }
     }
 }

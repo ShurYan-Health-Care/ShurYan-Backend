@@ -13,6 +13,15 @@ namespace Shuryan.Infrastructure.Repositories.Reviews
     {
         public PharmacyReviewRepository(ShuryanDbContext context) : base(context) { }
 
+        public async Task<IEnumerable<PharmacyReview>> GetByPharmacyIdAsync(Guid pharmacyId)
+        {
+            return await _dbSet
+                .Include(r => r.Patient)
+                .Where(r => r.PharmacyId == pharmacyId)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<PharmacyReview>> GetReviewsByPharmacyAsync(Guid pharmacyId)
         {
             return await _dbSet

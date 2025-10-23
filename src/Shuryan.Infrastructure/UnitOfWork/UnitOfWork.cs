@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -57,6 +57,7 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private IPharmacyOrderRepository? _pharmacyOrders;
         private IPrescriptionRepository? _prescriptions;
         private IPharmacyDocumentRepository? _pharmacyDocuments;
+        private IPharmacyWorkingHoursRepository? _pharmacyWorkingHours;
 
         // ==================== Laboratory Related Fields ====================
         private ILaboratoryRepository? _laboratories;
@@ -148,6 +149,9 @@ namespace Shuryan.Infrastructure.UnitOfWork
 
         public IPharmacyDocumentRepository PharmacyDocuments
             => _pharmacyDocuments ??= new PharmacyDocumentRepository(_context);
+
+        public IPharmacyWorkingHoursRepository PharmacyWorkingHours
+            => _pharmacyWorkingHours ??= new PharmacyWorkingHoursRepository(_context);
 
         // ==================== Laboratory Related Properties ====================
         public ILaboratoryRepository Laboratories
