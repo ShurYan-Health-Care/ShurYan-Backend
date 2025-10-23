@@ -7,6 +7,7 @@ namespace Shuryan.Core.Interfaces.Repositories.ReviewRepositories
 {
     public interface IPharmacyReviewRepository : IGenericRepository<PharmacyReview>
     {
+        Task<IEnumerable<PharmacyReview>> GetByPharmacyIdAsync(Guid pharmacyId);
 
         Task<IEnumerable<PharmacyReview>> GetReviewsByPharmacyAsync(Guid pharmacyId);
 

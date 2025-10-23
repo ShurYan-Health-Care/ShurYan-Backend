@@ -11,8 +11,7 @@ namespace Shuryan.Application.Interfaces
 {
     public interface IDoctorService
     {
-        // ==================== DOCTOR CRUD ====================
-
+        #region DOCTOR CRUD 
         Task<DoctorResponse?> GetDoctorByIdAsync(Guid id);
         Task<DoctorResponse?> GetDoctorByEmailAsync(string email);
         Task<IEnumerable<DoctorResponse>> GetDoctorsBySpecialtyAsync(MedicalSpecialty specialty);
@@ -24,42 +23,32 @@ namespace Shuryan.Application.Interfaces
         Task<DoctorResponse> UpdateDoctorAsync(Guid id, UpdateDoctorRequest request);
         Task<bool> DeleteDoctorAsync(Guid id);
         Task<bool> VerifyDoctorAsync(Guid id, VerifyDoctorRequest request);
-        
-        // ==================== AVAILABILITY ====================
+        #endregion
+
+        #region AVAILABILITY 
         Task<IEnumerable<DoctorAvailabilityResponse>> GetDoctorAvailabilitiesAsync(Guid doctorId);
-        Task<DoctorAvailabilityResponse> AddDoctorAvailabilityAsync(
-            Guid doctorId,
-            CreateDoctorAvailabilityRequest request);
-        Task<DoctorAvailabilityResponse> UpdateDoctorAvailabilityAsync(
-            Guid doctorId,
-            Guid availabilityId,
-            UpdateDoctorAvailabilityRequest request);
+        Task<DoctorAvailabilityResponse> AddDoctorAvailabilityAsync(Guid doctorId, CreateDoctorAvailabilityRequest request);
+        Task<DoctorAvailabilityResponse> UpdateDoctorAvailabilityAsync(Guid doctorId, Guid availabilityId, UpdateDoctorAvailabilityRequest request);
         Task<bool> DeleteDoctorAvailabilityAsync(Guid doctorId, Guid availabilityId);
+        #endregion
 
-        // ==================== CONSULTATIONS ====================
+        #region CONSULTATIONS
         Task<IEnumerable<DoctorConsultationResponse>> GetDoctorConsultationsAsync(Guid doctorId);
-        Task<DoctorConsultationResponse> AddDoctorConsultationAsync(
-            Guid doctorId,
-            CreateDoctorConsultationRequest request);
-        Task<DoctorConsultationResponse> UpdateDoctorConsultationAsync(
-            Guid doctorId,
-            Guid consultationId,
-            UpdateDoctorConsultationRequest request);
+        Task<DoctorConsultationResponse> AddDoctorConsultationAsync(Guid doctorId, CreateDoctorConsultationRequest request);
+        Task<DoctorConsultationResponse> UpdateDoctorConsultationAsync(Guid doctorId, Guid consultationId, UpdateDoctorConsultationRequest request);
         Task<bool> DeleteDoctorConsultationAsync(Guid doctorId, Guid consultationId);
+        #endregion
 
-        // ==================== DOCUMENTS ====================
+        #region DOCUMENTS
         Task<IEnumerable<DoctorDocumentResponse>> GetDoctorDocumentsAsync(Guid doctorId);
-        Task<DoctorDocumentResponse> AddDoctorDocumentAsync(
-            Guid doctorId,
-            CreateDoctorDocumentRequest request);
+        Task<DoctorDocumentResponse> AddDoctorDocumentAsync(Guid doctorId, CreateDoctorDocumentRequest request);
         Task<bool> DeleteDoctorDocumentAsync(Guid doctorId, Guid documentId);
+        #endregion
 
-        // ==================== OVERRIDES ====================
-        
+        #region OVERRIDES
         Task<IEnumerable<DoctorOverrideResponse>> GetDoctorOverridesAsync(Guid doctorId);
-        Task<DoctorOverrideResponse> AddDoctorOverrideAsync(
-            Guid doctorId,
-            CreateDoctorOverrideRequest request);
+        Task<DoctorOverrideResponse> AddDoctorOverrideAsync(Guid doctorId, CreateDoctorOverrideRequest request);
         Task<bool> DeleteDoctorOverrideAsync(Guid doctorId, Guid overrideId);
+        #endregion
     }
 }

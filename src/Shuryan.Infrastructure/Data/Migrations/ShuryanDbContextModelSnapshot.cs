@@ -814,8 +814,17 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<TimeOnly>("EndTime")
                         .HasColumnType("time");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<Guid>("PharmacyId")
                         .HasColumnType("uniqueidentifier");
@@ -1993,7 +2002,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 {
                     b.HasBaseType("Shuryan.Core.Entities.Identity.User");
 
-                    b.Property<Guid>("AddressId")
+                    b.Property<Guid?>("AddressId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
@@ -2062,7 +2071,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 {
                     b.HasBaseType("Shuryan.Core.Entities.Identity.User");
 
-                    b.Property<Guid>("AddressId")
+                    b.Property<Guid?>("AddressId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
@@ -2736,8 +2745,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.HasOne("Shuryan.Core.Entities.Shared.Address", "Address")
                         .WithOne()
                         .HasForeignKey("Shuryan.Core.Entities.Identity.Laboratory", "AddressId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Shuryan.Core.Entities.Identity.User", null)
                         .WithOne()
@@ -2764,8 +2772,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.HasOne("Shuryan.Core.Entities.Shared.Address", "Address")
                         .WithOne()
                         .HasForeignKey("Shuryan.Core.Entities.Identity.Pharmacy", "AddressId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Shuryan.Core.Entities.Identity.User", null)
                         .WithOne()

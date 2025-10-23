@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SqlServer.Server;
 using Shuryan.Application.DTOs.Responses.Auth;
+using Shuryan.Application.Interfaces;
 using Shuryan.Shared.Configurations;
 
 namespace Shuryan.Application.Services.Auth
