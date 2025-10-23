@@ -44,6 +44,7 @@ namespace Shuryan.Shared.Extensions
                         Array.Empty<string>()
                     }
                 });
+
             });
 
             return services;

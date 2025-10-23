@@ -14,6 +14,13 @@ namespace Shuryan.Infrastructure.Repositories.Pharmacies
     {
         public PharmacyRepository(ShuryanDbContext context) : base(context) { }
 
+        public async Task<Pharmacy?> GetByEmailAsync(string email)
+        {
+            return await _dbSet
+                .Include(p => p.Address)
+                .FirstOrDefaultAsync(p => p.Email == email && !p.IsDeleted);
+        }
+
         public async Task<Pharmacy?> GetPharmacyWithDetailsAsync(Guid pharmacyId)
         {
             return await _dbSet
