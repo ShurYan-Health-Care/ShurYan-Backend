@@ -10,6 +10,9 @@ namespace Shuryan.Application.DTOs.Requests.Laboratory
 {
     public class CreateLabOrderRequest
     {
+        [Required(ErrorMessage = "Patient ID is required")]
+        public Guid PatientId { get; set; }
+
         [Required(ErrorMessage = "Lab prescription ID is required")]
         public Guid LabPrescriptionId { get; set; }
 

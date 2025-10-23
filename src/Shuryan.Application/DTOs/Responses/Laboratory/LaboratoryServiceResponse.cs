@@ -3,9 +3,9 @@ using System;
 namespace Shuryan.Application.DTOs.Responses.Laboratory
 {
     /// <summary>
-    /// Clean lab service response without audit fields
+    /// Simplified lab service response - without audit fields
     /// </summary>
-    public class LabServiceResponse
+    public class LaboratoryServiceResponse
     {
         public Guid LabTestId { get; set; }
         public string LabTestName { get; set; } = string.Empty;

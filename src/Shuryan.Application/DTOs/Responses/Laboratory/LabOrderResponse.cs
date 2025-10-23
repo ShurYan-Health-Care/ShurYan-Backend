@@ -12,7 +12,9 @@ namespace Shuryan.Application.DTOs.Responses.Laboratory
     {
         public Guid LabPrescriptionId { get; set; }
         public Guid LaboratoryId { get; set; }
+        public string LaboratoryName { get; set; } = string.Empty;
         public Guid PatientId { get; set; }
+        public string PatientName { get; set; } = string.Empty;
         public LabOrderStatus Status { get; set; }
         public SampleCollectionType SampleCollectionType { get; set; }
         public decimal TestsTotalCost { get; set; }
@@ -20,5 +22,6 @@ namespace Shuryan.Application.DTOs.Responses.Laboratory
         public DateTime? ConfirmedByLabAt { get; set; }
         public string? CancellationReason { get; set; }
         public DateTime? CancelledAt { get; set; }
+        public IEnumerable<LabOrderTestResponse>? Tests { get; set; }
     }
 }

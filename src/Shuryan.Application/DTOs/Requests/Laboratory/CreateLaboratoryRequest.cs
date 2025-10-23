@@ -31,6 +31,8 @@ namespace Shuryan.Application.DTOs.Requests.Laboratory
 
         [Required(ErrorMessage = "Address is required")]
         public CreateAddressRequest Address { get; set; } = null!;
+
+        public IEnumerable<CreateLabWorkingHoursRequest>? WorkingHours { get; set; }
     }
 }
 
