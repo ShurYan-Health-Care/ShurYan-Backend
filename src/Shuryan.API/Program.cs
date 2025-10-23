@@ -55,6 +55,10 @@ builder.Services.AddAutoMapper(typeof(Shuryan.Application.Mappers.MappingProfile
 //builder.Services.AddScoped<Shuryan.Application.Interfaces.IDoctorService, Shuryan.Application.Services.DoctorService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
+builder.Services.AddScoped<ILaboratoryService, LaboratoryService>();
+builder.Services.AddScoped<ILabOrderService, LabOrderService>();
+builder.Services.AddScoped<ILaboratoryDocumentService, LaboratoryDocumentService>();
+builder.Services.AddScoped<ILabPrescriptionService, LabPrescriptionService>();
 
 
 // Register FluentValidation from Application assembly
@@ -78,7 +82,12 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 
 // ==================== Controllers ====================
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // ==================== API Documentation ====================
 builder.Services.AddEndpointsApiExplorer();

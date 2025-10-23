@@ -1,17 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Shuryan.Core.Enums;
+using System;
 
-namespace Shuryan.Application.DTOs.Common.Address
+namespace Shuryan.Application.DTOs.Responses.Laboratory
 {
     /// <summary>
-    /// Clean address response without audit fields
+    /// Simplified address response for laboratory - without audit fields
     /// </summary>
-    public class AddressResponse
+    public class LaboratoryAddressResponse
     {
         public string Street { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
