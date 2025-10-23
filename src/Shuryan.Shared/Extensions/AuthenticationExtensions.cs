@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -55,6 +55,7 @@ namespace Shuryan.Shared.Extensions
                 {
                     OnAuthenticationFailed = context =>
                     {
+                        Console.WriteLine($"Authentication Failed: {context.Exception.Message}");
                         if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
                         {
                             context.Response.Headers.Add("Token-Expired", "true");
@@ -63,12 +64,18 @@ namespace Shuryan.Shared.Extensions
                     },
                     OnChallenge = context =>
                     {
-                        // Can customize 401 response here
+                        Console.WriteLine($"Authentication Challenge: {context.Error}, {context.ErrorDescription}");
                         return Task.CompletedTask;
                     },
                     OnTokenValidated = context =>
                     {
-                        // Can add custom validation logic here
+                        Console.WriteLine($"Token Validated Successfully for user: {context.Principal?.Identity?.Name}");
+                        return Task.CompletedTask;
+                    },
+                    OnMessageReceived = context =>
+                    {
+                        var token = context.Request.Headers["Authorization"].FirstOrDefault();
+                        Console.WriteLine($"Token Received: {(string.IsNullOrEmpty(token) ? "NONE" : "Present")}");
                         return Task.CompletedTask;
                     }
                 };

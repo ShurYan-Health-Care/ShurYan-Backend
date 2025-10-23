@@ -1,36 +1,140 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using FluentValidation;
+using Microsoft.OpenApi.Models;
+using Shuryan.Application.Interfaces;
+using Shuryan.Application.Services;
 using Shuryan.Application.Services.Auth;
 using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
+using Shuryan.Core.Interfaces.Repositories;
+using Shuryan.Core.Interfaces.UnitOfWork;
+using Shuryan.Infrastructure.Repositories.Doctors;
+using Shuryan.Infrastructure.Repositories.Medical;
+using Shuryan.Infrastructure.Repositories.Patients;
+using Shuryan.Infrastructure.Services;
+using Shuryan.Infrastructure.UnitOfWork;
 using Shuryan.Shared.Configurations;
 
 namespace Shuryan.API.Extensions
 {
     public static class ServiceExtensions
     {
-        /// <summary>
-        /// Register all application services
-        /// </summary>
-        public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
+        #region Register all application configuration settings
+        public static IServiceCollection AddApplicationSettings(this IServiceCollection services, IConfiguration configuration)
         {
-            // Configure settings from appsettings.json
             services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
             services.Configure<OAuthSettings>(configuration.GetSection("OAuthSettings"));
 
-            // Register services
-            services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<ITokenService, TokenService>();
-            services.AddScoped<IOtpService, OtpService>();
-            services.AddScoped<IEmailService, EmailService>();
-            services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
+            return services;
+        }
+        #endregion
+
+        #region Register all repositories
+        public static IServiceCollection AddRepositories(this IServiceCollection services)
+        {
+            services.AddScoped<IPatientRepository, PatientRepository>();
+            services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            services.AddScoped<IDoctorRepository, DoctorRepository>();
+            services.AddScoped<IDoctorConsultationRepository, DoctorConsultationRepository>();
 
             return services;
         }
+        #endregion
+
+        #region Register Unit of Work pattern
+        public static IServiceCollection AddUnitOfWork(this IServiceCollection services)
+        {
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            return services;
+        }
+        #endregion
+
+        #region Register all application services
+        public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+        {
+            // Authentication & Authorization Services
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IOtpService, OtpService>();
+            services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
+
+            // Email Service
+            services.AddScoped<IEmailService, EmailService>();
+
+            // Business Services
+            services.AddScoped<IPatientService, PatientService>();
+            services.AddScoped<IPharmacyService, PharmacyService>();
+            services.AddScoped<IAppointmentService, AppointmentService>();
+
+            return services;
+        }
+        #endregion
+
+        #region Register FluentValidation validators
+        public static IServiceCollection AddValidation(this IServiceCollection services)
+        {
+            services.AddValidatorsFromAssemblyContaining<Program>();
+
+            return services;
+        }
+        #endregion
+
+        #region Register AutoMapper profiles
+        public static IServiceCollection AddAutoMapperProfiles(this IServiceCollection services)
+        {
+            services.AddAutoMapper(typeof(Shuryan.Application.Mappers.MappingProfile));
+
+            return services;
+        }
+        #endregion
+
+        #region Configure Swagger/OpenAPI documentation
+        public static IServiceCollection AddSwaggerDocumentation(this IServiceCollection services)
+        {
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Shuryan Healthcare API",
+                    Version = "v1",
+                    Description = "API for Shuryan Healthcare System",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Shuryan Team",
+                        Email = "support@shuryan.com"
+                    }
+                });
+
+                // Add JWT Authentication to Swagger
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter 'Bearer' [space] and then your valid JWT token.\n\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
+
+            return services;
+        }
+        #endregion
     }
 }

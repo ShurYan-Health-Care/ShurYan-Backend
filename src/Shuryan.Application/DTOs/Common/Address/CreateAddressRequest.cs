@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -19,7 +19,6 @@ namespace Shuryan.Application.DTOs.Common.Address
         public string City { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Governorate is required")]
-        [StringLength(100, MinimumLength = 2, ErrorMessage = "Governorate must be between 2-100 characters")]
         public Governorate Governorate { get; set; }
 
         [StringLength(20, ErrorMessage = "Building number cannot exceed 20 characters")]

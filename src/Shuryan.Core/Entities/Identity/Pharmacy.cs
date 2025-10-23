@@ -25,11 +25,11 @@ namespace Shuryan.Core.Entities.Identity
         public Guid? VerifierId { get; set; }
 
         [ForeignKey("Address")]
-        public Guid AddressId { get; set; }
+        public Guid? AddressId { get; set; }
 
         // Navigation Properties
         public virtual Verifier? Verifier { get; set; }
-        public virtual Address Address { get; set; } = null!;
+        public virtual Address? Address { get; set; }
         public virtual ICollection<PharmacyDocument> VerificationDocuments { get; set; } = new HashSet<PharmacyDocument>();
         public virtual ICollection<PharmacyWorkingHours> WorkingHours { get; set; } = new HashSet<PharmacyWorkingHours>();
         public virtual ICollection<PharmacyOrder> Orders { get; set; } = new HashSet<PharmacyOrder>();

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.System;
 using Shuryan.Infrastructure.Data;
 using Shuryan.Shared.Configurations;
@@ -151,6 +152,7 @@ namespace Shuryan.Application.Services.Auth
                     existingOtps.Count, userId, verificationType);
             }
         }
+
         public string GenerateSecureOtp(int length)
         {
             const string digits = "0123456789";

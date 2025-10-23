@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Application.DTOs.Responses.Pharmacy
 {
-    public class PharmacyResponse : BaseAuditableDto
+    public class PharmacyResponse : BaseSoftDeletableDto
     {
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }

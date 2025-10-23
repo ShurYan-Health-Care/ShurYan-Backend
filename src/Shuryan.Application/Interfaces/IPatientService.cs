@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Application.DTOs.Common.Address;
+using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Common.Pagination;
 using Shuryan.Application.DTOs.Requests.Patient;
 using Shuryan.Application.DTOs.Responses.Appointment;
@@ -15,7 +16,7 @@ namespace Shuryan.Application.Interfaces
 {
     public interface IPatientService
     {
-        // ==================== Basic CRUD Operations ====================
+        #region Basic CRUD Operations
         Task<PatientResponse?> GetPatientByIdAsync(Guid id);
         Task<PatientResponse?> GetPatientByEmailAsync(string Email);
         Task<bool> DeletePatientAsync(Guid id);
@@ -23,46 +24,53 @@ namespace Shuryan.Application.Interfaces
         Task<PatientResponse?> GetCurrentPatientAsync(Guid userId);
         Task<PatientResponse> UpdatePatientAsync(Guid id, UpdatePatientRequest request);
         Task<PatientResponse> CreatePatientAsync(CreatePatientRequest request);
-        
-        // ==================== Query Operations ====================
+        #endregion
+
+        #region Query Operations
         Task<IEnumerable<PatientResponse>> GetAllPatientsAsync(bool includeDeleted = false);
         Task<PaginatedResponse<PatientResponse>> GetPaginatedPatientsAsync(PaginationParams request);
         Task<PaginatedResponse<PatientResponse>> SearchPatientsAsync(SearchTermPatientsRequest request);
         Task<IEnumerable<PatientResponse>> GetPatientsWithMedicalHistoryAsync();
         Task<bool> IsEmailUniqueAsync(string email);
         Task<int> GetTotalPatientsCountAsync(bool includeDeleted = false);
+        #endregion
 
-        // ==================== Medical History Operations ====================
+        #region Medical History Operations
         Task<IEnumerable<MedicalHistoryItemResponse>> GetPatientMedicalHistoryAsync(Guid patientId);
         Task<MedicalHistoryItemResponse> AddMedicalHistoryItemAsync(Guid patientId, CreateMedicalHistoryItemRequest request);
         Task<MedicalHistoryItemResponse> UpdateMedicalHistoryItemAsync(Guid patientId, Guid itemId, UpdateMedicalHistoryItemRequest request);
         Task<bool> DeleteMedicalHistoryItemAsync(Guid patientId, Guid itemId);
+        #endregion
 
-        // ==================== Appointments Operations ====================
+        #region Appointments Operations
         Task<IEnumerable<AppointmentResponse>> GetPatientAppointmentsAsync(Guid patientId);
         Task<IEnumerable<AppointmentResponse>> GetUpcomingAppointmentsAsync(Guid patientId);
         Task<IEnumerable<AppointmentResponse>> GetPastAppointmentsAsync(Guid patientId);
         Task<AppointmentResponse?> GetNextAppointmentAsync(Guid patientId);
         Task<int> GetAppointmentsCountAsync(Guid patientId);
+        #endregion
 
-
-        // ==================== Prescriptions Operations ====================
+        #region Prescriptions Operations
         Task<IEnumerable<PrescriptionResponse>> GetPatientPrescriptionsAsync(Guid patientId);
         Task<IEnumerable<PrescriptionResponse>> GetActivePrescriptionsAsync(Guid patientId);
         Task<PrescriptionResponse?> GetPrescriptionByIdAsync(Guid patientId, Guid prescriptionId);
+        #endregion
 
-        // ==================== Lab Orders Operations ====================
+        #region Lab Orders Operations
         Task<IEnumerable<LabOrderResponse>> GetPatientLabOrdersAsync(Guid patientId);
         Task<IEnumerable<LabOrderResponse>> GetPendingLabOrdersAsync(Guid patientId);
         Task<LabOrderResponse?> GetLabOrderByIdAsync(Guid patientId, Guid orderId);
+        #endregion
 
-        // ==================== Address Operations ====================
+        #region Address Operations
         Task<AddressResponse?> GetPatientAddressAsync(Guid patientId);
         Task<AddressResponse> UpdatePatientAddressAsync(Guid patientId, UpdateAddressRequest request);
         Task<AddressResponse> CreatePatientAddressAsync(CreateAddressRequest request);
+        #endregion
 
-        // ==================== Profile Operations ====================
+        #region Profile Operations
         Task<bool> UpdateProfileImageAsync(Guid patientId, string imageUrl);
         Task<bool> RemoveProfileImageAsync(Guid patientId);
+        #endregion
     }
 }
