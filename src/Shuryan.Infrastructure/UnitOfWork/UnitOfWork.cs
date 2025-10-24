@@ -137,6 +137,9 @@ namespace Shuryan.Infrastructure.UnitOfWork
         public IClinicServiceRepository ClinicServices =>
             _clinicServices ??= new ClinicServiceRepository(_context);
 
+        public IPharmacyWorkingHoursRepository PharmacyWorkingHours
+            => _pharmacyWorkingHours ??= new PharmacyWorkingHoursRepository(_context);
+
         // ==================== Laboratory Related Properties ====================
         public ILaboratoryRepository Laboratories =>
             _laboratories ??= new LaboratoryRepository(_context);
@@ -177,9 +180,6 @@ namespace Shuryan.Infrastructure.UnitOfWork
 
         public IMedicationRepository Medications =>
             _medications ??= new MedicationRepository(_context);
-
-        public IPharmacyWorkingHoursRepository PharmacyWorkingHours =>
-            _pharmacyWorkingHours ??= new PharmacyWorkingHoursRepository(_context);
 
         public IPrescribedMedicationRepository PrescribedMedications =>
             _prescribedMedications ??= new PrescribedMedicationRepository(_context);

@@ -1,4 +1,4 @@
-﻿using Shuryan.Core.Enums;
+using Shuryan.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +10,11 @@ namespace Shuryan.Core.Interfaces.Repositories.Pharmacies
 {
     public interface IPharmacyRepository : IGenericRepository<Pharmacy>
     {
+        /// <summary>
+        /// Get pharmacy by email address
+        /// </summary>
+        Task<Pharmacy?> GetByEmailAsync(string email);
+
         /// <summary>
         /// يجلب صيدلية واحدة مع كل بياناتها المرتبطة بها (العنوان، مواعيد العمل، المستندات).
         /// </summary>

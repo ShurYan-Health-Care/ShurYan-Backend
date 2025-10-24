@@ -9,14 +9,12 @@ namespace Shuryan.Infrastructure.Repositories.Pharmacies
 {
     public class PharmacyWorkingHoursRepository : GenericRepository<PharmacyWorkingHours>, IPharmacyWorkingHoursRepository
     {
-        public PharmacyWorkingHoursRepository(ShuryanDbContext context) : base(context)
-        {
-        }
+        public PharmacyWorkingHoursRepository(ShuryanDbContext context) : base(context) { }
 
         public async Task<IEnumerable<PharmacyWorkingHours>> GetByPharmacyIdAsync(Guid pharmacyId)
         {
             return await _dbSet
-                .Where(wh => wh.PharmacyId == pharmacyId)
+                .Where(wh => wh.PharmacyId == pharmacyId && !wh.IsDeleted)
                 .OrderBy(wh => wh.DayOfWeek)
                 .ToListAsync();
         }
@@ -32,7 +30,40 @@ namespace Shuryan.Infrastructure.Repositories.Pharmacies
         public async Task<PharmacyWorkingHours?> GetByPharmacyAndDayAsync(Guid pharmacyId, SysDayOfWeek dayOfWeek)
         {
             return await _dbSet
-                .FirstOrDefaultAsync(wh => wh.PharmacyId == pharmacyId && wh.DayOfWeek == dayOfWeek);
+                .FirstOrDefaultAsync(wh => wh.PharmacyId == pharmacyId 
+                    && wh.DayOfWeek == dayOfWeek 
+                    && !wh.IsDeleted);
+        }
+
+        public async Task DeleteAllByPharmacyIdAsync(Guid pharmacyId)
+        {
+            var workingHours = await _dbSet
+                .Where(wh => wh.PharmacyId == pharmacyId)
+                .ToListAsync();
+
+            foreach (var wh in workingHours)
+            {
+                wh.IsDeleted = true;
+                wh.DeletedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsPharmacyOpenAsync(Guid pharmacyId, DateTime dateTime)
+        {
+            var dayOfWeek = (SysDayOfWeek)((int)dateTime.DayOfWeek);
+            var currentTime = TimeOnly.FromDateTime(dateTime);
+
+            var workingHours = await _dbSet
+                .FirstOrDefaultAsync(wh => wh.PharmacyId == pharmacyId 
+                    && wh.DayOfWeek == dayOfWeek 
+                    && !wh.IsDeleted);
+
+            if (workingHours == null)
+                return false;
+
+            return currentTime >= workingHours.StartTime && currentTime <= workingHours.EndTime;
         }
     }
 }

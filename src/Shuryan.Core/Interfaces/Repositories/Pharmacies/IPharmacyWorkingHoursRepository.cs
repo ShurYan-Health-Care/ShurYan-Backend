@@ -8,5 +8,7 @@ namespace Shuryan.Core.Interfaces.Repositories.Pharmacies
         Task<IEnumerable<PharmacyWorkingHours>> GetByPharmacyIdAsync(Guid pharmacyId);
         Task<IEnumerable<PharmacyWorkingHours>> GetByDayOfWeekAsync(SysDayOfWeek dayOfWeek);
         Task<PharmacyWorkingHours?> GetByPharmacyAndDayAsync(Guid pharmacyId, SysDayOfWeek dayOfWeek);
+        Task DeleteAllByPharmacyIdAsync(Guid pharmacyId);
+        Task<bool> IsPharmacyOpenAsync(Guid pharmacyId, DateTime dateTime);
     }
 }

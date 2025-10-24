@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Auth;
 using Shuryan.Application.DTOs.Responses.Auth;
+using Shuryan.Application.Interfaces;
 using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
 using Shuryan.Core.Entities.Common;
@@ -60,9 +61,7 @@ namespace Shuryan.Application.Services.Auth
 
         #region Registration
 
-        public async Task<ApiResponse<AuthResponseDto>> RegisterPatientAsync(
-            RegisterPatientRequest dto,
-            string? ipAddress = null)
+        public async Task<ApiResponse<AuthResponseDto>> RegisterPatientAsync(RegisterPatientRequest dto, string? ipAddress = null)
         {
             try
             {
@@ -70,10 +69,7 @@ namespace Shuryan.Application.Services.Auth
                 var existingUser = await _userManager.FindByEmailAsync(dto.Email);
                 if (existingUser != null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure(
-                        "Email already registered",
-                        new[] { "A user with this email already exists" },
-                        400);
+                    return ApiResponse<AuthResponseDto>.Failure("Email already registered", new[] { "A user with this email already exists" }, 400);
                 }
 
                 // Create Patient
@@ -93,10 +89,7 @@ namespace Shuryan.Application.Services.Auth
 
                 if (!result.Succeeded)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure(
-                        "Registration failed",
-                        result.Errors.Select(e => e.Description),
-                        400);
+                    return ApiResponse<AuthResponseDto>.Failure("Registration failed", result.Errors.Select(e => e.Description), 400);
                 }
 
                 // Assign Patient role
@@ -135,9 +128,7 @@ namespace Shuryan.Application.Services.Auth
             }
         }
 
-        public async Task<ApiResponse<AuthResponseDto>> RegisterDoctorAsync(
-            RegisterDoctorRequest dto,
-            string? ipAddress = null)
+        public async Task<ApiResponse<AuthResponseDto>> RegisterDoctorAsync(RegisterDoctorRequest dto, string? ipAddress = null)
         {
             try
             {
@@ -207,9 +198,7 @@ namespace Shuryan.Application.Services.Auth
             }
         }
 
-        public async Task<ApiResponse<AuthResponseDto>> RegisterLaboratoryAsync(
-            RegisterLaboratoryRequest dto,
-            string? ipAddress = null)
+        public async Task<ApiResponse<AuthResponseDto>> RegisterLaboratoryAsync(RegisterLaboratoryRequest dto, string? ipAddress = null)
         {
             try
             {
@@ -222,20 +211,6 @@ namespace Shuryan.Application.Services.Auth
                         400);
                 }
 
-                // Create address first
-                var address = new Address
-                {
-                    Id = Guid.NewGuid(),
-                    Street = dto.Address.Street,
-                    City = dto.Address.City,
-                    Governorate = dto.Address.Governorate,
-                    BuildingNumber = dto.Address.BuildingNumber,
-                    Latitude = dto.Address.Latitude,
-                    Longitude = dto.Address.Longitude,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                await _unitOfWork.Addresses.AddAsync(address);
 
                 var laboratory = new Laboratory
                 {
@@ -243,13 +218,6 @@ namespace Shuryan.Application.Services.Auth
                     Name = dto.Name,
                     Email = dto.Email,
                     UserName = dto.Email,
-                    PhoneNumber = dto.PhoneNumber,
-                    Description = dto.Description,
-                    WhatsAppNumber = dto.WhatsAppNumber,
-                    Website = dto.Website,
-                    OffersHomeSampleCollection = dto.OffersHomeSampleCollection,
-                    HomeSampleCollectionFee = dto.HomeSampleCollectionFee,
-                    AddressId = address.Id,
                     VerificationStatus = VerificationStatus.Unverified,
                     EmailConfirmed = false,
                     CreatedAt = DateTime.UtcNow
@@ -259,14 +227,7 @@ namespace Shuryan.Application.Services.Auth
 
                 if (!result.Succeeded)
                 {
-                    // Rollback address creation
-                    _unitOfWork.Addresses.Delete(address);
-                    await _unitOfWork.SaveChangesAsync();
-
-                    return ApiResponse<AuthResponseDto>.Failure(
-                        "Registration failed",
-                        result.Errors.Select(e => e.Description),
-                        400);
+                    return ApiResponse<AuthResponseDto>.Failure("Registration failed", result.Errors.Select(e => e.Description), 400);
                 }
 
                 await EnsureRoleExistsAsync(UserRole.Laboratory);
@@ -290,24 +251,20 @@ namespace Shuryan.Application.Services.Auth
 
                 var authResponse = await GenerateAuthResponseAsync(laboratory, ipAddress);
 
-                return ApiResponse<AuthResponseDto>.Success(
-                    authResponse,
-                    "Registration successful! Please verify your email and submit verification documents.",
-                    201);
+                return ApiResponse<AuthResponseDto>.Success(authResponse, "Registration successful! Please verify your email and submit verification documents.", 201);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during laboratory registration");
+                //return ApiResponse<AuthResponseDto>.Failure("An error occurred during registration", new[] { ex.Message }, 500);
                 return ApiResponse<AuthResponseDto>.Failure(
                     "An error occurred during registration",
-                    new[] { ex.Message },
+                    new[] { ex.InnerException?.Message ?? ex.Message },
                     500);
             }
         }
 
-        public async Task<ApiResponse<AuthResponseDto>> RegisterPharmacyAsync(
-            RegisterPharmacyRequest dto,
-            string? ipAddress = null)
+        public async Task<ApiResponse<AuthResponseDto>> RegisterPharmacyAsync(RegisterPharmacyRequest dto, string? ipAddress = null)
         {
             try
             {
@@ -320,33 +277,12 @@ namespace Shuryan.Application.Services.Auth
                         400);
                 }
 
-                // Create address first
-                var address = new Address
-                {
-                    Id = Guid.NewGuid(),
-                    Street = dto.Address.Street,
-                    City = dto.Address.City,
-                    Governorate = dto.Address.Governorate,
-                    BuildingNumber = dto.Address.BuildingNumber,
-                    Latitude = dto.Address.Latitude,
-                    Longitude = dto.Address.Longitude,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                await _unitOfWork.Addresses.AddAsync(address);
-
                 var pharmacy = new Pharmacy
                 {
                     Id = Guid.NewGuid(),
                     Name = dto.Name,
                     Email = dto.Email,
                     UserName = dto.Email,
-                    PhoneNumber = dto.PhoneNumber,
-                    Description = dto.Description,
-                    WhatsAppNumber = dto.WhatsAppNumber,
-                    Website = dto.Website,
-                    OffersDelivery = dto.OffersDelivery,
-                    AddressId = address.Id,
                     VerificationStatus = VerificationStatus.Unverified,
                     EmailConfirmed = false,
                     CreatedAt = DateTime.UtcNow
@@ -356,10 +292,6 @@ namespace Shuryan.Application.Services.Auth
 
                 if (!result.Succeeded)
                 {
-                    // Rollback address creation
-                    _unitOfWork.Addresses.Delete(address);
-                    await _unitOfWork.SaveChangesAsync();
-
                     return ApiResponse<AuthResponseDto>.Failure(
                         "Registration failed",
                         result.Errors.Select(e => e.Description),
@@ -516,9 +448,7 @@ namespace Shuryan.Application.Services.Auth
 
         #region Login
 
-        public async Task<ApiResponse<AuthResponseDto>> LoginAsync(
-            LoginRequest dto,
-            string? ipAddress = null)
+        public async Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginRequest dto, string? ipAddress = null)
         {
             try
             {
@@ -526,19 +456,13 @@ namespace Shuryan.Application.Services.Auth
 
                 if (user == null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure(
-                        "Invalid credentials",
-                        new[] { "Email or password is incorrect" },
-                        401);
+                    return ApiResponse<AuthResponseDto>.Failure("Invalid credentials", new[] { "Email or password is incorrect" }, 401);
                 }
 
                 // Check soft delete
                 if (user.IsDeleted)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure(
-                        "Account deactivated",
-                        new[] { "This account has been deactivated" },
-                        403);
+                    return ApiResponse<AuthResponseDto>.Failure("Account deactivated", new[] { "This account has been deactivated" }, 403);
                 }
 
                 // Check lockout
@@ -560,16 +484,10 @@ namespace Shuryan.Application.Services.Auth
                 {
                     if (result.IsLockedOut)
                     {
-                        return ApiResponse<AuthResponseDto>.Failure(
-                            "Account locked",
-                            new[] { "Too many failed attempts. Account locked for 15 minutes." },
-                            403);
+                        return ApiResponse<AuthResponseDto>.Failure("Account locked", new[] { "Too many failed attempts. Account locked for 15 minutes." }, 403);
                     }
 
-                    return ApiResponse<AuthResponseDto>.Failure(
-                        "Invalid credentials",
-                        new[] { "Email or password is incorrect" },
-                        401);
+                    return ApiResponse<AuthResponseDto>.Failure("Invalid credentials", new[] { "Email or password is incorrect" }, 401);
                 }
 
                 // Successful login - update tracking
@@ -582,10 +500,7 @@ namespace Shuryan.Application.Services.Auth
 
                 _logger.LogInformation("User logged in successfully: {Email}", user.Email);
 
-                return ApiResponse<AuthResponseDto>.Success(
-                    authResponse,
-                    "Login successful",
-                    200);
+                return ApiResponse<AuthResponseDto>.Success(authResponse, "Login successful", 200);
             }
             catch (Exception ex)
             {
