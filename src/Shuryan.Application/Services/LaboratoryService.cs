@@ -66,11 +66,11 @@ namespace Shuryan.Application.Services
                         if (lab == null) continue;
 
                         // Load Address
-                        if (lab.AddressId != Guid.Empty)
+                        if (lab.AddressId.HasValue && lab.AddressId.Value != Guid.Empty)
                         {
                             try
                             {
-                                var address = await _unitOfWork.Addresses.GetByIdAsync(lab.AddressId);
+                                var address = await _unitOfWork.Addresses.GetByIdAsync(lab.AddressId.Value);
                                 if (address != null)
                                     response.Address = _mapper.Map<DTOs.Common.Address.AddressResponse>(address);
                             }
@@ -160,11 +160,11 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<LaboratoryResponse>(laboratory);
 
                 // Load Address
-                if (laboratory.AddressId != Guid.Empty)
+                if (laboratory.AddressId.HasValue && laboratory.AddressId.Value != Guid.Empty)
                 {
                     try
                     {
-                        var address = await _unitOfWork.Addresses.GetByIdAsync(laboratory.AddressId);
+                        var address = await _unitOfWork.Addresses.GetByIdAsync(laboratory.AddressId.Value);
                         if (address != null)
                             response.Address = _mapper.Map<DTOs.Common.Address.AddressResponse>(address);
                     }

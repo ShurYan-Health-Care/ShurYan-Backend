@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -10,7 +10,7 @@ using Shuryan.Core.Enums;
 
 namespace Shuryan.Core.Entities.External.Pharmacies
 {
-    public class PharmacyWorkingHours : AuditableEntity
+    public class PharmacyWorkingHours : SoftDeletableEntity
 	{
         public SysDayOfWeek DayOfWeek { get; set; }
 

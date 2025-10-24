@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Application.DTOs.Responses.Auth;
 
-namespace Shuryan.Application.Services.Auth
+namespace Shuryan.Application.Interfaces
 {
     public interface IGoogleOAuthService
     {

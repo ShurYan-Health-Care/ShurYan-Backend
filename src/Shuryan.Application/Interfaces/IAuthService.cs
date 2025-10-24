@@ -7,36 +7,43 @@ using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Auth;
 using Shuryan.Application.DTOs.Responses.Auth;
 
-namespace Shuryan.Application.Services.Auth
+namespace Shuryan.Application.Interfaces
 {
     public interface IAuthService
     {
-        // Registration
+        #region Registration
         Task<ApiResponse<AuthResponseDto>> RegisterPatientAsync(RegisterPatientRequest dto, string? ipAddress = null);
         Task<ApiResponse<AuthResponseDto>> RegisterDoctorAsync(RegisterDoctorRequest dto, string? ipAddress = null);
         Task<ApiResponse<AuthResponseDto>> RegisterLaboratoryAsync(RegisterLaboratoryRequest dto, string? ipAddress = null);
         Task<ApiResponse<AuthResponseDto>> RegisterPharmacyAsync(RegisterPharmacyRequest dto, string? ipAddress = null);
+        #endregion
 
-        // Email Verification
+        #region Email Verification
         Task<ApiResponse<bool>> VerifyEmailAsync(VerifyEmailRequest dto);
         Task<ApiResponse<bool>> ResendVerificationOtpAsync(ResendOtpRequest dto);
+        #endregion
 
-        // Login
+        #region Login
         Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginRequest dto, string? ipAddress = null);
+        #endregion
 
-        // Google OAuth
+        #region Google OAuth
         Task<ApiResponse<AuthResponseDto>> GoogleLoginAsync(GoogleLoginRequest dto, string? ipAddress = null);
+        #endregion
 
-        // Password Management
+        #region Password Management
         Task<ApiResponse<bool>> ForgotPasswordAsync(ForgotPasswordRequest dto);
         Task<ApiResponse<bool>> VerifyResetOtpAndResetPasswordAsync(VerifyResetOtpRequest dto);
         Task<ApiResponse<bool>> ChangePasswordAsync(Guid userId, ChangePasswordRequest dto);
+        #endregion
 
-        // Token Management
+        #region
         Task<ApiResponse<AuthResponseDto>> RefreshTokenAsync(RefreshTokenRequest dto, string? ipAddress = null);
         Task<ApiResponse<bool>> LogoutAsync(string refreshToken, string? ipAddress = null);
+        #endregion
 
-        // User Info
+        #region User Info
         Task<ApiResponse<UserInfoDto>> GetCurrentUserAsync(Guid userId);
+        #endregion
     }
 }

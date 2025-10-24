@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Application.DTOs.Common.Address;
+using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Common.Pagination;
 using Shuryan.Application.DTOs.Requests.Patient;
 using Shuryan.Application.DTOs.Responses.Appointment;

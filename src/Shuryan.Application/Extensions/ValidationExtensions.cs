@@ -18,8 +18,8 @@ namespace Shuryan.Application.Extensions
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
             // Configure validation behavior
-            // ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
             ValidatorOptions.Global.DefaultClassLevelCascadeMode = CascadeMode.Stop;
+            // ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
 
             return services;
         }

@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Shuryan.Application.DTOs.Common.Address;
 using Shuryan.Application.DTOs.Common.Pagination;
+using Shuryan.Application.DTOs.Requests.Appointment;
 using Shuryan.Application.DTOs.Requests.Patient;
 using Shuryan.Application.DTOs.Responses.Appointment;
 using Shuryan.Application.DTOs.Responses.Laboratory;
@@ -772,6 +773,8 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+
+
 
         /// <summary>
         /// Get upcoming appointments for a patient

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging; // Added for ILogger
 using Shuryan.Application.DTOs.Common.Base; // Added for ApiResponse
 using Shuryan.Application.DTOs.Requests.Laboratory;
+using Shuryan.Application.DTOs.Requests.Pharmacy;
 using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Application.Interfaces;
 using System;
@@ -335,9 +336,4 @@ namespace Shuryan.API.Controllers
         #endregion
     }
 
-    // Helper request model (already defined, just ensuring it's here)
-    public class RejectDocumentRequest
-    {
-        public string RejectionReason { get; set; } = string.Empty;
-    }
 }
