@@ -1,6 +1,7 @@
-﻿using Shuryan.Core.Entities.Base;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -20,10 +21,15 @@ namespace Shuryan.Core.Entities.External.Pharmacies
         public string? FollowUpInstructions { get; set; }
         public bool IsDigitallyShared { get; set; } = false;
         public DateTime? SharedAt { get; set; }
+        
+        // Status tracking
+        public PrescriptionStatus Status { get; set; } = PrescriptionStatus.Active;
+        public string? CancellationReason { get; set; }
+        public DateTime? CancelledAt { get; set; }
         // --- العلاقات ---
         [ForeignKey("Appointment")]
-        public Guid AppointmentId { get; set; }
-        public virtual Appointment Appointment { get; set; } = null!;
+        public Guid? AppointmentId { get; set; }
+        public virtual Appointment? Appointment { get; set; }
 
         [ForeignKey("Doctor")]
         public Guid DoctorId { get; set; }

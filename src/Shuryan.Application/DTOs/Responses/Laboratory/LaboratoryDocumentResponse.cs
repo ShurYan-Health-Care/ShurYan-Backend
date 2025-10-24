@@ -13,8 +13,11 @@ namespace Shuryan.Application.DTOs.Responses.Laboratory
     {
         public string DocumentUrl { get; set; } = string.Empty;
         public LaboratoryDocumentType Type { get; set; }
+        public string TypeName { get; set; } = string.Empty;
         public VerificationDocumentStatus Status { get; set; }
+        public string StatusName { get; set; } = string.Empty;
         public string? RejectionReason { get; set; }
         public Guid LaboratoryId { get; set; }
+        public string LaboratoryName { get; set; } = string.Empty;
     }
 }

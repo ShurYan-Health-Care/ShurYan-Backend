@@ -1,15 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Storage;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Core.Interfaces.Repositories.ClinicRepositories;
-using Shuryan.Core.Interfaces.Repositories.Pharmacies;
 using Shuryan.Core.Interfaces.Repositories.LaboratoryRepositories;
-using Shuryan.Core.Interfaces.Repositories.ReviewRepositories;
+using Shuryan.Core.Interfaces.Repositories.Pharmacies;
 using Shuryan.Core.Interfaces.Repositories.MedicationRepositories;
+using Shuryan.Core.Interfaces.Repositories.ReviewRepositories;
 
 namespace Shuryan.Core.Interfaces.UnitOfWork
 {
@@ -37,27 +32,27 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
         IClinicPhotosRepository ClinicPhotos { get; }
         IClinicServiceRepository ClinicServices { get; }
 
-        // ==================== Pharmacy Related Repositories ====================
-        IPharmacyRepository Pharmacies { get; }
-        IPharmacyOrderRepository PharmacyOrders { get; }
-        IPrescriptionRepository Prescriptions { get; }
-        IPharmacyDocumentRepository PharmacyDocuments { get; }
-        IPharmacyWorkingHoursRepository PharmacyWorkingHours { get; }
-
         // ==================== Laboratory Related Repositories ====================
         ILaboratoryRepository Laboratories { get; }
         ILabOrderRepository LabOrders { get; }
         ILabPrescriptionRepository LabPrescriptions { get; }
         ILabPrescriptionItemRepository LabPrescriptionItems { get; }
+        ILabResultRepository LabResults { get; }
         ILabServiceRepository LabServices { get; }
         ILabTestRepository LabTests { get; }
-        ILabResultRepository LabResults { get; }
         ILabWorkingHoursRepository LabWorkingHours { get; }
         ILaboratoryDocumentRepository LaboratoryDocuments { get; }
 
-        // ==================== Medication Related Repositories ====================
+        // ==================== Pharmacy Related Repositories ====================
+        IPharmacyRepository Pharmacies { get; }
+        IPharmacyOrderRepository PharmacyOrders { get; }
+        IPrescriptionRepository Prescriptions { get; }
         IMedicationRepository Medications { get; }
+        IPharmacyWorkingHoursRepository PharmacyWorkingHours { get; }
         IPrescribedMedicationRepository PrescribedMedications { get; }
+        IDispensingRecordRepository DispensingRecords { get; }
+        IPrescriptionShareRepository PrescriptionShares { get; }
+        IPharmacyDocumentRepository PharmacyDocuments { get; }
 
         // ==================== Review Related Repositories ====================
         IDoctorReviewRepository DoctorReviews { get; }

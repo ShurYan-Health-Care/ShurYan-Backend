@@ -13,8 +13,11 @@ namespace Shuryan.Application.DTOs.Responses.Doctor
     {
         public string DocumentUrl { get; set; } = string.Empty;
         public DoctorDocumentType Type { get; set; }
+        public string TypeName { get; set; } = string.Empty;
         public VerificationDocumentStatus Status { get; set; }
+        public string StatusName { get; set; } = string.Empty;
         public string? RejectionReason { get; set; }
         public Guid DoctorId { get; set; }
+        public string DoctorName { get; set; } = string.Empty;
     }
 }

@@ -65,7 +65,7 @@ namespace Shuryan.Application.Interfaces
         #region Address Operations
         Task<AddressResponse?> GetPatientAddressAsync(Guid patientId);
         Task<AddressResponse> UpdatePatientAddressAsync(Guid patientId, UpdateAddressRequest request);
-        Task<AddressResponse> CreatePatientAddressAsync(CreateAddressRequest request);
+        Task<AddressResponse> CreatePatientAddressAsync(CreateAddressRequest request); // Keep original signature
         #endregion
 
         #region Profile Operations

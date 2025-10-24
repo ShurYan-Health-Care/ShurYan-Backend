@@ -1540,7 +1540,7 @@ namespace Shuryan.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<PharmacyDocumentResponse>>> RejectDocument(Guid id, Guid documentId, [FromBody] RejectDocumentRequest request)
+        public async Task<ActionResult<ApiResponse<PharmacyDocumentResponse>>> RejectDocument(Guid id, Guid documentId, [FromBody] Shuryan.Application.DTOs.Requests.Pharmacy.RejectDocumentRequest request)
         {
             if (!ModelState.IsValid)
             {

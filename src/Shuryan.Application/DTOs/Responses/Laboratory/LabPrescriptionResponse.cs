@@ -11,7 +11,9 @@ namespace Shuryan.Application.DTOs.Responses.Laboratory
     {
         public Guid AppointmentId { get; set; }
         public Guid DoctorId { get; set; }
+        public string DoctorName { get; set; } = string.Empty;
         public Guid PatientId { get; set; }
+        public string PatientName { get; set; } = string.Empty;
         public string? GeneralNotes { get; set; }
         public IEnumerable<LabPrescriptionItemResponse> Items { get; set; } = new List<LabPrescriptionItemResponse>();
     }
