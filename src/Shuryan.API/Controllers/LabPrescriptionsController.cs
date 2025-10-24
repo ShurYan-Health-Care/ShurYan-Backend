@@ -2,21 +2,21 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Shuryan.Application.DTOs.Common.Base; // Added
+using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Laboratory;
 using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Application.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq; // Added
-using System.Security.Claims; // Added
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Shuryan.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Secure the controller by default
+    [Authorize]
     public class LabPrescriptionsController : ControllerBase
     {
         private readonly ILabPrescriptionService _prescriptionService;
@@ -31,31 +31,29 @@ namespace Shuryan.API.Controllers
         }
 
         #region Helper Methods
-
-        /// <summary>
-        /// Gets the current authenticated user's ID.
-        /// </summary>
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            return string.IsNullOrEmpty(userIdClaim) ? Guid.Empty : Guid.Parse(userIdClaim);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Guid.Empty;
+            }
+            return userId;
         }
 
-        /// <summary>
-        /// Checks if the current user is an Admin.
-        /// </summary>
+        private bool IsAccessingOwnData(Guid userId)
+        {
+            var currentUserId = GetCurrentUserId();
+            return currentUserId == userId;
+        }
+
         private bool IsAdmin()
         {
             return User.IsInRole("Admin");
         }
-
         #endregion
 
         #region CRUD Operations
-
-        /// <summary>
-        /// Get all lab prescriptions with optional filters (Admin only)
-        /// </summary>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabPrescriptionResponse>>), StatusCodes.Status200OK)]
@@ -68,7 +66,8 @@ namespace Shuryan.API.Controllers
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            _logger.LogInformation("Admin {AdminId} getting all lab prescriptions with filters.", GetCurrentUserId());
+            _logger.LogInformation("Admin {AdminId} getting all lab prescriptions with filters", GetCurrentUserId());
+            
             try
             {
                 var prescriptions = await _prescriptionService.GetAllLabPrescriptionsAsync(
@@ -76,18 +75,24 @@ namespace Shuryan.API.Controllers
                     patientId,
                     startDate,
                     endDate);
-                return Ok(ApiResponse<IEnumerable<LabPrescriptionResponse>>.Success(prescriptions, "Prescriptions retrieved successfully"));
+                
+                _logger.LogInformation("Successfully retrieved {Count} lab prescriptions", prescriptions.Count());
+                return Ok(ApiResponse<IEnumerable<LabPrescriptionResponse>>.Success(
+                    prescriptions,
+                    "Prescriptions retrieved successfully"
+                ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting all lab prescriptions");
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving prescriptions", new[] { ex.Message }, 500));
+                _logger.LogError(ex, "Error retrieving all lab prescriptions");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving prescriptions",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
-        /// <summary>
-        /// Get lab prescription by ID. Accessible by owner (Patient, Doctor) or Admin.
-        /// </summary>
         [HttpGet("{id}")]
         [Authorize(Roles = "Patient,Doctor,Admin")]
         [ProducesResponseType(typeof(ApiResponse<LabPrescriptionResponse>), StatusCodes.Status200OK)]
@@ -97,37 +102,49 @@ namespace Shuryan.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ApiResponse<LabPrescriptionResponse>>> GetLabPrescription(Guid id)
         {
-            _logger.LogInformation("Attempting to get lab prescription {PrescriptionId}", id);
+            _logger.LogInformation("Get lab prescription request for prescription: {PrescriptionId}", id);
+            
             try
             {
                 var prescription = await _prescriptionService.GetLabPrescriptionByIdAsync(id);
                 if (prescription == null)
                 {
                     _logger.LogWarning("Lab prescription not found: {PrescriptionId}", id);
-                    return NotFound(ApiResponse<object>.Failure($"Lab prescription with ID {id} not found", statusCode: 404));
+                    return NotFound(ApiResponse<object>.Failure(
+                        $"Lab prescription with ID {id} not found",
+                        statusCode: 404
+                    ));
                 }
 
-                // Security Check
+                // Security Check: Users can only access prescriptions they own unless they're Admin
                 var currentUserId = GetCurrentUserId();
                 if (!IsAdmin() && prescription.PatientId != currentUserId && prescription.DoctorId != currentUserId)
                 {
                     _logger.LogWarning("Forbidden: User {CurrentUserId} attempted to access prescription {PrescriptionId} belonging to Patient {PatientId} and Doctor {DoctorId}",
                         currentUserId, id, prescription.PatientId, prescription.DoctorId);
-                    return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("You are not authorized to view this prescription", statusCode: 403));
+                    return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(
+                        "You are not authorized to view this prescription",
+                        statusCode: 403
+                    ));
                 }
 
-                return Ok(ApiResponse<LabPrescriptionResponse>.Success(prescription, "Prescription retrieved successfully"));
+                _logger.LogInformation("Lab prescription retrieved successfully: {PrescriptionId}", id);
+                return Ok(ApiResponse<LabPrescriptionResponse>.Success(
+                    prescription,
+                    "Prescription retrieved successfully"
+                ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting lab prescription {PrescriptionId}", id);
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving the prescription", new[] { ex.Message }, 500));
+                _logger.LogError(ex, "Error retrieving lab prescription {PrescriptionId}", id);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving the prescription",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
-        /// <summary>
-        /// Create a new lab prescription (Doctor only)
-        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Doctor")]
         [ProducesResponseType(typeof(ApiResponse<LabPrescriptionResponse>), StatusCodes.Status201Created)]
@@ -138,21 +155,30 @@ namespace Shuryan.API.Controllers
         public async Task<ActionResult<ApiResponse<LabPrescriptionResponse>>> CreateLabPrescription(
             [FromBody] CreateLabPrescriptionRequest request)
         {
-            _logger.LogInformation("Attempting to create lab prescription for patient {PatientId} by doctor {DoctorId}", request.PatientId, request.DoctorId);
+            _logger.LogInformation("Create lab prescription request for patient {PatientId} by doctor {DoctorId}", 
+                request.PatientId, request.DoctorId);
+
+            // Security check: Doctor can only create prescriptions for themselves
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId != request.DoctorId)
+            {
+                _logger.LogWarning("Forbidden: Doctor {CurrentUserId} attempted to create prescription as doctor {DoctorId}", 
+                    currentUserId, request.DoctorId);
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(
+                    "Doctors can only create prescriptions as themselves",
+                    statusCode: 403
+                ));
+            }
 
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
                 _logger.LogWarning("Invalid model state for CreateLabPrescription. Errors: {Errors}", string.Join(", ", errors));
-                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
-            }
-
-            // Security check: Doctor can only create prescriptions for themself
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId != request.DoctorId)
-            {
-                _logger.LogWarning("Forbidden: Doctor {CurrentUserId} attempted to create prescription as doctor {DoctorId}", currentUserId, request.DoctorId);
-                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("Doctors can only create prescriptions as themselves", statusCode: 403));
+                return BadRequest(ApiResponse<object>.Failure(
+                    "Invalid request data",
+                    errors,
+                    400
+                ));
             }
 
             try
@@ -160,21 +186,32 @@ namespace Shuryan.API.Controllers
                 var prescription = await _prescriptionService.CreateLabPrescriptionAsync(request);
                 _logger.LogInformation("Lab prescription {PrescriptionId} created successfully", prescription.Id);
 
-                var response = ApiResponse<LabPrescriptionResponse>.Success(prescription, "Prescription created successfully", 201);
+                var response = ApiResponse<LabPrescriptionResponse>.Success(
+                    prescription,
+                    "Prescription created successfully",
+                    201
+                );
                 return CreatedAtAction(
                     nameof(GetLabPrescription),
                     new { id = prescription.Id },
                     response);
             }
-            catch (ArgumentException ex) // e.g., Patient, Doctor, or Appointment not found
+            catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Bad request on lab prescription creation");
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 400
+                ));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating lab prescription");
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while creating the prescription", new[] { ex.Message }, 500));
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while creating the prescription",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -483,4 +520,5 @@ namespace Shuryan.API.Controllers
         #endregion
     }
 }
+
 

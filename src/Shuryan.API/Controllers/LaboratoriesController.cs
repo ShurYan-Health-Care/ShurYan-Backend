@@ -16,7 +16,7 @@ namespace Shuryan.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Secure the controller by default
+    [Authorize]
     public class LaboratoriesController : ControllerBase
     {
         private readonly ILaboratoryService _laboratoryService;
@@ -31,33 +31,31 @@ namespace Shuryan.API.Controllers
         }
 
         #region Helper Methods
-
-        /// <summary>
-        /// Gets the current authenticated user's ID.
-        /// </summary>
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            return string.IsNullOrEmpty(userIdClaim) ? Guid.Empty : Guid.Parse(userIdClaim);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Guid.Empty;
+            }
+            return userId;
         }
 
-        /// <summary>
-        /// Checks if the current user is an Admin.
-        /// </summary>
+        private bool IsAccessingOwnData(Guid laboratoryId)
+        {
+            var currentUserId = GetCurrentUserId();
+            return currentUserId == laboratoryId;
+        }
+
         private bool IsAdmin()
         {
             return User.IsInRole("Admin");
         }
-
         #endregion
 
         #region CRUD Operations
-
-        /// <summary>
-        /// Get all laboratories with optional filters (Public)
-        /// </summary>
         [HttpGet]
-        [AllowAnonymous] // This is a public search endpoint
+        [AllowAnonymous]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<LaboratoryResponse>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ApiResponse<IEnumerable<LaboratoryResponse>>>> GetAllLaboratories(
@@ -78,23 +76,22 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Successfully retrieved {Count} laboratories", laboratories.Count());
                 return Ok(ApiResponse<IEnumerable<LaboratoryResponse>>.Success(
                     laboratories,
-                    "Laboratories retrieved successfully"));
+                    "Laboratories retrieved successfully"
+                ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting all laboratories");
+                _logger.LogError(ex, "Error retrieving all laboratories");
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "An error occurred while retrieving laboratories",
+                    "An unexpected error occurred while retrieving laboratories",
                     new[] { ex.Message },
-                    500));
+                    500
+                ));
             }
         }
 
-        /// <summary>
-        /// Get laboratory by ID (Public)
-        /// </summary>
         [HttpGet("{id}")]
-        [AllowAnonymous] // Public endpoint
+        [AllowAnonymous]
         [ProducesResponseType(typeof(ApiResponse<LaboratoryResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
@@ -110,59 +107,77 @@ namespace Shuryan.API.Controllers
                     _logger.LogWarning("Laboratory not found for laboratory: {LaboratoryId}", id);
                     return NotFound(ApiResponse<object>.Failure(
                         $"Laboratory with ID {id} not found",
-                        statusCode: 404));
+                        statusCode: 404
+                    ));
                 }
 
                 _logger.LogInformation("Laboratory retrieved successfully for laboratory: {LaboratoryId}", id);
                 return Ok(ApiResponse<LaboratoryResponse>.Success(
                     laboratory,
-                    "Laboratory retrieved successfully"));
+                    "Laboratory retrieved successfully"
+                ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting laboratory for laboratory: {LaboratoryId}", id);
+                _logger.LogError(ex, "Error retrieving laboratory for laboratory: {LaboratoryId}", id);
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "An error occurred while retrieving the laboratory",
+                    "An unexpected error occurred while retrieving the laboratory",
                     new[] { ex.Message },
-                    500));
+                    500
+                ));
             }
         }
 
         /// <summary>
         /// Get laboratory basic info (Public)
         /// </summary>
-        [HttpGet("{id}/basic")]
-        [AllowAnonymous] // Public endpoint
-        [ProducesResponseType(typeof(ApiResponse<LaboratoryBasicResponse>), StatusCodes.Status200OK)]
+        [HttpGet("me")]
+        [Authorize(Roles = "Laboratory")]
+        [ProducesResponseType(typeof(ApiResponse<LaboratoryResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<LaboratoryBasicResponse>>> GetLaboratoryBasicInfo(Guid id)
+        public async Task<ActionResult<ApiResponse<LaboratoryResponse>>> GetMyProfile()
         {
-            _logger.LogInformation("Get laboratory basic info request for laboratory: {LaboratoryId}", id);
+            var currentLaboratoryId = GetCurrentUserId();
+
+            if (currentLaboratoryId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to access laboratory profile - invalid token");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "Invalid or missing authentication token",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get laboratory profile request for laboratory: {LaboratoryId}", currentLaboratoryId);
 
             try
             {
-                var laboratory = await _laboratoryService.GetLaboratoryBasicInfoAsync(id);
+                var laboratory = await _laboratoryService.GetLaboratoryByIdAsync(currentLaboratoryId);
                 if (laboratory == null)
                 {
-                    _logger.LogWarning("Laboratory basic info not found for laboratory: {LaboratoryId}", id);
+                    _logger.LogWarning("Laboratory profile not found for laboratory: {LaboratoryId}", currentLaboratoryId);
                     return NotFound(ApiResponse<object>.Failure(
-                        $"Laboratory with ID {id} not found",
-                        statusCode: 404));
+                        $"Laboratory with ID {currentLaboratoryId} not found",
+                        statusCode: 404
+                    ));
                 }
 
-                _logger.LogInformation("Laboratory basic info retrieved successfully for laboratory: {LaboratoryId}", id);
-                return Ok(ApiResponse<LaboratoryBasicResponse>.Success(
+                _logger.LogInformation("Laboratory profile retrieved successfully for laboratory: {LaboratoryId}", currentLaboratoryId);
+                return Ok(ApiResponse<LaboratoryResponse>.Success(
                     laboratory,
-                    "Laboratory basic info retrieved successfully"));
+                    "Profile retrieved successfully"
+                ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting laboratory basic info for laboratory: {LaboratoryId}", id);
+                _logger.LogError(ex, "Error retrieving laboratory profile for laboratory: {LaboratoryId}", currentLaboratoryId);
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "An error occurred while retrieving the laboratory basic info",
+                    "An unexpected error occurred while retrieving the profile",
                     new[] { ex.Message },
-                    500));
+                    500
+                ));
             }
         }
 
@@ -219,9 +234,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Update laboratory (Laboratory owner or Admin)
-        /// </summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Laboratory,Admin")]
         [ProducesResponseType(typeof(ApiResponse<LaboratoryResponse>), StatusCodes.Status200OK)]
@@ -234,45 +246,56 @@ namespace Shuryan.API.Controllers
             Guid id,
             [FromBody] UpdateLaboratoryRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ApiResponse<object>.Failure(
-                    "Invalid model state",
-                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToArray(),
-                    400));
-
             _logger.LogInformation("Update laboratory request for laboratory: {LaboratoryId}", id);
 
-            // Security check: Labs can only update their own profile
-            var currentUserId = GetCurrentUserId();
-            if (User.IsInRole("Laboratory") && !IsAdmin() && currentUserId != id)
+            // Ownership check: Laboratories can only update their own profile unless they're Admin
+            if (!IsAdmin() && !IsAccessingOwnData(id))
             {
-                _logger.LogWarning("Forbidden: Laboratory {CurrentUserId} attempted to update another laboratory {LaboratoryId}", currentUserId, id);
-                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("Laboratories can only update their own profile", statusCode: 403));
+                _logger.LogWarning("Forbidden: Laboratory {CurrentUserId} attempted to update another laboratory {LaboratoryId}", 
+                    GetCurrentUserId(), id);
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(
+                    "Laboratories can only update their own profile",
+                    statusCode: 403
+                ));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("Invalid model state for UpdateLaboratory for laboratory: {LaboratoryId}. Errors: {Errors}", 
+                    id, string.Join(", ", errors));
+                return BadRequest(ApiResponse<object>.Failure(
+                    "Invalid request data",
+                    errors,
+                    400
+                ));
             }
 
             try
             {
                 var laboratory = await _laboratoryService.UpdateLaboratoryAsync(id, request);
-
                 _logger.LogInformation("Laboratory updated successfully for laboratory: {LaboratoryId}", id);
                 return Ok(ApiResponse<LaboratoryResponse>.Success(
                     laboratory,
-                    "Laboratory updated successfully"));
+                    "Laboratory updated successfully"
+                ));
             }
-            catch (ArgumentException ex) // Not found
+            catch (ArgumentException ex)
             {
-                _logger.LogWarning("Laboratory not found for update: {LaboratoryId}", id);
+                _logger.LogWarning(ex, "Laboratory not found for update: {LaboratoryId}", id);
                 return NotFound(ApiResponse<object>.Failure(
                     ex.Message,
-                    statusCode: 404));
+                    statusCode: 404
+                ));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating laboratory for laboratory: {LaboratoryId}", id);
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "An error occurred while updating the laboratory",
+                    "An unexpected error occurred while updating the laboratory",
                     new[] { ex.Message },
-                    500));
+                    500
+                ));
             }
         }
 
@@ -350,9 +373,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Add a new service to laboratory (Laboratory owner or Admin)
-        /// </summary>
         [HttpPost("{id}/services")]
         [Authorize(Roles = "Laboratory,Admin")]
         [ProducesResponseType(typeof(ApiResponse<LabServiceResponse>), StatusCodes.Status201Created)]
@@ -364,51 +384,62 @@ namespace Shuryan.API.Controllers
             Guid id,
             [FromBody] CreateLabServiceRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ApiResponse<object>.Failure(
-                    "Invalid model state",
-                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToArray(),
-                    400));
-
             _logger.LogInformation("Add laboratory service request for laboratory: {LaboratoryId}", id);
 
-            // Security check: Labs can only add services to their own profile
-            var currentUserId = GetCurrentUserId();
-            if (User.IsInRole("Laboratory") && !IsAdmin() && currentUserId != id)
+            // Ownership check: Laboratories can only add services to their own profile unless they're Admin
+            if (!IsAdmin() && !IsAccessingOwnData(id))
             {
-                _logger.LogWarning("Forbidden: Laboratory {CurrentUserId} attempted to add service to another laboratory {LaboratoryId}", currentUserId, id);
-                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("Laboratories can only add services to their own profile", statusCode: 403));
+                _logger.LogWarning("Forbidden: Laboratory {CurrentUserId} attempted to add service to another laboratory {LaboratoryId}", 
+                    GetCurrentUserId(), id);
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(
+                    "Laboratories can only add services to their own profile",
+                    statusCode: 403
+                ));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("Invalid model state for AddLaboratoryService for laboratory: {LaboratoryId}. Errors: {Errors}", 
+                    id, string.Join(", ", errors));
+                return BadRequest(ApiResponse<object>.Failure(
+                    "Invalid request data",
+                    errors,
+                    400
+                ));
             }
 
             try
             {
                 var service = await _laboratoryService.AddLaboratoryServiceAsync(id, request);
-
                 _logger.LogInformation("Laboratory service added successfully for laboratory: {LaboratoryId}", id);
 
                 var response = ApiResponse<LabServiceResponse>.Success(
-                        service,
-                        "Laboratory service added successfully", 201);
-
+                    service,
+                    "Laboratory service added successfully",
+                    201
+                );
                 return CreatedAtAction(
-                    nameof(GetLaboratoryServices), // TODO: Should be GetServiceById
+                    nameof(GetLaboratoryServices),
                     new { id },
                     response);
             }
-            catch (ArgumentException ex) // e.g., Lab not found, or test not found
+            catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid argument while adding service to laboratory: {LaboratoryId}", id);
                 return BadRequest(ApiResponse<object>.Failure(
                     ex.Message,
-                    statusCode: 400));
+                    statusCode: 400
+                ));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding service to laboratory: {LaboratoryId}", id);
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "An error occurred while adding the laboratory service",
+                    "An unexpected error occurred while adding the laboratory service",
                     new[] { ex.Message },
-                    500));
+                    500
+                ));
             }
         }
 
@@ -688,3 +719,4 @@ namespace Shuryan.API.Controllers
         #endregion
     }
 }
+

@@ -17,7 +17,7 @@ namespace Shuryan.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Secure the controller by default
+    [Authorize]
     public class LabOrdersController : ControllerBase
     {
         private readonly ILabOrderService _labOrderService;
@@ -32,29 +32,29 @@ namespace Shuryan.API.Controllers
         }
 
         #region Helper Methods
-
-        /// Gets the current authenticated user's ID.
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            return string.IsNullOrEmpty(userIdClaim) ? Guid.Empty : Guid.Parse(userIdClaim);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Guid.Empty;
+            }
+            return userId;
         }
 
-        /// <summary>
-        /// Checks if the current user is an Admin.
-        /// </summary>
+        private bool IsAccessingOwnData(Guid userId)
+        {
+            var currentUserId = GetCurrentUserId();
+            return currentUserId == userId;
+        }
+
         private bool IsAdmin()
         {
             return User.IsInRole("Admin");
         }
-
         #endregion
 
         #region CRUD Operations
-
-        /// <summary>
-        /// Get all lab orders with optional filters (Admin only)
-        /// </summary>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabOrderResponse>>), StatusCodes.Status200OK)]
@@ -68,7 +68,8 @@ namespace Shuryan.API.Controllers
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            _logger.LogInformation("Admin user {AdminId} getting all lab orders with filters.", GetCurrentUserId());
+            _logger.LogInformation("Admin user {AdminId} getting all lab orders with filters", GetCurrentUserId());
+            
             try
             {
                 var orders = await _labOrderService.GetAllLabOrdersAsync(
@@ -77,12 +78,21 @@ namespace Shuryan.API.Controllers
                     status,
                     startDate,
                     endDate);
-                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(orders, "Lab orders retrieved successfully"));
+                
+                _logger.LogInformation("Successfully retrieved {Count} lab orders", orders.Count());
+                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(
+                    orders,
+                    "Lab orders retrieved successfully"
+                ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting all lab orders");
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving lab orders", new[] { ex.Message }, 500));
+                _logger.LogError(ex, "Error retrieving all lab orders");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving lab orders",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -121,9 +131,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Get patient's lab orders. Accessible by the Patient, Doctor, or Admin.
-        /// </summary>
         [HttpGet("patient/{patientId}")]
         [Authorize(Roles = "Patient,Doctor,Admin")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabOrderResponse>>), StatusCodes.Status200OK)]
@@ -132,30 +139,39 @@ namespace Shuryan.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ApiResponse<IEnumerable<LabOrderResponse>>>> GetPatientLabOrders(Guid patientId)
         {
-            _logger.LogInformation("Attempting to get lab orders for patient {PatientId}", patientId);
+            _logger.LogInformation("Get lab orders request for patient: {PatientId}", patientId);
 
-            var currentUserId = GetCurrentUserId();
-            if (User.IsInRole("Patient") && !IsAdmin() && currentUserId != patientId)
+            // Ownership check: Patients can only view their own lab orders unless they're Admin or Doctor
+            if (User.IsInRole("Patient") && !IsAdmin() && !IsAccessingOwnData(patientId))
             {
-                _logger.LogWarning("Forbidden: Patient {CurrentUserId} attempted to access orders of patient {PatientId}", currentUserId, patientId);
-                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("Patients can only view their own lab orders", statusCode: 403));
+                _logger.LogWarning("Forbidden: Patient {CurrentUserId} attempted to access orders of patient {PatientId}", 
+                    GetCurrentUserId(), patientId);
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(
+                    "Patients can only view their own lab orders",
+                    statusCode: 403
+                ));
             }
 
             try
             {
                 var orders = await _labOrderService.GetPatientLabOrdersAsync(patientId);
-                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(orders, "Patient lab orders retrieved successfully"));
+                _logger.LogInformation("Successfully retrieved {Count} lab orders for patient: {PatientId}", orders.Count(), patientId);
+                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(
+                    orders,
+                    "Patient lab orders retrieved successfully"
+                ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting lab orders for patient {PatientId}", patientId);
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving orders", new[] { ex.Message }, 500));
+                _logger.LogError(ex, "Error retrieving lab orders for patient {PatientId}", patientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving orders",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
-        /// <summary>
-        /// Get laboratory's lab orders. Accessible by the Laboratory or Admin.
-        /// </summary>
         [HttpGet("laboratory/{laboratoryId}")]
         [Authorize(Roles = "Laboratory,Admin")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabOrderResponse>>), StatusCodes.Status200OK)]
@@ -164,30 +180,39 @@ namespace Shuryan.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ApiResponse<IEnumerable<LabOrderResponse>>>> GetLaboratoryLabOrders(Guid laboratoryId)
         {
-            _logger.LogInformation("Attempting to get lab orders for laboratory {LaboratoryId}", laboratoryId);
+            _logger.LogInformation("Get lab orders request for laboratory: {LaboratoryId}", laboratoryId);
 
-            var currentUserId = GetCurrentUserId();
-            if (User.IsInRole("Laboratory") && !IsAdmin() && currentUserId != laboratoryId)
+            // Ownership check: Laboratories can only view their own lab orders unless they're Admin
+            if (!IsAdmin() && !IsAccessingOwnData(laboratoryId))
             {
-                _logger.LogWarning("Forbidden: Laboratory {CurrentUserId} attempted to access orders of laboratory {LaboratoryId}", currentUserId, laboratoryId);
-                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("Laboratories can only view their own lab orders", statusCode: 403));
+                _logger.LogWarning("Forbidden: Laboratory {CurrentUserId} attempted to access orders of laboratory {LaboratoryId}", 
+                    GetCurrentUserId(), laboratoryId);
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(
+                    "Laboratories can only view their own lab orders",
+                    statusCode: 403
+                ));
             }
 
             try
             {
                 var orders = await _labOrderService.GetLaboratoryLabOrdersAsync(laboratoryId);
-                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(orders, "Laboratory lab orders retrieved successfully"));
+                _logger.LogInformation("Successfully retrieved {Count} lab orders for laboratory: {LaboratoryId}", orders.Count(), laboratoryId);
+                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(
+                    orders,
+                    "Laboratory lab orders retrieved successfully"
+                ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting lab orders for laboratory {LaboratoryId}", laboratoryId);
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving orders", new[] { ex.Message }, 500));
+                _logger.LogError(ex, "Error retrieving lab orders for laboratory {LaboratoryId}", laboratoryId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving orders",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
-        /// <summary>
-        /// Create a new lab order. Accessible by Patient or Doctor.
-        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Patient,Doctor")]
         [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status201Created)]
@@ -197,13 +222,17 @@ namespace Shuryan.API.Controllers
         public async Task<ActionResult<ApiResponse<LabOrderResponse>>> CreateLabOrder(
             [FromBody] CreateLabOrderRequest request)
         {
-            _logger.LogInformation("Attempting to create lab order for patient {PatientId}", request.PatientId);
+            _logger.LogInformation("Create lab order request for patient: {PatientId}", request.PatientId);
 
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
                 _logger.LogWarning("Invalid model state for CreateLabOrder. Errors: {Errors}", string.Join(", ", errors));
-                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
+                return BadRequest(ApiResponse<object>.Failure(
+                    "Invalid request data",
+                    errors,
+                    400
+                ));
             }
 
             try
@@ -211,21 +240,32 @@ namespace Shuryan.API.Controllers
                 var order = await _labOrderService.CreateLabOrderAsync(request);
                 _logger.LogInformation("Lab order {OrderId} created successfully", order.Id);
 
-                var response = ApiResponse<LabOrderResponse>.Success(order, "Lab order created successfully", 201);
+                var response = ApiResponse<LabOrderResponse>.Success(
+                    order,
+                    "Lab order created successfully",
+                    201
+                );
                 return CreatedAtAction(
                     nameof(GetLabOrder),
                     new { id = order.Id },
                     response);
             }
-            catch (ArgumentException ex) // e.g., Patient, Lab, or Test not found
+            catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Bad request on lab order creation");
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 400
+                ));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating lab order");
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while creating the lab order", new[] { ex.Message }, 500));
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while creating the lab order",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -691,3 +731,4 @@ namespace Shuryan.API.Controllers
         public string? TransactionId { get; set; }
     }
 }
+
