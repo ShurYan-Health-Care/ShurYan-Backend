@@ -9,7 +9,7 @@ namespace Shuryan.Application.Interfaces
 {
     public interface IPrescriptionService
     {
-        // ==================== Basic CRUD Operations ====================
+        #region Basic CRUD Operations
 
         /// <summary>
         /// Get prescription by ID with full details
@@ -31,7 +31,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<bool> DeletePrescriptionAsync(Guid id);
 
-        // ==================== Prescription Lifecycle Operations ====================
+        #endregion
+
+        #region Prescription Lifecycle Operations
 
         /// <summary>
         /// Cancel a prescription with reason
@@ -43,7 +45,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<PrescriptionResponse> RenewPrescriptionAsync(Guid id, RenewPrescriptionRequest request);
 
-        // ==================== Query Operations ====================
+        #endregion
+
+        #region Query Operations
 
         /// <summary>
         /// Advanced query with multiple filters
@@ -65,7 +69,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<int> GetTotalPrescriptionsCountAsync();
 
-        // ==================== Patient Related Operations ====================
+        #endregion
+
+        #region Patient Related Operations
 
         /// <summary>
         /// Get all prescriptions for a specific patient
@@ -94,7 +100,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<IEnumerable<CurrentMedicationResponse>> GetCurrentMedicationsAsync(Guid patientId);
 
-        // ==================== Doctor Related Operations ====================
+        #endregion
+
+        #region Doctor Related Operations
 
         /// <summary>
         /// Get all prescriptions created by a specific doctor
@@ -113,7 +121,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<int> GetDoctorPrescriptionsCountAsync(Guid doctorId);
 
-        // ==================== Pharmacy Related Operations ====================
+        #endregion
+
+        #region Pharmacy Related Operations
 
         /// <summary>
         /// Get prescriptions containing a specific medication
@@ -150,14 +160,18 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task AcceptPrescriptionDeliveryAsync(Guid id, AcceptDeliveryRequest request);
 
-        // ==================== Analytics & Statistics Operations ====================
+        #endregion
+
+        #region Analytics & Statistics Operations
 
         /// <summary>
         /// Get prescription status history (audit trail)
         /// </summary>
         Task<IEnumerable<PrescriptionStatusHistory>> GetStatusHistoryAsync(Guid id);
 
-        // ==================== Date Range Operations ====================
+        #endregion
+
+        #region Date Range Operations
 
         /// <summary>
         /// Get prescriptions created within a date range
@@ -182,7 +196,9 @@ namespace Shuryan.Application.Interfaces
             DateTime startDate,
             DateTime endDate);
 
-        // ==================== Appointment Related Operations ====================
+        #endregion
+
+        #region Appointment Related Operations
 
         /// <summary>
         /// Get prescription for a specific appointment
@@ -193,5 +209,7 @@ namespace Shuryan.Application.Interfaces
         /// Check if appointment already has a prescription
         /// </summary>
         Task<bool> AppointmentHasPrescriptionAsync(Guid appointmentId);
+
+        #endregion
     }
 }

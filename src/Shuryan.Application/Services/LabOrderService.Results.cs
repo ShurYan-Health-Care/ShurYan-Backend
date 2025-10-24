@@ -13,7 +13,7 @@ namespace Shuryan.Application.Services
 {
     public partial class LabOrderService
     {
-        // ==================== Results Management ====================
+        #region Results Management
 
         public async Task<IEnumerable<LabResultResponse>> GetLabOrderResultsAsync(Guid labOrderId)
         {
@@ -76,16 +76,16 @@ namespace Shuryan.Application.Services
                 // Update properties
                 if (!string.IsNullOrEmpty(request.ResultValue))
                     result.ResultValue = request.ResultValue;
-                
+
                 if (request.ReferenceRange != null)
                     result.ReferenceRange = request.ReferenceRange;
-                
+
                 if (request.Unit != null)
                     result.Unit = request.Unit;
-                
+
                 if (request.Notes != null)
                     result.Notes = request.Notes;
-                
+
                 result.UpdatedAt = DateTime.UtcNow;
                 await _unitOfWork.SaveChangesAsync();
 
@@ -101,7 +101,9 @@ namespace Shuryan.Application.Services
             }
         }
 
-        // ==================== Statistics ====================
+        #endregion
+
+        #region Statistics
 
         public async Task<LabOrderStatistics> GetLabOrderStatisticsAsync(
             Guid? laboratoryId = null,
@@ -133,8 +135,8 @@ namespace Shuryan.Application.Services
                     CancelledOrders = orders.Count(o => o.Status == LabOrderStatus.CancelledByPatient || o.Status == LabOrderStatus.CancelledByLab),
                     TotalRevenue = orders.Where(o => o.Status == LabOrderStatus.Completed)
                                          .Sum(o => o.TestsTotalCost + o.SampleCollectionDeliveryCost),
-                    AverageOrderValue = orders.Any() 
-                        ? orders.Average(o => o.TestsTotalCost + o.SampleCollectionDeliveryCost) 
+                    AverageOrderValue = orders.Any()
+                        ? orders.Average(o => o.TestsTotalCost + o.SampleCollectionDeliveryCost)
                         : 0
                 };
 
@@ -147,5 +149,7 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+
+        #endregion
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Shuryan.Application.DTOs.Requests.Laboratory;
 using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Application.Interfaces;
-using Shuryan.Core.Entities.Shared;
+using Shuryan.Core.Entities.Shared; // Assuming LaboratoryDocument is here
 using Shuryan.Core.Enums;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using System;
@@ -28,6 +28,8 @@ namespace Shuryan.Application.Services
             _mapper = mapper;
             _logger = logger;
         }
+
+        #region CRUD Operations
 
         public async Task<IEnumerable<LaboratoryDocumentResponse>> GetLaboratoryDocumentsAsync(Guid laboratoryId)
         {
@@ -122,6 +124,7 @@ namespace Shuryan.Application.Services
 
                 _logger.LogInformation("Uploaded document {DocumentId} for laboratory {LaboratoryId}", document.Id, laboratoryId);
 
+                // Re-fetch to ensure all properties (like LaboratoryName) are populated correctly
                 return await GetDocumentByIdAsync(document.Id)
                     ?? throw new InvalidOperationException("Failed to retrieve uploaded document");
             }
@@ -140,21 +143,31 @@ namespace Shuryan.Application.Services
                 if (document == null)
                     return false;
 
-                // Mark as rejected/deleted
+                // Instead of deleting, mark as Rejected (soft delete concept for documents)
                 document.Status = VerificationDocumentStatus.Rejected;
-                document.RejectionReason = "Document deleted";
+                document.RejectionReason = "Document deleted by user/admin."; // Indicate deletion
                 document.UpdatedAt = DateTime.UtcNow;
+                // Consider adding an UpdatedBy field if tracking user actions
+                // document.UpdatedBy = GetCurrentUserId();
+
+                // Call Update method instead of Remove
+                _unitOfWork.LaboratoryDocuments.Update(document); // Assuming an Update method exists
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Deleted document {DocumentId}", id);
+                _logger.LogInformation("Marked document {DocumentId} as deleted/rejected", id);
                 return true;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting document {DocumentId}", id);
-                throw;
+                throw; // Re-throw the exception to be handled by the controller
             }
         }
+
+
+        #endregion
+
+        #region Verification Operations
 
         public async Task<LaboratoryDocumentResponse> ApproveDocumentAsync(Guid id)
         {
@@ -164,9 +177,20 @@ namespace Shuryan.Application.Services
                 if (document == null)
                     throw new ArgumentException($"Document with ID {id} not found");
 
+                if (document.Status == VerificationDocumentStatus.Approved)
+                {
+                    _logger.LogWarning("Document {DocumentId} is already approved.", id);
+                    // Return current state without changes or throw specific exception
+                    return await GetDocumentByIdAsync(id) ?? throw new InvalidOperationException("Failed to retrieve already approved document");
+                }
+
+
                 document.Status = VerificationDocumentStatus.Approved;
-                document.RejectionReason = null;
+                document.RejectionReason = null; // Clear rejection reason on approval
                 document.UpdatedAt = DateTime.UtcNow;
+                // document.UpdatedBy = GetVerifierUserId(); // Add who approved it
+
+                _unitOfWork.LaboratoryDocuments.Update(document);
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("Approved document {DocumentId}", id);
@@ -183,18 +207,33 @@ namespace Shuryan.Application.Services
 
         public async Task<LaboratoryDocumentResponse> RejectDocumentAsync(Guid id, string rejectionReason)
         {
+            if (string.IsNullOrWhiteSpace(rejectionReason))
+            {
+                throw new ArgumentException("Rejection reason cannot be empty when rejecting a document.", nameof(rejectionReason));
+            }
+
             try
             {
                 var document = await _unitOfWork.LaboratoryDocuments.GetByIdAsync(id);
                 if (document == null)
                     throw new ArgumentException($"Document with ID {id} not found");
 
+                if (document.Status == VerificationDocumentStatus.Rejected)
+                {
+                    _logger.LogWarning("Document {DocumentId} is already rejected.", id);
+                    // Return current state or throw exception
+                    return await GetDocumentByIdAsync(id) ?? throw new InvalidOperationException("Failed to retrieve already rejected document");
+                }
+
                 document.Status = VerificationDocumentStatus.Rejected;
                 document.RejectionReason = rejectionReason;
                 document.UpdatedAt = DateTime.UtcNow;
+                // document.UpdatedBy = GetVerifierUserId(); // Add who rejected it
+
+                _unitOfWork.LaboratoryDocuments.Update(document);
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Rejected document {DocumentId}", id);
+                _logger.LogInformation("Rejected document {DocumentId} with reason: {RejectionReason}", id, rejectionReason);
 
                 return await GetDocumentByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve rejected document");
@@ -210,14 +249,22 @@ namespace Shuryan.Application.Services
         {
             try
             {
-                var documents = await _unitOfWork.LaboratoryDocuments.GetAllAsync();
-                var pendingDocuments = documents.Where(d => d.Status == VerificationDocumentStatus.Pending).ToList();
+                // Optimize: Filter directly in the repository if possible
+                var documents = await _unitOfWork.LaboratoryDocuments.FindAsync(d => d.Status == VerificationDocumentStatus.Pending);
+                // var documents = (await _unitOfWork.LaboratoryDocuments.GetAllAsync())
+                //                   .Where(d => d.Status == VerificationDocumentStatus.Pending);
+
 
                 var responses = new List<LaboratoryDocumentResponse>();
-                foreach (var doc in pendingDocuments)
+                // Optimize: Get all required laboratory names in one go if possible
+                var laboratoryIds = documents.Select(d => d.LaboratoryId).Distinct().ToList();
+                var laboratories = (await _unitOfWork.Laboratories.FindAsync(l => laboratoryIds.Contains(l.Id)))
+                                   .ToDictionary(l => l.Id, l => l.Name);
+
+
+                foreach (var doc in documents)
                 {
-                    var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(doc.LaboratoryId);
-                    var laboratoryName = laboratory?.Name ?? "";
+                    var laboratoryName = laboratories.TryGetValue(doc.LaboratoryId, out var name) ? name : "Unknown Laboratory";
 
                     responses.Add(new LaboratoryDocumentResponse
                     {
@@ -229,7 +276,7 @@ namespace Shuryan.Application.Services
                         StatusName = doc.Status.ToString(),
                         RejectionReason = doc.RejectionReason,
                         LaboratoryId = doc.LaboratoryId,
-                        LaboratoryName = laboratoryName,
+                        LaboratoryName = laboratoryName, // Use fetched name
                         CreatedAt = doc.CreatedAt,
                         CreatedBy = doc.CreatedBy,
                         UpdatedAt = doc.UpdatedAt,
@@ -246,5 +293,7 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+
+        #endregion
     }
 }

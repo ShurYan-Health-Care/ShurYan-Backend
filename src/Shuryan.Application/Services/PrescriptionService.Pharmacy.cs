@@ -10,8 +10,7 @@ namespace Shuryan.Application.Services
 {
     public partial class PrescriptionService
     {
-        // ==================== Pharmacy Operations ====================
-
+        #region Pharmacy Operations
         public async Task<PrescriptionVerificationResponse> VerifyPrescriptionAsync(Guid id, string? verificationCode)
         {
             try
@@ -24,13 +23,13 @@ namespace Shuryan.Application.Services
                 var isCancelled = prescription.Status == Core.Enums.PrescriptionStatus.Cancelled;
                 var isExpired = prescription.Status == Core.Enums.PrescriptionStatus.Expired;
                 var isDispensed = prescription.Status == Core.Enums.PrescriptionStatus.Dispensed;
-                
+
                 var signatureValid = !string.IsNullOrEmpty(prescription.DigitalSignature);
                 var isValid = !isCancelled && !isExpired && signatureValid;
-                
+
                 string verificationStatus = "Valid";
                 string? reasonCannotBeDispensed = null;
-                
+
                 if (isCancelled)
                 {
                     verificationStatus = "Cancelled";
@@ -82,7 +81,7 @@ namespace Shuryan.Application.Services
                 // Check if cancelled or expired
                 if (prescription.Status == Core.Enums.PrescriptionStatus.Cancelled)
                     throw new InvalidOperationException("Cannot dispense a cancelled prescription");
-                
+
                 if (prescription.Status == Core.Enums.PrescriptionStatus.Expired)
                     throw new InvalidOperationException("Cannot dispense an expired prescription");
 
@@ -144,7 +143,7 @@ namespace Shuryan.Application.Services
                     });
                 }
 
-                _logger.LogInformation("Prescription {PrescriptionId} dispensed at pharmacy {PharmacyId}", 
+                _logger.LogInformation("Prescription {PrescriptionId} dispensed at pharmacy {PharmacyId}",
                     id, request.PharmacyId);
 
                 return new DispenseResult
@@ -215,7 +214,7 @@ namespace Shuryan.Application.Services
                     pharmacyName = pharmacy?.Name;
                 }
 
-                _logger.LogInformation("Prescription {PrescriptionId} shared with code {ShareCode}", 
+                _logger.LogInformation("Prescription {PrescriptionId} shared with code {ShareCode}",
                     id, shareCode);
 
                 return new SharePrescriptionResult
@@ -244,13 +243,13 @@ namespace Shuryan.Application.Services
             try
             {
                 var records = await _unitOfWork.DispensingRecords.GetByPrescriptionIdAsync(prescriptionId);
-                
+
                 var result = new List<DTOs.Responses.Prescription.DispensingRecord>();
-                
+
                 foreach (var record in records)
                 {
                     var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(record.PharmacyId);
-                    
+
                     // Map dispensed medications
                     var medications = new List<DTOs.Responses.Prescription.DispensedMedicationDetail>();
                     if (record.DispensedMedications != null)
@@ -269,7 +268,7 @@ namespace Shuryan.Application.Services
                             });
                         }
                     }
-                    
+
                     result.Add(new DTOs.Responses.Prescription.DispensingRecord
                     {
                         Id = record.Id,
@@ -286,10 +285,10 @@ namespace Shuryan.Application.Services
                         PatientSignatureConfirmed = record.PatientSignatureConfirmed
                     });
                 }
-                
-                _logger.LogInformation("Retrieved {Count} dispensing records for prescription {PrescriptionId}", 
+
+                _logger.LogInformation("Retrieved {Count} dispensing records for prescription {PrescriptionId}",
                     result.Count, prescriptionId);
-                
+
                 return result;
             }
             catch (Exception ex)
@@ -318,11 +317,11 @@ namespace Shuryan.Application.Services
                 // prescription.DeliveryAcceptedAt = DateTime.UtcNow;
                 // prescription.EstimatedDeliveryTime = request.EstimatedDeliveryTime;
                 // prescription.DeliveryPharmacyId = request.PharmacyId;
-                
+
                 _unitOfWork.Prescriptions.Update(prescription);
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Delivery accepted for prescription {PrescriptionId} by pharmacy {PharmacyId}", 
+                _logger.LogInformation("Delivery accepted for prescription {PrescriptionId} by pharmacy {PharmacyId}",
                     id, request.PharmacyId);
             }
             catch (Exception ex)
@@ -330,6 +329,7 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error accepting delivery for prescription {PrescriptionId}", id);
                 throw;
             }
-        }
+        } 
+        #endregion
     }
 }

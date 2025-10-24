@@ -10,12 +10,10 @@ using Shuryan.Application.Services.Auth;
 using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
 using Shuryan.Core.Interfaces.Repositories;
-using Shuryan.Core.Interfaces.Services;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.Data;
 using Shuryan.Infrastructure.Repositories.Patients;
 using Shuryan.Infrastructure.Repositories.Pharmacies;
-using Shuryan.Infrastructure.Services;
 using Shuryan.Infrastructure.UnitOfWork;
 using Shuryan.Shared.Configurations;
 using Shuryan.Shared.Extensions;
@@ -51,8 +49,7 @@ builder.Services.AddAutoMapper(typeof(Shuryan.Application.Mappers.MappingProfile
 
 
 // ==================== Application Services ====================
-//builder.Services.AddScoped<Shuryan.Core.Interfaces.Services.IDoctorService, Shuryan.Infrastructure.Services.DoctorService>();
-//builder.Services.AddScoped<Shuryan.Application.Interfaces.IDoctorService, Shuryan.Application.Services.DoctorService>();
+builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
 builder.Services.AddScoped<ILaboratoryService, LaboratoryService>();

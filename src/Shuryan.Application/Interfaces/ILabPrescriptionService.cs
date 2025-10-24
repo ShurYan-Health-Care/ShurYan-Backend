@@ -8,7 +8,7 @@ namespace Shuryan.Application.Interfaces
 {
     public interface ILabPrescriptionService
     {
-        // ==================== CRUD Operations ====================
+        #region CRUD Operations
 
         /// <summary>
         /// Get all lab prescriptions with optional filters
@@ -54,7 +54,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<bool> DeleteLabPrescriptionAsync(Guid id);
 
-        // ==================== Prescription Items Management ====================
+        #endregion
+
+        #region Prescription Items Management
 
         /// <summary>
         /// Get prescription items
@@ -70,5 +72,7 @@ namespace Shuryan.Application.Interfaces
         /// Remove item from prescription
         /// </summary>
         Task<bool> RemovePrescriptionItemAsync(Guid itemId);
+
+        #endregion
     }
 }

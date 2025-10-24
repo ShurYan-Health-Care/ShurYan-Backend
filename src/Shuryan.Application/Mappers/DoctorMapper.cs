@@ -1,10 +1,11 @@
 using Shuryan.Application.DTOs.Responses.Clinic;
 using Shuryan.Application.DTOs.Responses.Doctor;
-using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.Common; // Assuming TimeOnly.ToTimeSpan() extension method might be here or in Core.Extensions
 using Shuryan.Core.Entities.External.Clinic;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.Medical.Consultations;
 using Shuryan.Core.Entities.Medical.Schedules;
+using System; // Added for ArgumentNullException
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,7 +13,7 @@ namespace Shuryan.Application.Mappers
 {
     public static class DoctorMapper
     {
-        // ==================== DOCTOR MAPPING ====================
+        #region DOCTOR MAPPING
 
         public static DoctorResponse MapToDoctorResponse(Doctor doctor)
         {
@@ -60,7 +61,9 @@ namespace Shuryan.Application.Mappers
             return doctors?.Select(MapToDoctorResponse) ?? Enumerable.Empty<DoctorResponse>();
         }
 
-        // ==================== AVAILABILITY MAPPING ====================
+        #endregion
+
+        #region AVAILABILITY MAPPING
 
         public static DoctorAvailabilityResponse MapToAvailabilityResponse(DoctorAvailability availability)
         {
@@ -72,6 +75,7 @@ namespace Shuryan.Application.Mappers
                 Id = availability.Id,
                 DoctorId = availability.DoctorId,
                 DayOfWeek = availability.DayOfWeek,
+                // Assuming TimeOnly.ToTimeSpan() is an extension or handled appropriately
                 StartTime = availability.StartTime.ToTimeSpan(),
                 EndTime = availability.EndTime.ToTimeSpan(),
                 CreatedAt = availability.CreatedAt,
@@ -81,7 +85,9 @@ namespace Shuryan.Application.Mappers
             };
         }
 
-        // ==================== CONSULTATION MAPPING ====================
+        #endregion
+
+        #region CONSULTATION MAPPING
 
         public static DoctorConsultationResponse MapToConsultationResponse(DoctorConsultation consultation)
         {
@@ -97,7 +103,9 @@ namespace Shuryan.Application.Mappers
             };
         }
 
-        // ==================== DOCUMENT MAPPING ====================
+        #endregion
+
+        #region DOCUMENT MAPPING
 
         public static DoctorDocumentResponse MapToDocumentResponse(DoctorDocument document)
         {
@@ -117,7 +125,9 @@ namespace Shuryan.Application.Mappers
             };
         }
 
-        // ==================== OVERRIDE MAPPING ====================
+        #endregion
+
+        #region OVERRIDE MAPPING
 
         public static DoctorOverrideResponse MapToOverrideResponse(DoctorOverride overrideSchedule)
         {
@@ -136,7 +146,9 @@ namespace Shuryan.Application.Mappers
             };
         }
 
-        // ==================== CLINIC MAPPING (Helper) ====================
+        #endregion
+
+        #region CLINIC MAPPING (Helper)
 
         private static ClinicResponse? MapToClinicResponse(Clinic clinic)
         {
@@ -147,7 +159,10 @@ namespace Shuryan.Application.Mappers
             {
                 Id = clinic.Id,
                 Name = clinic.Name
+                // Add other basic clinic details if needed, avoid deep mapping here
             };
         }
+
+        #endregion
     }
 }

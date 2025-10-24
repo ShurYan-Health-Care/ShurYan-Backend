@@ -8,7 +8,7 @@ namespace Shuryan.Application.Services
 {
     public partial class LabOrderService
     {
-        // ==================== Order Lifecycle ====================
+        #region Order Lifecycle
 
         public async Task<LabOrderResponse> ConfirmLabOrderAsync(Guid id)
         {
@@ -123,7 +123,9 @@ namespace Shuryan.Application.Services
             }
         }
 
-        // ==================== Payment ====================
+        #endregion
+
+        #region Payment
 
         public async Task<LabOrderResponse> MarkLabOrderAsPaidAsync(Guid id, string paymentMethod, string? transactionId = null)
         {
@@ -152,5 +154,7 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+
+        #endregion
     }
 }

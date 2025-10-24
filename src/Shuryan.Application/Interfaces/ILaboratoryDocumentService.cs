@@ -1,6 +1,6 @@
 using Shuryan.Application.DTOs.Requests.Laboratory;
 using Shuryan.Application.DTOs.Responses.Laboratory;
-using Shuryan.Core.Enums;
+using Shuryan.Core.Enums; // Assuming this namespace exists for verification enums if needed later
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -9,7 +9,7 @@ namespace Shuryan.Application.Interfaces
 {
     public interface ILaboratoryDocumentService
     {
-        // ==================== CRUD Operations ====================
+        #region CRUD Operations
 
         /// <summary>
         /// Get all documents for a laboratory
@@ -31,7 +31,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<bool> DeleteDocumentAsync(Guid id);
 
-        // ==================== Verification Operations ====================
+        #endregion
+
+        #region Verification Operations
 
         /// <summary>
         /// Approve document
@@ -47,5 +49,7 @@ namespace Shuryan.Application.Interfaces
         /// Get pending documents for verification
         /// </summary>
         Task<IEnumerable<LaboratoryDocumentResponse>> GetPendingDocumentsAsync();
+
+        #endregion
     }
 }

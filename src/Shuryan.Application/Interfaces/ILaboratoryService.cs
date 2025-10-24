@@ -8,8 +8,8 @@ namespace Shuryan.Application.Interfaces
 {
     public interface ILaboratoryService
     {
-        // ==================== CRUD Operations ====================
-        
+        #region CRUD Operations
+
         /// <summary>
         /// Get all laboratories with optional filters
         /// </summary>
@@ -43,7 +43,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<bool> DeleteLaboratoryAsync(Guid id);
 
-        // ==================== Lab Services Management ====================
+        #endregion
+
+        #region Lab Services Management
 
         /// <summary>
         /// Get all services offered by a laboratory
@@ -65,7 +67,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<bool> RemoveLaboratoryServiceAsync(Guid serviceId);
 
-        // ==================== Working Hours ====================
+        #endregion
+
+        #region Working Hours
 
         /// <summary>
         /// Get laboratory working hours
@@ -77,7 +81,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task SetLaboratoryWorkingHoursAsync(Guid laboratoryId, IEnumerable<CreateLabWorkingHoursRequest> request);
 
-        // ==================== Search & Filter ====================
+        #endregion
+
+        #region Search & Filter
 
         /// <summary>
         /// Search laboratories by location
@@ -92,12 +98,16 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<IEnumerable<LaboratoryResponse>> GetLaboratoriesOfferingTestAsync(Guid labTestId);
 
-        // ==================== Statistics ====================
+        #endregion
+
+        #region Statistics
 
         /// <summary>
         /// Get laboratory statistics
         /// </summary>
         Task<LaboratoryStatistics> GetLaboratoryStatisticsAsync(Guid laboratoryId);
+
+        #endregion
     }
 
     public class LaboratoryStatistics

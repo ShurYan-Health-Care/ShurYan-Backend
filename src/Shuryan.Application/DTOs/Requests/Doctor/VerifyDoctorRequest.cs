@@ -14,3 +14,4 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
         public string? VerificationNotes { get; set; }
     }
 }
+
