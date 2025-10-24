@@ -25,3 +25,4 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
         public double? MinRating { get; set; }
     }
 }
+

@@ -26,6 +26,8 @@ namespace Shuryan.Application.DTOs.Requests.Laboratory
 
         [Range(0, 10000, ErrorMessage = "Home sample collection fee must be between 0 and 10000")]
         public decimal? HomeSampleCollectionFee { get; set; }
+
+        public IEnumerable<CreateLabWorkingHoursRequest>? WorkingHours { get; set; }
     }
 }
 

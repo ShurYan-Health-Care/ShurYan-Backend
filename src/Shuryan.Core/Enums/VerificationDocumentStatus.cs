@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -9,6 +9,9 @@ namespace Shuryan.Core.Enums
 {
     public enum VerificationDocumentStatus
     {
+        [Description("مسودة")]
+        Draft = 0,
+
         [Description("في الانتظار")]
         Pending = 1,
 
@@ -16,6 +19,9 @@ namespace Shuryan.Core.Enums
         Approved = 2,
 
         [Description("مرفوض")]
-        Rejected = 3
+        Rejected = 3,
+
+        [Description("منتهي الصلاحية")]
+        Expired = 4
     }
 }

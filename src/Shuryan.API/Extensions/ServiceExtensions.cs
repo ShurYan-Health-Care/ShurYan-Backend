@@ -10,7 +10,6 @@ using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.Repositories.Doctors;
 using Shuryan.Infrastructure.Repositories.Medical;
 using Shuryan.Infrastructure.Repositories.Patients;
-using Shuryan.Infrastructure.Services;
 using Shuryan.Infrastructure.UnitOfWork;
 using Shuryan.Shared.Configurations;
 
@@ -65,6 +64,7 @@ namespace Shuryan.API.Extensions
             services.AddScoped<IPatientService, PatientService>();
             services.AddScoped<IPharmacyService, PharmacyService>();
             services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddScoped<IDoctorService, DoctorService>();
 
             return services;
         }

@@ -3,6 +3,7 @@ using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Interfaces.Repositories.Pharmacies;
 using Shuryan.Infrastructure.Data;
+using Shuryan.Infrastructure.Repositories;
 
 namespace Shuryan.Infrastructure.Repositories.Pharmacies
 {
@@ -15,6 +16,14 @@ namespace Shuryan.Infrastructure.Repositories.Pharmacies
             return await _dbSet
                 .Where(wh => wh.PharmacyId == pharmacyId && !wh.IsDeleted)
                 .OrderBy(wh => wh.DayOfWeek)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<PharmacyWorkingHours>> GetByDayOfWeekAsync(SysDayOfWeek dayOfWeek)
+        {
+            return await _dbSet
+                .Include(wh => wh.Pharmacy)
+                .Where(wh => wh.DayOfWeek == dayOfWeek)
                 .ToListAsync();
         }
 

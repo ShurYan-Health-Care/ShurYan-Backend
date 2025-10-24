@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,11 +18,21 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 
 			builder.HasKey(lr => lr.Id);
 
-			builder.Property(lr => lr.ResultFileUrl)
+			builder.Property(lr => lr.ResultValue)
+				   .IsRequired()
 				   .HasMaxLength(500);
 
-			builder.Property(lr => lr.LabNotes)
+			builder.Property(lr => lr.ReferenceRange)
+				   .HasMaxLength(200);
+
+			builder.Property(lr => lr.Unit)
+				   .HasMaxLength(50);
+
+			builder.Property(lr => lr.Notes)
 				   .HasMaxLength(1000);
+
+			builder.Property(lr => lr.AttachmentUrl)
+				   .HasMaxLength(500);
 
 
 			// Relationships

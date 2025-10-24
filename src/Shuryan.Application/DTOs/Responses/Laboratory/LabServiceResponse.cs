@@ -1,16 +1,15 @@
-using Shuryan.Application.DTOs.Common.Base;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Shuryan.Application.DTOs.Responses.Laboratory
 {
-    public class LabServiceResponse : BaseAuditableDto
+    /// <summary>
+    /// Clean lab service response without audit fields
+    /// </summary>
+    public class LabServiceResponse
     {
-        public Guid LaboratoryId { get; set; }
         public Guid LabTestId { get; set; }
+        public string LabTestName { get; set; } = string.Empty;
+        public string LabTestCategory { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public bool IsAvailable { get; set; }
         public string? LabSpecificNotes { get; set; }

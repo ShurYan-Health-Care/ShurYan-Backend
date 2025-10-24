@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -17,10 +17,15 @@ namespace Shuryan.Core.Entities.External.Laboratories
         [ForeignKey("LabTest")]
         public Guid LabTestId { get; set; } // التحليل نفسه من جدول التحاليل اللي النتيجة ده تخصه
 
-        // أو لو عاوز تخزن PDF
-        public string? ResultFileUrl { get; set; } // رابط ملف PDF بالنتيجة
-
-        public string? LabNotes { get; set; } // ملاحظات من المعمل
+        public string ResultValue { get; set; } = string.Empty; // قيمة النتيجة (نص أو رقم)
+        
+        public string? ReferenceRange { get; set; } // المدى الطبيعي للنتيجة
+        
+        public string? Unit { get; set; } // وحدة القياس (mg/dL, g/dL, etc.)
+        
+        public string? Notes { get; set; } // ملاحظات من المعمل
+        
+        public string? AttachmentUrl { get; set; } // رابط ملف PDF بالنتيجة
 
         // Navigation Properties
         public virtual LabOrder LabOrder { get; set; } = null!;
