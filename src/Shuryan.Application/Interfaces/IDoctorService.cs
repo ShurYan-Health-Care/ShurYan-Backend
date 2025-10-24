@@ -1,65 +1,49 @@
 using Shuryan.Application.DTOs.Requests.Doctor;
 using Shuryan.Application.DTOs.Responses.Doctor;
-using Shuryan.Application.DTOs.Common.Pagination;
-using Shuryan.Core.Enums.Doctor;
-using Shuryan.Core.Enums;
 using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Shuryan.Application.Interfaces
 {
     public interface IDoctorService
     {
-        // ==================== DOCTOR CRUD ====================
+        #region Profile Management
+        Task<DoctorProfileResponse?> GetDoctorProfileAsync(Guid doctorId);
+        Task<DoctorProfileResponse> UpdateDoctorProfileAsync(Guid doctorId, UpdateDoctorProfileRequest request);
+        Task<IEnumerable<DoctorProfileResponse>> GetAllDoctorsAsync(int pageNumber = 1, int pageSize = 10);
+        Task<IEnumerable<DoctorProfileResponse>> SearchDoctorsAsync(string searchTerm, int pageNumber = 1, int pageSize = 10);
+        Task<IEnumerable<DoctorProfileResponse>> GetDoctorsBySpecialtyAsync(string specialty, int pageNumber = 1, int pageSize = 10);
+        Task<bool> DeleteDoctorAsync(Guid doctorId);
+        Task<DoctorProfileResponse> UpdateProfileImageAsync(Guid doctorId, string imageUrl);
+        Task<IEnumerable<DoctorProfileResponse>> GetTopRatedDoctorsAsync(int count = 10);
+        Task<IEnumerable<DoctorProfileResponse>> GetDoctorsByGovernorateAsync(string governorate, int pageNumber = 1, int pageSize = 10);
+        Task<DoctorStatisticsResponse> GetDoctorStatisticsAsync(Guid doctorId);
+        #endregion
 
-        Task<DoctorResponse?> GetDoctorByIdAsync(Guid id);
-        Task<DoctorResponse?> GetDoctorByEmailAsync(string email);
-        Task<IEnumerable<DoctorResponse>> GetDoctorsBySpecialtyAsync(MedicalSpecialty specialty);
-        Task<IEnumerable<DoctorResponse>> GetVerifiedDoctorsAsync();
-        Task<IEnumerable<DoctorResponse>> GetDoctorsByGovernorateAsync(Governorate governorate);
-        Task<PaginatedResponse<DoctorResponse>> SearchDoctorsAsync(SearchDoctorsRequest request);
-        Task<bool> IsDoctorAvailableAtAsync(Guid doctorId, DateTime dateTime);
-        Task<DoctorResponse> CreateDoctorAsync(CreateDoctorRequest request);
-        Task<DoctorResponse> UpdateDoctorAsync(Guid id, UpdateDoctorRequest request);
-        Task<bool> DeleteDoctorAsync(Guid id);
-        Task<bool> VerifyDoctorAsync(Guid id, VerifyDoctorRequest request);
-        
-        // ==================== AVAILABILITY ====================
-        Task<IEnumerable<DoctorAvailabilityResponse>> GetDoctorAvailabilitiesAsync(Guid doctorId);
-        Task<DoctorAvailabilityResponse> AddDoctorAvailabilityAsync(
-            Guid doctorId,
-            CreateDoctorAvailabilityRequest request);
-        Task<DoctorAvailabilityResponse> UpdateDoctorAvailabilityAsync(
-            Guid doctorId,
-            Guid availabilityId,
-            UpdateDoctorAvailabilityRequest request);
-        Task<bool> DeleteDoctorAvailabilityAsync(Guid doctorId, Guid availabilityId);
-
-        // ==================== CONSULTATIONS ====================
-        Task<IEnumerable<DoctorConsultationResponse>> GetDoctorConsultationsAsync(Guid doctorId);
-        Task<DoctorConsultationResponse> AddDoctorConsultationAsync(
-            Guid doctorId,
-            CreateDoctorConsultationRequest request);
-        Task<DoctorConsultationResponse> UpdateDoctorConsultationAsync(
-            Guid doctorId,
-            Guid consultationId,
-            UpdateDoctorConsultationRequest request);
-        Task<bool> DeleteDoctorConsultationAsync(Guid doctorId, Guid consultationId);
-
-        // ==================== DOCUMENTS ====================
+        #region Document Management
         Task<IEnumerable<DoctorDocumentResponse>> GetDoctorDocumentsAsync(Guid doctorId);
-        Task<DoctorDocumentResponse> AddDoctorDocumentAsync(
-            Guid doctorId,
-            CreateDoctorDocumentRequest request);
-        Task<bool> DeleteDoctorDocumentAsync(Guid doctorId, Guid documentId);
+        Task<DoctorDocumentResponse?> GetDocumentByIdAsync(Guid documentId);
+        Task<DoctorDocumentResponse> UploadDocumentAsync(Guid doctorId, UploadDoctorDocumentRequest request);
+        Task<DoctorDocumentResponse> UpdateDocumentAsync(Guid documentId, UploadDoctorDocumentRequest request);
+        Task<bool> DeleteDocumentAsync(Guid documentId);
+        Task<DoctorDocumentResponse> SubmitDocumentForReviewAsync(Guid documentId); // Draft → Pending
+        Task<DoctorDocumentResponse> ApproveDocumentAsync(Guid documentId); // Pending → Approved
+        Task<DoctorDocumentResponse> RejectDocumentAsync(Guid documentId, string rejectionReason); // Pending → Rejected
+        Task<DoctorDocumentResponse> MarkDocumentAsExpiredAsync(Guid documentId); // Approved → Expired
+        Task<IEnumerable<DoctorDocumentResponse>> GetPendingDocumentsAsync();
+        Task<IEnumerable<DoctorDocumentResponse>> GetApprovedDocumentsAsync();
+        Task<IEnumerable<DoctorDocumentResponse>> GetRejectedDocumentsAsync();
+        #endregion
 
-        // ==================== OVERRIDES ====================
-        
-        Task<IEnumerable<DoctorOverrideResponse>> GetDoctorOverridesAsync(Guid doctorId);
-        Task<DoctorOverrideResponse> AddDoctorOverrideAsync(
-            Guid doctorId,
-            CreateDoctorOverrideRequest request);
-        Task<bool> DeleteDoctorOverrideAsync(Guid doctorId, Guid overrideId);
+        #region Verification
+        Task<DoctorProfileResponse> VerifyDoctorAsync(Guid doctorId, Guid verifierId);
+        Task<DoctorProfileResponse> UnverifyDoctorAsync(Guid doctorId);
+        Task<IEnumerable<DoctorProfileResponse>> GetPendingVerificationDoctorsAsync(int pageNumber = 1, int pageSize = 10);
+        Task<IEnumerable<DoctorProfileResponse>> GetVerifiedDoctorsAsync(int pageNumber = 1, int pageSize = 10);
+        Task<IEnumerable<DoctorProfileResponse>> GetUnverifiedDoctorsAsync(int pageNumber = 1, int pageSize = 10);
+        Task<DoctorProfileResponse> SuspendDoctorAsync(Guid doctorId);
+        Task<DoctorProfileResponse> ActivateDoctorAsync(Guid doctorId); 
+        #endregion
     }
 }

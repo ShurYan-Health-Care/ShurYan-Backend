@@ -9,8 +9,7 @@ namespace Shuryan.Application.Services
 {
     public partial class PrescriptionService
     {
-        // ==================== Statistics & Analytics ====================
-
+        #region Statistics & Analytics
         public async Task<IEnumerable<DTOs.Responses.Prescription.PrescriptionStatusHistory>> GetStatusHistoryAsync(Guid prescriptionId)
         {
             try
@@ -21,7 +20,7 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Prescription with ID {prescriptionId} not found");
 
                 // Get doctor name
-                var doctorName = prescription.Doctor != null 
+                var doctorName = prescription.Doctor != null
                     ? $"د. {prescription.Doctor.FirstName} {prescription.Doctor.LastName}"
                     : null;
 
@@ -91,9 +90,9 @@ namespace Shuryan.Application.Services
                     // Try to get pharmacist info from dispensing record
                     var dispensingRecords = await _unitOfWork.DispensingRecords.GetByPrescriptionIdAsync(prescriptionId);
                     var latestDispensing = dispensingRecords.OrderByDescending(d => d.DispensedAt).FirstOrDefault();
-                    
-                    var pharmacyName = latestDispensing != null 
-                        ? (await _unitOfWork.Pharmacies.GetByIdAsync(latestDispensing.PharmacyId))?.Name 
+
+                    var pharmacyName = latestDispensing != null
+                        ? (await _unitOfWork.Pharmacies.GetByIdAsync(latestDispensing.PharmacyId))?.Name
                         : null;
 
                     history.Add(new DTOs.Responses.Prescription.PrescriptionStatusHistory
@@ -113,9 +112,9 @@ namespace Shuryan.Application.Services
                     });
                 }
 
-                _logger.LogInformation("Retrieved {Count} status history entries for prescription {PrescriptionId}", 
+                _logger.LogInformation("Retrieved {Count} status history entries for prescription {PrescriptionId}",
                     history.Count, prescriptionId);
-                
+
                 return history.OrderBy(h => h.ChangedAt);
             }
             catch (Exception ex)
@@ -123,6 +122,7 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error getting status history for prescription {PrescriptionId}", prescriptionId);
                 throw;
             }
-        }
+        } 
+        #endregion
     }
 }

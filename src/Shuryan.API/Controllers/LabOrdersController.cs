@@ -1,18 +1,23 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Laboratory;
 using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Enums.Laboratory;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Shuryan.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
+    [Authorize] // Secure the controller by default
     public class LabOrdersController : ControllerBase
     {
         private readonly ILabOrderService _labOrderService;
@@ -26,20 +31,44 @@ namespace Shuryan.API.Controllers
             _logger = logger;
         }
 
-        // ==================== CRUD Operations ====================
+        #region Helper Methods
+
+        /// Gets the current authenticated user's ID.
+        private Guid GetCurrentUserId()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            return string.IsNullOrEmpty(userIdClaim) ? Guid.Empty : Guid.Parse(userIdClaim);
+        }
 
         /// <summary>
-        /// Get all lab orders with optional filters
+        /// Checks if the current user is an Admin.
+        /// </summary>
+        private bool IsAdmin()
+        {
+            return User.IsInRole("Admin");
+        }
+
+        #endregion
+
+        #region CRUD Operations
+
+        /// <summary>
+        /// Get all lab orders with optional filters (Admin only)
         /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<LabOrderResponse>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<LabOrderResponse>>> GetAllLabOrders(
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabOrderResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<LabOrderResponse>>>> GetAllLabOrders(
             [FromQuery] Guid? patientId = null,
             [FromQuery] Guid? laboratoryId = null,
             [FromQuery] LabOrderStatus? status = null,
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
+            _logger.LogInformation("Admin user {AdminId} getting all lab orders with filters.", GetCurrentUserId());
             try
             {
                 var orders = await _labOrderService.GetAllLabOrdersAsync(
@@ -48,434 +77,606 @@ namespace Shuryan.API.Controllers
                     status,
                     startDate,
                     endDate);
-                return Ok(orders);
+                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(orders, "Lab orders retrieved successfully"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting all lab orders");
-                return StatusCode(500, new { Message = "An error occurred while retrieving lab orders" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving lab orders", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Get lab order by ID
+        /// Get lab order by ID. Accessible by owner (Patient, Lab) or Admin/Doctor.
         /// </summary>
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(LabOrderResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<LabOrderResponse>> GetLabOrder(Guid id)
+        [Authorize(Roles = "Patient,Doctor,Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabOrderResponse>>> GetLabOrder(Guid id)
         {
+            _logger.LogInformation("Attempting to get lab order {OrderId}", id);
             try
             {
                 var order = await _labOrderService.GetLabOrderByIdAsync(id);
                 if (order == null)
-                    return NotFound(new { Message = $"Lab order with ID {id} not found" });
+                {
+                    _logger.LogWarning("Lab order not found: {OrderId}", id);
+                    return NotFound(ApiResponse<object>.Failure($"Lab order with ID {id} not found", statusCode: 404));
+                }
 
-                return Ok(order);
+                // TODO: Add service-layer check if current user (GetCurrentUserId())
+                // is the Patient, the Laboratory, a Doctor, or Admin.
+                // For now, we assume the role check is sufficient for controller access.
+
+                return Ok(ApiResponse<LabOrderResponse>.Success(order, "Lab order retrieved successfully"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting lab order {OrderId}", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving the order", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Get patient's lab orders
+        /// Get patient's lab orders. Accessible by the Patient, Doctor, or Admin.
         /// </summary>
         [HttpGet("patient/{patientId}")]
-        //[Authorize(Roles = "Patient,Doctor,Admin")]
-        [ProducesResponseType(typeof(IEnumerable<LabOrderResponse>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<LabOrderResponse>>> GetPatientLabOrders(Guid patientId)
+        [Authorize(Roles = "Patient,Doctor,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabOrderResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<LabOrderResponse>>>> GetPatientLabOrders(Guid patientId)
         {
+            _logger.LogInformation("Attempting to get lab orders for patient {PatientId}", patientId);
+
+            var currentUserId = GetCurrentUserId();
+            if (User.IsInRole("Patient") && !IsAdmin() && currentUserId != patientId)
+            {
+                _logger.LogWarning("Forbidden: Patient {CurrentUserId} attempted to access orders of patient {PatientId}", currentUserId, patientId);
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("Patients can only view their own lab orders", statusCode: 403));
+            }
+
             try
             {
                 var orders = await _labOrderService.GetPatientLabOrdersAsync(patientId);
-                return Ok(orders);
+                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(orders, "Patient lab orders retrieved successfully"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting lab orders for patient {PatientId}", patientId);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving orders", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Get laboratory's lab orders
+        /// Get laboratory's lab orders. Accessible by the Laboratory or Admin.
         /// </summary>
         [HttpGet("laboratory/{laboratoryId}")]
-        //[Authorize(Roles = "Laboratory,Admin")]
-        [ProducesResponseType(typeof(IEnumerable<LabOrderResponse>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<LabOrderResponse>>> GetLaboratoryLabOrders(Guid laboratoryId)
+        [Authorize(Roles = "Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabOrderResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<LabOrderResponse>>>> GetLaboratoryLabOrders(Guid laboratoryId)
         {
+            _logger.LogInformation("Attempting to get lab orders for laboratory {LaboratoryId}", laboratoryId);
+
+            var currentUserId = GetCurrentUserId();
+            if (User.IsInRole("Laboratory") && !IsAdmin() && currentUserId != laboratoryId)
+            {
+                _logger.LogWarning("Forbidden: Laboratory {CurrentUserId} attempted to access orders of laboratory {LaboratoryId}", currentUserId, laboratoryId);
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("Laboratories can only view their own lab orders", statusCode: 403));
+            }
+
             try
             {
                 var orders = await _labOrderService.GetLaboratoryLabOrdersAsync(laboratoryId);
-                return Ok(orders);
+                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(orders, "Laboratory lab orders retrieved successfully"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting lab orders for laboratory {LaboratoryId}", laboratoryId);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving orders", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Create a new lab order
+        /// Create a new lab order. Accessible by Patient or Doctor.
         /// </summary>
         [HttpPost]
-        //[Authorize(Roles = "Patient,Doctor")]
-        [ProducesResponseType(typeof(LabOrderResponse), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<LabOrderResponse>> CreateLabOrder(
+        [Authorize(Roles = "Patient,Doctor")]
+        [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabOrderResponse>>> CreateLabOrder(
             [FromBody] CreateLabOrderRequest request)
         {
+            _logger.LogInformation("Attempting to create lab order for patient {PatientId}", request.PatientId);
+
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("Invalid model state for CreateLabOrder. Errors: {Errors}", string.Join(", ", errors));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
+            }
 
             try
             {
                 var order = await _labOrderService.CreateLabOrderAsync(request);
+                _logger.LogInformation("Lab order {OrderId} created successfully", order.Id);
+
+                var response = ApiResponse<LabOrderResponse>.Success(order, "Lab order created successfully", 201);
                 return CreatedAtAction(
                     nameof(GetLabOrder),
                     new { id = order.Id },
-                    order);
+                    response);
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex) // e.g., Patient, Lab, or Test not found
             {
-                return BadRequest(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Bad request on lab order creation");
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating lab order");
-                return StatusCode(500, new { 
-                    Message = "An error occurred while creating the lab order",
-                    Error = ex.Message,
-                    InnerError = ex.InnerException?.Message
-                });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while creating the lab order", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Cancel lab order
+        /// Cancel lab order. Accessible by Patient, Laboratory, or Admin.
         /// </summary>
         [HttpPost("{id}/cancel")]
-        //[Authorize(Roles = "Patient,Laboratory,Admin")]
-        [ProducesResponseType(typeof(LabOrderResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<LabOrderResponse>> CancelLabOrder(
+        [Authorize(Roles = "Patient,Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabOrderResponse>>> CancelLabOrder(
             Guid id,
             [FromBody] CancelLabOrderRequest request)
         {
+            _logger.LogInformation("Attempting to cancel lab order {OrderId}", id);
+
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("Invalid model state for CancelLabOrder. Errors: {Errors}", string.Join(", ", errors));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
+            }
 
             try
             {
+                // Service layer should check if the current user has permission
+                // and if the order is in a state that can be cancelled.
                 var order = await _labOrderService.CancelLabOrderAsync(id, request.CancellationReason);
-                return Ok(order);
+                _logger.LogInformation("Lab order {OrderId} cancelled successfully", id);
+                return Ok(ApiResponse<LabOrderResponse>.Success(order, "Lab order cancelled successfully"));
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex) // Order not found
             {
-                return NotFound(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Lab order not found for cancellation: {OrderId}", id);
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException ex) // Order cannot be cancelled
             {
-                return BadRequest(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Invalid operation on lab order cancellation: {OrderId}", id);
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error cancelling lab order {OrderId}", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while cancelling the order", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Delete lab order (soft delete)
+        /// Delete lab order (soft delete). Admin only.
         /// </summary>
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> DeleteLabOrder(Guid id)
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteLabOrder(Guid id)
         {
+            _logger.LogInformation("Attempting to delete lab order {OrderId}", id);
             try
             {
                 var result = await _labOrderService.DeleteLabOrderAsync(id);
                 if (!result)
-                    return NotFound(new { Message = $"Lab order with ID {id} not found" });
+                {
+                    _logger.LogWarning("Lab order not found for deletion: {OrderId}", id);
+                    return NotFound(ApiResponse<object>.Failure($"Lab order with ID {id} not found", statusCode: 404));
+                }
 
-                return NoContent();
+                _logger.LogInformation("Lab order {OrderId} deleted successfully", id);
+                return Ok(ApiResponse<object>.Success(null, "Lab order deleted successfully"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting lab order {OrderId}", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while deleting the order", new[] { ex.Message }, 500));
             }
         }
 
-        // ==================== Order Lifecycle ====================
+        #endregion
+
+        #region Order Lifecycle
 
         /// <summary>
-        /// Confirm lab order by laboratory
+        /// Confirm lab order by laboratory.
         /// </summary>
         [HttpPost("{id}/confirm")]
-        //[Authorize(Roles = "Laboratory")]
-        [ProducesResponseType(typeof(LabOrderResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<LabOrderResponse>> ConfirmLabOrder(Guid id)
+        [Authorize(Roles = "Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabOrderResponse>>> ConfirmLabOrder(Guid id)
         {
+            _logger.LogInformation("Attempting to confirm lab order {OrderId}", id);
             try
             {
+                // Service layer should check if current user is the correct laboratory
                 var order = await _labOrderService.ConfirmLabOrderAsync(id);
-                return Ok(order);
+                _logger.LogInformation("Lab order {OrderId} confirmed", id);
+                return Ok(ApiResponse<LabOrderResponse>.Success(order, "Lab order confirmed"));
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex) // Not found
             {
-                return NotFound(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Lab order not found for confirmation: {OrderId}", id);
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException ex) // Invalid state
             {
-                return BadRequest(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Invalid operation on lab order confirmation: {OrderId}", id);
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error confirming lab order {OrderId}", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while confirming the order", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Mark order as sample collected
+        /// Mark order as sample collected.
         /// </summary>
         [HttpPost("{id}/sample-collected")]
-        //[Authorize(Roles = "Laboratory")]
-        [ProducesResponseType(typeof(LabOrderResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<LabOrderResponse>> MarkSampleCollected(Guid id)
+        [Authorize(Roles = "Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabOrderResponse>>> MarkSampleCollected(Guid id)
         {
+            _logger.LogInformation("Attempting to mark sample collected for lab order {OrderId}", id);
             try
             {
                 var order = await _labOrderService.MarkSampleCollectedAsync(id);
-                return Ok(order);
+                _logger.LogInformation("Lab order {OrderId} marked as sample collected", id);
+                return Ok(ApiResponse<LabOrderResponse>.Success(order, "Sample collected status updated"));
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex) // Not found
             {
-                return NotFound(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Lab order not found for sample collected: {OrderId}", id);
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException ex) // Invalid state
             {
-                return BadRequest(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Invalid operation on mark sample collected: {OrderId}", id);
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error marking sample collected for lab order {OrderId}", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while updating status", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Mark order as in progress (tests being performed)
+        /// Mark order as in progress (tests being performed).
         /// </summary>
         [HttpPost("{id}/in-progress")]
-        //[Authorize(Roles = "Laboratory")]
-        [ProducesResponseType(typeof(LabOrderResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<LabOrderResponse>> MarkInProgress(Guid id)
+        [Authorize(Roles = "Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabOrderResponse>>> MarkInProgress(Guid id)
         {
+            _logger.LogInformation("Attempting to mark in progress for lab order {OrderId}", id);
             try
             {
                 var order = await _labOrderService.MarkInProgressAsync(id);
-                return Ok(order);
+                _logger.LogInformation("Lab order {OrderId} marked as in progress", id);
+                return Ok(ApiResponse<LabOrderResponse>.Success(order, "In progress status updated"));
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex) // Not found
             {
-                return NotFound(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Lab order not found for in progress: {OrderId}", id);
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException ex) // Invalid state
             {
-                return BadRequest(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Invalid operation on mark in progress: {OrderId}", id);
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error marking lab order {OrderId} as in progress", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while updating status", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Complete lab order (all results ready)
+        /// Complete lab order (all results ready).
         /// </summary>
         [HttpPost("{id}/complete")]
-        //[Authorize(Roles = "Laboratory")]
-        [ProducesResponseType(typeof(LabOrderResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<LabOrderResponse>> CompleteLabOrder(Guid id)
+        [Authorize(Roles = "Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabOrderResponse>>> CompleteLabOrder(Guid id)
         {
+            _logger.LogInformation("Attempting to complete lab order {OrderId}", id);
             try
             {
                 var order = await _labOrderService.CompleteLabOrderAsync(id);
-                return Ok(order);
+                _logger.LogInformation("Lab order {OrderId} completed", id);
+                return Ok(ApiResponse<LabOrderResponse>.Success(order, "Lab order completed"));
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex) // Not found
             {
-                return NotFound(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Lab order not found for completion: {OrderId}", id);
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException ex) // Invalid state
             {
-                return BadRequest(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Invalid operation on lab order completion: {OrderId}", id);
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error completing lab order {OrderId}", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while completing the order", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Mark lab order as paid
+        /// Mark lab order as paid.
         /// </summary>
         [HttpPost("{id}/mark-paid")]
-        //[Authorize(Roles = "Laboratory,Admin")]
-        [ProducesResponseType(typeof(LabOrderResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<LabOrderResponse>> MarkLabOrderAsPaid(
+        [Authorize(Roles = "Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabOrderResponse>>> MarkLabOrderAsPaid(
             Guid id,
             [FromBody] MarkAsPaidRequest request)
         {
+            _logger.LogInformation("Attempting to mark lab order {OrderId} as paid", id);
+
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("Invalid model state for MarkLabOrderAsPaid. Errors: {Errors}", string.Join(", ", errors));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
+            }
 
             try
             {
                 var order = await _labOrderService.MarkLabOrderAsPaidAsync(id, request.PaymentMethod, request.TransactionId);
-                return Ok(order);
+                _logger.LogInformation("Lab order {OrderId} marked as paid", id);
+                return Ok(ApiResponse<LabOrderResponse>.Success(order, "Lab order marked as paid"));
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex) // Not found
             {
-                return NotFound(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Lab order not found for marking as paid: {OrderId}", id);
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException ex) // Invalid state
             {
-                return BadRequest(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Invalid operation on marking lab order as paid: {OrderId}", id);
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error marking lab order {OrderId} as paid", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while marking as paid", new[] { ex.Message }, 500));
             }
         }
 
-        // ==================== Results Management ====================
+        #endregion
+
+        #region Results Management
 
         /// <summary>
-        /// Get lab order results
+        /// Get lab order results. Accessible by Patient, Doctor, Laboratory, Admin.
         /// </summary>
         [HttpGet("{id}/results")]
-        //[Authorize(Roles = "Patient,Doctor,Laboratory,Admin")]
-        [ProducesResponseType(typeof(IEnumerable<LabResultResponse>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<LabResultResponse>>> GetLabOrderResults(Guid id)
+        [Authorize(Roles = "Patient,Doctor,Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabResultResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<LabResultResponse>>>> GetLabOrderResults(Guid id)
         {
+            _logger.LogInformation("Attempting to get results for lab order {OrderId}", id);
             try
             {
+                // TODO: Service-layer check to ensure user has permission for this order
                 var results = await _labOrderService.GetLabOrderResultsAsync(id);
-                return Ok(results);
+                return Ok(ApiResponse<IEnumerable<LabResultResponse>>.Success(results, "Lab order results retrieved successfully"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting results for lab order {OrderId}", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving results", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Add result to lab order
+        /// Add result to lab order. Accessible by Laboratory or Admin.
         /// </summary>
         [HttpPost("{id}/results")]
-        //[Authorize(Roles = "Laboratory")]
-        [ProducesResponseType(typeof(LabResultResponse), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<LabResultResponse>> AddLabOrderResult(
+        [Authorize(Roles = "Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabResultResponse>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabResultResponse>>> AddLabOrderResult(
             Guid id,
             [FromBody] CreateLabResultRequest request)
         {
+            _logger.LogInformation("Attempting to add result to lab order {OrderId}", id);
+
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("Invalid model state for AddLabOrderResult. Errors: {Errors}", string.Join(", ", errors));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
+            }
 
             try
             {
+                // TODO: Service-layer check if user is the correct laboratory for this order
                 var result = await _labOrderService.AddLabOrderResultAsync(id, request);
+                _logger.LogInformation("Result {ResultId} added to lab order {OrderId}", result.Id, id);
+
+                var response = ApiResponse<LabResultResponse>.Success(result, "Result added successfully", 201);
                 return CreatedAtAction(
-                    nameof(GetLabOrderResults),
+                    nameof(GetLabOrderResults), // TODO: Needs a "GetResultById" endpoint
                     new { id },
-                    result);
+                    response);
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex) // e.g., Order not found, or test not part of order
             {
-                return BadRequest(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Bad request on adding lab result to order {OrderId}", id);
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding result to lab order {OrderId}", id);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while adding the result", new[] { ex.Message }, 500));
             }
         }
 
         /// <summary>
-        /// Update lab result
+        /// Update lab result. Accessible by Laboratory or Admin.
         /// </summary>
         [HttpPut("results/{resultId}")]
-        //[Authorize(Roles = "Laboratory")]
-        [ProducesResponseType(typeof(LabResultResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<LabResultResponse>> UpdateLabResult(
+        [Authorize(Roles = "Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabResultResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabResultResponse>>> UpdateLabResult(
             Guid resultId,
             [FromBody] UpdateLabResultRequest request)
         {
+            _logger.LogInformation("Attempting to update lab result {ResultId}", resultId);
+
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("Invalid model state for UpdateLabResult. Errors: {Errors}", string.Join(", ", errors));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
+            }
 
             try
             {
+                // TODO: Service-layer check if user is the correct laboratory for this result
                 var result = await _labOrderService.UpdateLabResultAsync(resultId, request);
-                return Ok(result);
+                _logger.LogInformation("Lab result {ResultId} updated successfully", resultId);
+                return Ok(ApiResponse<LabResultResponse>.Success(result, "Result updated successfully"));
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException ex) // Result not found
             {
-                return NotFound(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Lab result not found for update: {ResultId}", resultId);
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating lab result {ResultId}", resultId);
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while updating the result", new[] { ex.Message }, 500));
             }
         }
 
-        // ==================== Statistics ====================
+        #endregion
+
+        #region Statistics
 
         /// <summary>
-        /// Get lab order statistics
+        /// Get lab order statistics. Accessible by Laboratory or Admin.
         /// </summary>
         [HttpGet("statistics")]
-        //[Authorize(Roles = "Laboratory,Admin")]
-        [ProducesResponseType(typeof(LabOrderStatistics), StatusCodes.Status200OK)]
-        public async Task<ActionResult<LabOrderStatistics>> GetLabOrderStatistics(
+        [Authorize(Roles = "Laboratory,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<LabOrderStatistics>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<LabOrderStatistics>>> GetLabOrderStatistics(
             [FromQuery] Guid? laboratoryId = null,
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
+            _logger.LogInformation("Attempting to get lab order statistics. LabID: {LaboratoryId}", laboratoryId);
+
+            // Security check: If a lab user is asking, they can only see their own stats.
+            var currentUserId = GetCurrentUserId();
+            if (User.IsInRole("Laboratory") && !IsAdmin())
+            {
+                if (laboratoryId == null)
+                {
+                    // If lab user didn't specify ID, force it to be their own ID.
+                    laboratoryId = currentUserId;
+                }
+                else if (laboratoryId != currentUserId)
+                {
+                    _logger.LogWarning("Forbidden: Laboratory {CurrentUserId} attempted to access statistics for {LaboratoryId}", currentUserId, laboratoryId);
+                    return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("Laboratories can only view their own statistics", statusCode: 403));
+                }
+            }
+
             try
             {
                 var statistics = await _labOrderService.GetLabOrderStatisticsAsync(laboratoryId, startDate, endDate);
-                return Ok(statistics);
+                return Ok(ApiResponse<LabOrderStatistics>.Success(statistics, "Statistics retrieved successfully"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting lab order statistics");
-                return StatusCode(500, new { Message = "An error occurred" });
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving statistics", new[] { ex.Message }, 500));
             }
         }
+
+        #endregion
     }
 
     // Helper request models

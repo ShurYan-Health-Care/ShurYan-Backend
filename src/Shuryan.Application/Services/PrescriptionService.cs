@@ -30,8 +30,7 @@ namespace Shuryan.Application.Services
             _logger = logger;
         }
 
-        // ==================== Basic CRUD Operations ====================
-
+        #region Basic CRUD Operations
         public async Task<PrescriptionResponse?> GetPrescriptionByIdAsync(Guid id)
         {
             try
@@ -209,9 +208,10 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
 
-        // ==================== Query Operations ====================
 
+        #region Query Operations
         public async Task<PaginatedResponse<PrescriptionResponse>> GetPaginatedPrescriptionsAsync(PaginationParams request)
         {
             try
@@ -279,10 +279,12 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error getting total prescriptions count");
                 throw;
             }
-        }
 
-        // ==================== Patient Related Operations ====================
+            }
+        #endregion
 
+
+        #region Patient Related Operations
         public async Task<IEnumerable<PrescriptionResponse>> GetPatientPrescriptionsAsync(Guid patientId)
         {
             try
@@ -307,7 +309,7 @@ namespace Shuryan.Application.Services
             }
         }
 
-        public async Task<PaginatedResponse<PrescriptionResponse>> GetPaginatedPatientPrescriptionsAsync(Guid patientId,PaginationParams request)
+        public async Task<PaginatedResponse<PrescriptionResponse>> GetPaginatedPatientPrescriptionsAsync(Guid patientId, PaginationParams request)
         {
             try
             {
@@ -390,8 +392,9 @@ namespace Shuryan.Application.Services
             }
         }
 
-        // ==================== Doctor Related Operations ====================
+        #endregion
 
+        #region Doctor Related Operations
         public async Task<IEnumerable<PrescriptionResponse>> GetDoctorPrescriptionsAsync(Guid doctorId)
         {
             try
@@ -416,7 +419,7 @@ namespace Shuryan.Application.Services
             }
         }
 
-        public async Task<PaginatedResponse<PrescriptionResponse>> GetPaginatedDoctorPrescriptionsAsync(Guid doctorId,PaginationParams request)
+        public async Task<PaginatedResponse<PrescriptionResponse>> GetPaginatedDoctorPrescriptionsAsync(Guid doctorId, PaginationParams request)
         {
             try
             {
@@ -478,7 +481,9 @@ namespace Shuryan.Application.Services
             }
         }
 
-        // ==================== Pharmacy Related Operations ====================
+        #endregion
+      
+        #region Pharmacy Related Operations
 
         public async Task<IEnumerable<PrescriptionResponse>> GetPrescriptionsContainingMedicationAsync(Guid medicationId)
         {
@@ -533,9 +538,10 @@ namespace Shuryan.Application.Services
             }
         }
 
-        // ==================== Date Range & Analytics Operations ====================
+        #endregion
 
-        public async Task<IEnumerable<PrescriptionResponse>> GetPrescriptionsByDateRangeAsync(DateTime startDate,DateTime endDate)
+        #region Date Range & Analytics Operations
+        public async Task<IEnumerable<PrescriptionResponse>> GetPrescriptionsByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
             {
@@ -553,7 +559,7 @@ namespace Shuryan.Application.Services
             }
         }
 
-        public async Task<IEnumerable<PrescriptionResponse>> GetDoctorPrescriptionsByDateRangeAsync(Guid doctorId,DateTime startDate,DateTime endDate)
+        public async Task<IEnumerable<PrescriptionResponse>> GetDoctorPrescriptionsByDateRangeAsync(Guid doctorId, DateTime startDate, DateTime endDate)
         {
             try
             {
@@ -579,7 +585,7 @@ namespace Shuryan.Application.Services
             }
         }
 
-        public async Task<IEnumerable<PrescriptionResponse>> GetPatientPrescriptionsByDateRangeAsync(Guid patientId,DateTime startDate,DateTime endDate)
+        public async Task<IEnumerable<PrescriptionResponse>> GetPatientPrescriptionsByDateRangeAsync(Guid patientId, DateTime startDate, DateTime endDate)
         {
             try
             {
@@ -605,8 +611,9 @@ namespace Shuryan.Application.Services
             }
         }
 
-        // ==================== Appointment Related Operations ====================
+        #endregion
 
+        #region  Appointment Related Operations
         public async Task<PrescriptionResponse?> GetPrescriptionByAppointmentIdAsync(Guid appointmentId)
         {
             try
@@ -648,9 +655,9 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
 
-        // ==================== Advanced Query Operations ====================
-
+        #region Advanced Query Operations
         public async Task<PrescriptionQueryResponse> GetPrescriptionsAsync(PrescriptionQueryParams queryParams)
         {
             try
@@ -679,14 +686,14 @@ namespace Shuryan.Application.Services
                 if (!string.IsNullOrWhiteSpace(queryParams.SearchTerm))
                 {
                     var searchLower = queryParams.SearchTerm.ToLower();
-                    query = query.Where(p => 
+                    query = query.Where(p =>
                         p.PrescriptionNumber.ToLower().Contains(searchLower));
                 }
 
                 // Sorting
                 query = queryParams.SortBy?.ToLower() switch
                 {
-                    "createdat" => queryParams.SortDescending 
+                    "createdat" => queryParams.SortDescending
                         ? query.OrderByDescending(p => p.CreatedAt)
                         : query.OrderBy(p => p.CreatedAt),
                     "updatedat" => queryParams.SortDescending
@@ -787,9 +794,9 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
 
-        // ==================== Prescription Lifecycle Operations ====================
-
+        #region Prescription Lifecycle Operations
         public async Task<PrescriptionResponse> CancelPrescriptionAsync(Guid id, CancelPrescriptionRequest request)
         {
             try
@@ -871,7 +878,7 @@ namespace Shuryan.Application.Services
                 await _unitOfWork.Prescriptions.AddAsync(newPrescription);
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Prescription {OriginalId} renewed as {NewId}", 
+                _logger.LogInformation("Prescription {OriginalId} renewed as {NewId}",
                     id, newPrescription.Id);
 
                 return _mapper.Map<PrescriptionResponse>(newPrescription);
@@ -882,9 +889,9 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
 
-        // ==================== Patient Medication Operations ====================
-
+        #region Patient Medication Operations
         public async Task<IEnumerable<CurrentMedicationResponse>> GetCurrentMedicationsAsync(Guid patientId)
         {
             try
@@ -896,13 +903,13 @@ namespace Shuryan.Application.Services
                 // Get all prescriptions for this patient (not cancelled)
                 var allPrescriptions = await _unitOfWork.Prescriptions.GetAllAsync();
                 var activePrescriptions = allPrescriptions
-                    .Where(p => p.PatientId == patientId && 
+                    .Where(p => p.PatientId == patientId &&
                                 p.Status != Core.Enums.PrescriptionStatus.Cancelled &&
                                 p.Status != Core.Enums.PrescriptionStatus.Expired)
                     .ToList();
 
                 var currentMedications = new List<CurrentMedicationResponse>();
-                
+
                 foreach (var prescription in activePrescriptions)
                 {
                     // Get prescription with details
@@ -916,7 +923,7 @@ namespace Shuryan.Application.Services
                         var startDate = prescriptionDetails.CreatedAt;
                         var endDate = startDate.AddDays(prescribedMed.DurationDays);
                         var daysRemaining = (int)(endDate - DateTime.UtcNow).TotalDays;
-                        
+
                         // Only include medications that haven't expired yet (or show all for debugging)
                         if (endDate > DateTime.UtcNow || daysRemaining >= -30)  // Show medications from last 30 days
                         {
@@ -936,13 +943,13 @@ namespace Shuryan.Application.Services
                                 DurationInDays = prescribedMed.DurationDays,
                                 SpecialInstructions = prescribedMed.SpecialInstructions,
                                 DoctorId = prescriptionDetails.DoctorId,
-                                DoctorName = prescriptionDetails.Doctor != null 
+                                DoctorName = prescriptionDetails.Doctor != null
                                     ? $"{prescriptionDetails.Doctor.FirstName} {prescriptionDetails.Doctor.LastName}"
                                     : null,
                                 DoctorSpecialization = null, // TODO: Add specialization if needed
                                 IsDispensed = prescriptionDetails.Status == Core.Enums.PrescriptionStatus.Dispensed,
-                                DispensedDate = prescriptionDetails.Status == Core.Enums.PrescriptionStatus.Dispensed 
-                                    ? prescriptionDetails.UpdatedAt 
+                                DispensedDate = prescriptionDetails.Status == Core.Enums.PrescriptionStatus.Dispensed
+                                    ? prescriptionDetails.UpdatedAt
                                     : null,
                                 RemainingDays = daysRemaining > 0 ? daysRemaining : 0,
                                 StartDate = startDate,
@@ -952,10 +959,10 @@ namespace Shuryan.Application.Services
                         }
                     }
                 }
-                
-                _logger.LogInformation("Retrieved {Count} current medications for patient {PatientId}", 
+
+                _logger.LogInformation("Retrieved {Count} current medications for patient {PatientId}",
                     currentMedications.Count, patientId);
-                
+
                 return currentMedications.OrderBy(m => m.EndDate);
             }
             catch (Exception ex)
@@ -963,7 +970,8 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error getting current medications for patient {PatientId}", patientId);
                 throw;
             }
-        }
+        } 
+        #endregion
 
         // Helper method
         private string GenerateUniquePrescriptionNumber()

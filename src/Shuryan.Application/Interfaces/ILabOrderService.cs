@@ -9,7 +9,7 @@ namespace Shuryan.Application.Interfaces
 {
     public interface ILabOrderService
     {
-        // ==================== CRUD Operations ====================
+        #region CRUD Operations
 
         /// <summary>
         /// Get all lab orders with optional filters
@@ -56,7 +56,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<bool> DeleteLabOrderAsync(Guid id);
 
-        // ==================== Order Lifecycle ====================
+        #endregion
+
+        #region Order Lifecycle
 
         /// <summary>
         /// Confirm lab order by laboratory
@@ -78,7 +80,9 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<LabOrderResponse> CompleteLabOrderAsync(Guid id);
 
-        // ==================== Results Management ====================
+        #endregion
+
+        #region Results Management
 
         /// <summary>
         /// Get lab order results
@@ -95,14 +99,18 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<LabResultResponse> UpdateLabResultAsync(Guid resultId, UpdateLabResultRequest request);
 
-        // ==================== Payment ====================
+        #endregion
+
+        #region Payment
 
         /// <summary>
         /// Mark lab order as paid
         /// </summary>
         Task<LabOrderResponse> MarkLabOrderAsPaidAsync(Guid id, string paymentMethod, string? transactionId = null);
 
-        // ==================== Statistics ====================
+        #endregion
+
+        #region Statistics
 
         /// <summary>
         /// Get lab order statistics
@@ -111,6 +119,8 @@ namespace Shuryan.Application.Interfaces
             Guid? laboratoryId = null,
             DateTime? startDate = null,
             DateTime? endDate = null);
+
+        #endregion
     }
 
     public class LabOrderStatistics

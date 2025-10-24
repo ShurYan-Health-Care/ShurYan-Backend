@@ -28,6 +28,8 @@ namespace Shuryan.Application.Services
             _logger = logger;
         }
 
+        #region Get All Prescriptions
+
         public async Task<IEnumerable<LabPrescriptionResponse>> GetAllLabPrescriptionsAsync(
             Guid? doctorId = null,
             Guid? patientId = null,
@@ -38,7 +40,6 @@ namespace Shuryan.Application.Services
             {
                 var prescriptions = (await _unitOfWork.LabPrescriptions.GetAllAsync()).ToList();
 
-                // Apply filters
                 if (doctorId.HasValue)
                     prescriptions = prescriptions.Where(p => p.DoctorId == doctorId.Value).ToList();
 
@@ -71,6 +72,10 @@ namespace Shuryan.Application.Services
             }
         }
 
+        #endregion
+
+        #region Get Prescription By Id
+
         public async Task<LabPrescriptionResponse?> GetLabPrescriptionByIdAsync(Guid id)
         {
             try
@@ -80,28 +85,25 @@ namespace Shuryan.Application.Services
                     return null;
 
                 var response = _mapper.Map<LabPrescriptionResponse>(prescription);
-                
-                // Load Doctor Name
+
                 var doctor = await _unitOfWork.Doctors.GetByIdAsync(prescription.DoctorId);
                 if (doctor != null)
                 {
                     response.DoctorName = $"د. {doctor.FirstName} {doctor.LastName}";
                 }
-                
-                // Load Patient Name
+
                 var patient = await _unitOfWork.Patients.GetByIdAsync(prescription.PatientId);
                 if (patient != null)
                 {
                     response.PatientName = $"{patient.FirstName} {patient.LastName}";
                 }
-                
-                // Manually map items to ensure correct mapping
+
                 response.Items = prescription.Items.Select(item => new LabPrescriptionItemResponse
                 {
                     LabTestId = item.LabTestId,
                     SpecialInstructions = item.DoctorNotes
                 }).ToList();
-                
+
                 _logger.LogInformation("Retrieved lab prescription {PrescriptionId}", id);
                 return response;
             }
@@ -112,17 +114,20 @@ namespace Shuryan.Application.Services
             }
         }
 
+        #endregion
+
+        #region Get Prescription By AppointmentId
+
         public async Task<LabPrescriptionResponse?> GetLabPrescriptionByAppointmentIdAsync(Guid appointmentId)
         {
             try
             {
                 var prescriptions = await _unitOfWork.LabPrescriptions.GetAllAsync();
                 var prescription = prescriptions.FirstOrDefault(p => p.AppointmentId == appointmentId);
-                
+
                 if (prescription == null)
                     return null;
 
-                // Use GetLabPrescriptionByIdAsync to get full details
                 return await GetLabPrescriptionByIdAsync(prescription.Id);
             }
             catch (Exception ex)
@@ -131,6 +136,10 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+
+        #endregion
+
+        #region Get Prescriptions By Patient/Doctor
 
         public async Task<IEnumerable<LabPrescriptionResponse>> GetPatientLabPrescriptionsAsync(Guid patientId)
         {
@@ -186,21 +195,22 @@ namespace Shuryan.Application.Services
             }
         }
 
+        #endregion
+
+        #region Create / Update / Delete Prescription
+
         public async Task<LabPrescriptionResponse> CreateLabPrescriptionAsync(CreateLabPrescriptionRequest request)
         {
             try
             {
-                // Validate appointment exists
                 var appointment = await _unitOfWork.Appointments.GetByIdAsync(request.AppointmentId);
                 if (appointment == null)
                     throw new ArgumentException($"Appointment with ID {request.AppointmentId} not found");
 
-                // Validate doctor exists
                 var doctor = await _unitOfWork.Doctors.GetByIdAsync(request.DoctorId);
                 if (doctor == null)
                     throw new ArgumentException($"Doctor with ID {request.DoctorId} not found");
 
-                // Validate patient exists
                 var patient = await _unitOfWork.Patients.GetByIdAsync(request.PatientId);
                 if (patient == null)
                     throw new ArgumentException($"Patient with ID {request.PatientId} not found");
@@ -217,12 +227,10 @@ namespace Shuryan.Application.Services
 
                 await _unitOfWork.LabPrescriptions.AddAsync(prescription);
 
-                // Add prescription items
                 if (request.Items != null && request.Items.Any())
                 {
                     foreach (var itemRequest in request.Items)
                     {
-                        // Validate lab test exists
                         var labTest = await _unitOfWork.LabTests.GetByIdAsync(itemRequest.LabTestId);
                         if (labTest == null)
                             throw new ArgumentException($"Lab test with ID {itemRequest.LabTestId} not found");
@@ -235,7 +243,7 @@ namespace Shuryan.Application.Services
                             DoctorNotes = itemRequest.SpecialInstructions,
                             CreatedAt = DateTime.UtcNow
                         };
-                        
+
                         await _unitOfWork.LabPrescriptionItems.AddAsync(item);
                     }
                 }
@@ -286,7 +294,6 @@ namespace Shuryan.Application.Services
                 if (prescription == null)
                     return false;
 
-                // Mark as deleted by updating timestamp
                 prescription.UpdatedAt = DateTime.UtcNow;
                 await _unitOfWork.SaveChangesAsync();
 
@@ -300,7 +307,9 @@ namespace Shuryan.Application.Services
             }
         }
 
-        // ==================== Prescription Items Management ====================
+        #endregion
+
+        #region Prescription Items Management
 
         public async Task<IEnumerable<LabPrescriptionItemResponse>> GetPrescriptionItemsAsync(Guid prescriptionId)
         {
@@ -360,7 +369,6 @@ namespace Shuryan.Application.Services
                 if (item == null)
                     return false;
 
-                // Mark as deleted
                 item.UpdatedAt = DateTime.UtcNow;
                 await _unitOfWork.SaveChangesAsync();
 
@@ -373,5 +381,7 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+
+        #endregion
     }
 }

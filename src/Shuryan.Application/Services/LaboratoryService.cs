@@ -27,13 +27,12 @@ namespace Shuryan.Application.Services
             _mapper = mapper;
             _logger = logger;
         }
-
-        // ==================== CRUD Operations ====================
-
+        
+        #region CRUD Operations
         public async Task<IEnumerable<LaboratoryResponse>> GetAllLaboratoriesAsync(
-            string? searchTerm = null,
-            bool? offersHomeSampleCollection = null,
-            bool includeInactive = false)
+          string? searchTerm = null,
+          bool? offersHomeSampleCollection = null,
+          bool includeInactive = false)
         {
             try
             {
@@ -65,7 +64,7 @@ namespace Shuryan.Application.Services
                     {
                         var lab = laboratories.FirstOrDefault(l => l.Id == response.Id);
                         if (lab == null) continue;
-                    
+
                         // Load Address
                         if (lab.AddressId != Guid.Empty)
                         {
@@ -100,11 +99,11 @@ namespace Shuryan.Application.Services
                             var labServices = await _unitOfWork.LabServices.GetAllAsync();
                             var services = labServices.Where(s => s.LaboratoryId == lab.Id && s.IsAvailable).ToList();
                             var serviceResponses = new List<LabServiceResponse>();
-                            
+
                             foreach (var service in services)
                             {
                                 var serviceResponse = _mapper.Map<LabServiceResponse>(service);
-                                
+
                                 // Load Lab Test details
                                 try
                                 {
@@ -119,10 +118,10 @@ namespace Shuryan.Application.Services
                                 {
                                     _logger.LogWarning(testEx, "Error loading lab test {LabTestId}", service.LabTestId);
                                 }
-                                
+
                                 serviceResponses.Add(serviceResponse);
                             }
-                            
+
                             response.LabServices = serviceResponses;
                         }
                         catch (Exception ex)
@@ -194,11 +193,11 @@ namespace Shuryan.Application.Services
                     var labServices = await _unitOfWork.LabServices.GetAllAsync();
                     var services = labServices.Where(s => s.LaboratoryId == id && s.IsAvailable).ToList();
                     var serviceResponses = new List<LabServiceResponse>();
-                    
+
                     foreach (var service in services)
                     {
                         var serviceResponse = _mapper.Map<LabServiceResponse>(service);
-                        
+
                         // Load Lab Test details
                         try
                         {
@@ -213,10 +212,10 @@ namespace Shuryan.Application.Services
                         {
                             _logger.LogWarning(testEx, "Error loading lab test {LabTestId}", service.LabTestId);
                         }
-                        
+
                         serviceResponses.Add(serviceResponse);
                     }
-                    
+
                     response.LabServices = serviceResponses;
                 }
                 catch (Exception ex)
@@ -259,9 +258,9 @@ namespace Shuryan.Application.Services
             {
                 // Check for duplicate laboratory name
                 var allLabs = await _unitOfWork.Laboratories.GetAllAsync();
-                var existingLabByName = allLabs.FirstOrDefault(l => 
+                var existingLabByName = allLabs.FirstOrDefault(l =>
                     l.Name.Trim().ToLower() == request.Name.Trim().ToLower());
-                
+
                 if (existingLabByName != null)
                 {
                     throw new InvalidOperationException($"معمل بنفس الاسم '{request.Name}' موجود بالفعل");
@@ -270,9 +269,9 @@ namespace Shuryan.Application.Services
                 // Check for duplicate WhatsApp number
                 if (!string.IsNullOrWhiteSpace(request.WhatsAppNumber))
                 {
-                    var existingLabByWhatsApp = allLabs.FirstOrDefault(l => 
+                    var existingLabByWhatsApp = allLabs.FirstOrDefault(l =>
                         l.WhatsAppNumber == request.WhatsAppNumber);
-                    
+
                     if (existingLabByWhatsApp != null)
                     {
                         throw new InvalidOperationException($"رقم الواتساب '{request.WhatsAppNumber}' مستخدم بالفعل");
@@ -292,7 +291,7 @@ namespace Shuryan.Application.Services
                 laboratory.CreatedAt = DateTime.UtcNow;
                 laboratory.LaboratoryStatus = Core.Enums.Identity.Status.Active;
                 laboratory.VerificationStatus = Core.Enums.Identity.VerificationStatus.UnderReview;
-                
+
                 // Set required IdentityUser fields
                 laboratory.UserName = $"lab_{laboratory.Id}"; // Unique username
                 laboratory.Email = $"lab_{laboratory.Id}@temp.local"; // Temporary email (will be updated later)
@@ -300,7 +299,7 @@ namespace Shuryan.Application.Services
                 laboratory.SecurityStamp = Guid.NewGuid().ToString();
 
                 await _unitOfWork.Laboratories.AddAsync(laboratory);
-                
+
                 // Add working hours if provided
                 if (request.WorkingHours != null && request.WorkingHours.Any())
                 {
@@ -313,12 +312,12 @@ namespace Shuryan.Application.Services
                         await _unitOfWork.LabWorkingHours.AddAsync(workingHours);
                     }
                 }
-                
+
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("Created laboratory {LaboratoryId} with address {AddressId}", laboratory.Id, address.Id);
 
-                return await GetLaboratoryByIdAsync(laboratory.Id) 
+                return await GetLaboratoryByIdAsync(laboratory.Id)
                     ?? throw new InvalidOperationException("Failed to retrieve created laboratory");
             }
             catch (Exception ex)
@@ -349,19 +348,19 @@ namespace Shuryan.Application.Services
                     laboratory.OffersHomeSampleCollection = request.OffersHomeSampleCollection.Value;
                 if (request.HomeSampleCollectionFee.HasValue)
                     laboratory.HomeSampleCollectionFee = request.HomeSampleCollectionFee;
-                
+
                 // Update working hours if provided
                 if (request.WorkingHours != null && request.WorkingHours.Any())
                 {
                     // Remove existing working hours
                     var existingHours = await _unitOfWork.LabWorkingHours.GetAllAsync();
                     var labExistingHours = existingHours.Where(w => w.LaboratoryId == id).ToList();
-                    
+
                     foreach (var existingHour in labExistingHours)
                     {
                         _unitOfWork.LabWorkingHours.Delete(existingHour);
                     }
-                    
+
                     // Add new working hours
                     foreach (var hoursRequest in request.WorkingHours)
                     {
@@ -372,7 +371,7 @@ namespace Shuryan.Application.Services
                         await _unitOfWork.LabWorkingHours.AddAsync(workingHours);
                     }
                 }
-                
+
                 laboratory.UpdatedAt = DateTime.UtcNow;
                 await _unitOfWork.SaveChangesAsync();
 
@@ -410,8 +409,9 @@ namespace Shuryan.Application.Services
             }
         }
 
-        // ==================== Lab Services Management ====================
+        #endregion
 
+        #region Lab Services Management
         public async Task<IEnumerable<LabServiceResponse>> GetLaboratoryServicesAsync(Guid laboratoryId)
         {
             try
@@ -420,11 +420,11 @@ namespace Shuryan.Application.Services
                 var labServices = services.Where(s => s.LaboratoryId == laboratoryId).ToList();
 
                 var responses = new List<LabServiceResponse>();
-                
+
                 foreach (var service in labServices)
                 {
                     var response = _mapper.Map<LabServiceResponse>(service);
-                    
+
                     // Load Lab Test details
                     try
                     {
@@ -439,10 +439,10 @@ namespace Shuryan.Application.Services
                     {
                         _logger.LogWarning(testEx, "Error loading lab test {LabTestId}", service.LabTestId);
                     }
-                    
+
                     responses.Add(response);
                 }
-                
+
                 return responses;
             }
             catch (Exception ex)
@@ -475,11 +475,11 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Added service to laboratory {LaboratoryId}", laboratoryId);
 
                 var response = _mapper.Map<LabServiceResponse>(labService);
-                
+
                 // Load Lab Test details
                 response.LabTestName = labTest.Name;
                 response.LabTestCategory = labTest.Category.ToString();
-                
+
                 return response;
             }
             catch (Exception ex)
@@ -512,11 +512,11 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Updated lab service {ServiceId}", serviceId);
 
                 var response = _mapper.Map<LabServiceResponse>(service);
-                
+
                 // Load Lab Test details
                 response.LabTestName = labTest.Name;
                 response.LabTestCategory = labTest.Category.ToString();
-                
+
                 return response;
             }
             catch (Exception ex)
@@ -548,8 +548,9 @@ namespace Shuryan.Application.Services
             }
         }
 
-        // ==================== Working Hours ====================
+        #endregion
 
+        #region Working Hours
         public async Task<IEnumerable<LabWorkingHoursResponse>> GetLaboratoryWorkingHoursAsync(Guid laboratoryId)
         {
             try
@@ -598,10 +599,10 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error setting working hours for laboratory {LaboratoryId}", laboratoryId);
                 throw;
             }
-        }
+        } 
+        #endregion
 
-        // ==================== Search & Filter ====================
-
+        #region Search & Filter
         public async Task<IEnumerable<LaboratoryResponse>> SearchLaboratoriesByLocationAsync(
             double latitude,
             double longitude,
@@ -612,7 +613,7 @@ namespace Shuryan.Application.Services
                 // This would require spatial queries - simplified version
                 var laboratories = await _unitOfWork.Laboratories.GetAllAsync();
                 var responses = _mapper.Map<IEnumerable<LaboratoryResponse>>(laboratories);
-                
+
                 _logger.LogInformation("Searched laboratories by location");
                 return responses;
             }
@@ -648,9 +649,10 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error getting laboratories offering test {LabTestId}", labTestId);
                 throw;
             }
-        }
+        } 
+        #endregion
 
-        // ==================== Statistics ====================
+        #region Statistics
 
         public async Task<LaboratoryStatistics> GetLaboratoryStatisticsAsync(Guid laboratoryId)
         {
@@ -667,9 +669,9 @@ namespace Shuryan.Application.Services
                 {
                     TotalOrders = labOrders.Count,
                     CompletedOrders = labOrders.Count(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.Completed),
-                    PendingOrders = labOrders.Count(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.PendingPayment || 
+                    PendingOrders = labOrders.Count(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.PendingPayment ||
                                                          o.Status == Core.Enums.Laboratory.LabOrderStatus.ConfirmedByLab),
-                    CancelledOrders = labOrders.Count(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.CancelledByPatient || 
+                    CancelledOrders = labOrders.Count(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.CancelledByPatient ||
                                                            o.Status == Core.Enums.Laboratory.LabOrderStatus.CancelledByLab),
                     TotalRevenue = labOrders.Where(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.Completed)
                                             .Sum(o => o.TestsTotalCost + o.SampleCollectionDeliveryCost),
@@ -685,6 +687,7 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error getting statistics for laboratory {LaboratoryId}", laboratoryId);
                 throw;
             }
-        }
+        } 
+        #endregion
     }
 }

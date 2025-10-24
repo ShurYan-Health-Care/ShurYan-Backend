@@ -29,8 +29,7 @@ namespace Shuryan.Application.Services
             _logger = logger;
         }
 
-        // ==================== CRUD Operations ====================
-
+        #region Get All Lab Orders
         public async Task<IEnumerable<LabOrderResponse>> GetAllLabOrdersAsync(
             Guid? patientId = null,
             Guid? laboratoryId = null,
@@ -78,7 +77,9 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
 
+        #region Get Lab Order By Id
         public async Task<LabOrderResponse?> GetLabOrderByIdAsync(Guid id)
         {
             try
@@ -91,28 +92,28 @@ namespace Shuryan.Application.Services
                 }
 
                 var response = _mapper.Map<LabOrderResponse>(order);
-                
+
                 // Load Patient Name
                 var patient = await _unitOfWork.Patients.GetByIdAsync(order.PatientId);
                 if (patient != null)
                 {
                     response.PatientName = $"{patient.FirstName} {patient.LastName}";
                 }
-                
+
                 // Load Laboratory Name
                 var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(order.LaboratoryId);
                 if (laboratory != null)
                 {
                     response.LaboratoryName = laboratory.Name;
                 }
-                
+
                 // Load Lab Prescription Tests
                 var labPrescription = await _unitOfWork.LabPrescriptions.GetByIdAsync(order.LabPrescriptionId);
                 if (labPrescription != null)
                 {
                     var tests = new List<LabOrderTestResponse>();
                     decimal totalCost = 0;
-                    
+
                     foreach (var prescItem in labPrescription.Items)
                     {
                         var labTest = await _unitOfWork.LabTests.GetByIdAsync(prescItem.LabTestId);
@@ -120,13 +121,13 @@ namespace Shuryan.Application.Services
                         {
                             // Get price from laboratory's services
                             var labServices = await _unitOfWork.LabServices.GetAllAsync();
-                            var labService = labServices.FirstOrDefault(ls => 
-                                ls.LaboratoryId == order.LaboratoryId && 
+                            var labService = labServices.FirstOrDefault(ls =>
+                                ls.LaboratoryId == order.LaboratoryId &&
                                 ls.LabTestId == labTest.Id);
-                            
+
                             decimal price = labService?.Price ?? 0;
                             totalCost += price;
-                            
+
                             tests.Add(new LabOrderTestResponse
                             {
                                 LabTestId = labTest.Id,
@@ -136,17 +137,17 @@ namespace Shuryan.Application.Services
                             });
                         }
                     }
-                    
+
                     response.Tests = tests;
                     response.TestsTotalCost = totalCost;
-                    
+
                     // Add home collection fee if applicable
                     if (order.SampleCollectionType == SampleCollectionType.HomeSampleCollection && laboratory != null)
                     {
                         response.SampleCollectionDeliveryCost = laboratory.HomeSampleCollectionFee ?? 0;
                     }
                 }
-                
+
                 _logger.LogInformation("Retrieved lab order {OrderId}", id);
                 return response;
             }
@@ -156,13 +157,15 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
 
+        #region Get Patient & Laboratory Orders
         public async Task<IEnumerable<LabOrderResponse>> GetPatientLabOrdersAsync(Guid patientId)
         {
             try
             {
                 var orders = await _unitOfWork.LabOrders.GetPagedOrdersForPatientAsync(patientId, 1, 100);
-                
+
                 var responses = new List<LabOrderResponse>();
                 foreach (var order in orders)
                 {
@@ -172,7 +175,7 @@ namespace Shuryan.Application.Services
                         responses.Add(response);
                     }
                 }
-                
+
                 _logger.LogInformation("Retrieved lab orders for patient {PatientId}", patientId);
                 return responses;
             }
@@ -188,7 +191,7 @@ namespace Shuryan.Application.Services
             try
             {
                 var orders = await _unitOfWork.LabOrders.GetPagedOrdersForLaboratoryAsync(laboratoryId, null, 1, 100);
-                
+
                 var responses = new List<LabOrderResponse>();
                 foreach (var order in orders)
                 {
@@ -198,7 +201,7 @@ namespace Shuryan.Application.Services
                         responses.Add(response);
                     }
                 }
-                
+
                 _logger.LogInformation("Retrieved lab orders for laboratory {LaboratoryId}", laboratoryId);
                 return responses;
             }
@@ -208,7 +211,9 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
 
+        #region Create Order
         public async Task<LabOrderResponse> CreateLabOrderAsync(CreateLabOrderRequest request)
         {
             try
@@ -248,7 +253,9 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
 
+        #region Update Order
         public async Task<LabOrderResponse> UpdateLabOrderStatusAsync(Guid id, LabOrderStatus newStatus, string? notes = null)
         {
             try
@@ -272,7 +279,9 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
 
+        #region Cancel & Delete
         public async Task<LabOrderResponse> CancelLabOrderAsync(Guid id, string cancellationReason)
         {
             try
@@ -329,5 +338,6 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
+        #endregion
     }
 }
