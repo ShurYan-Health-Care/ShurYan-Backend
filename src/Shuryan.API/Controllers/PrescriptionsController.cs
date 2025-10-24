@@ -41,9 +41,12 @@ namespace Shuryan.API.Controllers
             return string.IsNullOrEmpty(userIdClaim) ? Guid.Empty : Guid.Parse(userIdClaim);
         }
 
-        /// <summary>
-        /// Checks if the current user is an Admin.
-        /// </summary>
+        private bool IsAccessingOwnData(Guid userId)
+        {
+            var currentUserId = GetCurrentUserId();
+            return currentUserId == userId;
+        }
+
         private bool IsAdmin()
         {
             return User.IsInRole("Admin");
