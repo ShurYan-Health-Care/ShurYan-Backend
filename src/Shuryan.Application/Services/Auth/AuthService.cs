@@ -659,16 +659,6 @@ namespace Shuryan.Application.Services.Auth
         {
             try
             {
-                // Check rate limiting
-                var canResend = await _otpService.CanResendOtpAsync(dto.Email);
-                if (!canResend)
-                {
-                    return ApiResponse<bool>.Failure(
-                        "Too many requests",
-                        new[] { "Please wait before requesting another code" },
-                        429);
-                }
-
                 var user = await _userManager.FindByEmailAsync(dto.Email);
 
                 // Don't reveal if user exists (security best practice)
@@ -678,6 +668,18 @@ namespace Shuryan.Application.Services.Auth
                         true,
                         "If your email exists, you'll receive a password reset code");
                 }
+
+
+                // Check rate limiting
+                var canResend = await _otpService.CanResendOtpAsync(dto.Email);
+                if (!canResend)
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Too many requests",
+                        new[] { "Please wait before requesting another code" },
+                        429);
+                }
+                
 
                 // Generate and send OTP
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
