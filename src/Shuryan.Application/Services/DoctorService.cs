@@ -229,6 +229,22 @@ namespace Shuryan.Application.Services
             }
         }
 
+        public IEnumerable<SpecialtyResponse> GetSpecialties()
+        {
+            var specialties = Enum.GetValues(typeof(Core.Enums.Doctor.MedicalSpecialty))
+                .Cast<Core.Enums.Doctor.MedicalSpecialty>()
+                .Select(s => new SpecialtyResponse
+                {
+                    Id = (int)s,
+                    Name = s.ToString()
+                })
+                .ToList();
+
+            return specialties;
+        }
+
+
+
         public async Task<bool> DeleteDoctorAsync(Guid doctorId)
         {
             try

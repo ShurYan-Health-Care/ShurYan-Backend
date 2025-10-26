@@ -14,6 +14,7 @@ namespace Shuryan.Application.Interfaces
         Task<IEnumerable<DoctorProfileResponse>> GetAllDoctorsAsync(int pageNumber = 1, int pageSize = 10);
         Task<IEnumerable<DoctorProfileResponse>> SearchDoctorsAsync(string searchTerm, int pageNumber = 1, int pageSize = 10);
         Task<IEnumerable<DoctorProfileResponse>> GetDoctorsBySpecialtyAsync(string specialty, int pageNumber = 1, int pageSize = 10);
+        IEnumerable<SpecialtyResponse> GetSpecialties();
         Task<bool> DeleteDoctorAsync(Guid doctorId);
         Task<DoctorProfileResponse> UpdateProfileImageAsync(Guid doctorId, string imageUrl);
         Task<IEnumerable<DoctorProfileResponse>> GetTopRatedDoctorsAsync(int count = 10);
