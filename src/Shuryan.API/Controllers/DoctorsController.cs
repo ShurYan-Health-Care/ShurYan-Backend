@@ -224,6 +224,37 @@ namespace Shuryan.API.Controllers
             }
         }
 
+
+        [HttpGet("specialty/all")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<SpecialtyResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<SpecialtyResponse>>>> GetAllSpecialty()
+        {
+            _logger.LogInformation("Request received to get all specialties");
+
+            try
+            {
+                var result = _doctorService.GetSpecialties();
+
+                if (result == null || !result.Any())
+                {
+                    _logger.LogWarning("No specialties found");
+                    return Ok(ApiResponse<IEnumerable<SpecialtyResponse>>.Success(result, "No specialties found"));
+                }
+
+                _logger.LogInformation("Retrieved {Count} specialties successfully", result.Count());
+                return Ok(ApiResponse<IEnumerable<SpecialtyResponse>>.Success(result, "Specialties retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while retrieving specialties");
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving specialities", new[] { ex.Message }, 500));
+            }
+        }
+
+
+
         [HttpPut("{id}")]
         [Authorize(Roles = "Doctor,Admin")]
         [ProducesResponseType(typeof(ApiResponse<DoctorProfileResponse>), StatusCodes.Status200OK)]
