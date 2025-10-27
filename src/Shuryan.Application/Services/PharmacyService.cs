@@ -19,12 +19,14 @@ namespace Shuryan.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<PharmacyService> _logger;
+        private readonly IFileUploadService _fileUploadService;
 
-        public PharmacyService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<PharmacyService> logger)
+        public PharmacyService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<PharmacyService> logger, IFileUploadService fileUploadService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _fileUploadService = fileUploadService;
         }
 
         public async Task<PharmacyResponse?> GetPharmacyByIdAsync(Guid id)
@@ -244,7 +246,10 @@ namespace Shuryan.Application.Services
 
         public async Task<PharmacyDocumentResponse> UploadDocumentAsync(Guid pharmacyId, CreatePharmacyDocumentRequest request)
         {
-            var doc = new PharmacyDocument { Id = Guid.NewGuid(), PharmacyId = pharmacyId, DocumentUrl = request.DocumentUrl, Type = request.Type, Status = VerificationDocumentStatus.Pending, CreatedAt = DateTime.UtcNow };
+            // Upload document file to Cloudinary
+            var uploadResult = await _fileUploadService.UploadDocumentAsync(request.DocumentFile, pharmacyId.ToString());
+
+            var doc = new PharmacyDocument { Id = Guid.NewGuid(), PharmacyId = pharmacyId, DocumentUrl = uploadResult.FileUrl, Type = request.Type, Status = VerificationDocumentStatus.Pending, CreatedAt = DateTime.UtcNow };
             await _unitOfWork.PharmacyDocuments.AddAsync(doc);
             await _unitOfWork.SaveChangesAsync();
             return _mapper.Map<PharmacyDocumentResponse>(doc);
