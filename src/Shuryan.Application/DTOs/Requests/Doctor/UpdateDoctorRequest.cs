@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Shuryan.Core.Enums.Doctor;
 using Shuryan.Core.Enums.Identity;
 using System;
@@ -27,8 +28,7 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
         [StringLength(5000, ErrorMessage = "Biography cannot exceed 5000 characters")]
         public string? Biography { get; set; }
 
-        [Url(ErrorMessage = "Invalid profile image URL format")]
-        public string? ProfileImageUrl { get; set; }
+        public IFormFile? ProfileImage { get; set; }
 
         public DateTime? BirthDate { get; set; }
 

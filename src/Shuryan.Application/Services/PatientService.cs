@@ -34,17 +34,20 @@ namespace Shuryan.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<PatientService> _logger;
+        private readonly IFileUploadService _fileUploadService;
 
         public PatientService(
             IPatientRepository patientRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            ILogger<PatientService> logger)
+            ILogger<PatientService> logger,
+            IFileUploadService fileUploadService)
         {
             _patientRepository = patientRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _fileUploadService = fileUploadService;
         }
 
         #region Basic CRUD Operations
@@ -192,9 +195,18 @@ namespace Shuryan.Application.Services
                     patient.Gender = request.Gender;
                 }
 
-                if (!string.IsNullOrWhiteSpace(request.ProfileImageUrl))
+                // Upload profile image if provided
+                if (request.ProfileImage != null)
                 {
-                    patient.ProfileImageUrl = request.ProfileImageUrl;
+                    // Delete old image if exists
+                    if (!string.IsNullOrWhiteSpace(patient.ProfileImageUrl))
+                    {
+                        await _fileUploadService.DeleteFileAsync(patient.ProfileImageUrl);
+                    }
+
+                    // Upload new image
+                    var uploadResult = await _fileUploadService.UploadProfileImageAsync(request.ProfileImage, id.ToString());
+                    patient.ProfileImageUrl = uploadResult.FileUrl;
                 }
 
                 // Handle Address - Create if doesn't exist, Update if exists

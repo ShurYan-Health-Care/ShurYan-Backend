@@ -5,6 +5,7 @@ using Shuryan.Application.Services;
 using Shuryan.Application.Services.Auth;
 using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
+using Shuryan.Application.Settings;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.Repositories.Doctors;
@@ -22,6 +23,7 @@ namespace Shuryan.API.Extensions
         {
             services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
             services.Configure<OAuthSettings>(configuration.GetSection("OAuthSettings"));
+            services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
 
             return services;
         }
@@ -59,6 +61,9 @@ namespace Shuryan.API.Extensions
 
             // Email Service
             services.AddScoped<IEmailService, EmailService>();
+
+            // File Upload Service
+            services.AddScoped<IFileUploadService, CloudinaryService>();
 
             // Business Services
             services.AddScoped<IPatientService, PatientService>();

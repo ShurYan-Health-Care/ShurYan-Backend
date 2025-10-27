@@ -10,7 +10,9 @@ namespace Shuryan.Application.Interfaces
     {
         #region Profile Management
         Task<DoctorProfileResponse?> GetDoctorProfileAsync(Guid doctorId);
+        Task<DoctorPersonalProfileResponse?> GetPersonalProfileAsync(Guid doctorId);
         Task<DoctorProfileResponse> UpdateDoctorProfileAsync(Guid doctorId, UpdateDoctorProfileRequest request);
+        Task<DoctorProfileResponse> UpdatePersonalInfoAsync(Guid doctorId, UpdatePersonalInfoRequest request);
         Task<IEnumerable<DoctorProfileResponse>> GetAllDoctorsAsync(int pageNumber = 1, int pageSize = 10);
         Task<IEnumerable<DoctorProfileResponse>> SearchDoctorsAsync(string searchTerm, int pageNumber = 1, int pageSize = 10);
         Task<IEnumerable<DoctorProfileResponse>> GetDoctorsBySpecialtyAsync(string specialty, int pageNumber = 1, int pageSize = 10);
