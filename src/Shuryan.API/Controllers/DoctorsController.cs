@@ -51,6 +51,183 @@ namespace Shuryan.API.Controllers
         }
         #endregion
 
+
+        [HttpGet("profile/personal")]
+        [Authorize(Roles = "Doctor")]
+        [ProducesResponseType(typeof(ApiResponse<DoctorPersonalProfileResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<DoctorPersonalProfileResponse>>> GetPersonalProfile()
+        {
+            var currentDoctorId = GetCurrentDoctorId();
+
+            if (currentDoctorId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to access personal profile - invalid token");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "Invalid or missing authentication token",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get personal profile request for doctor: {DoctorId}", currentDoctorId);
+
+            try
+            {
+                var personalProfile = await _doctorService.GetPersonalProfileAsync(currentDoctorId);
+                if (personalProfile == null)
+                {
+                    _logger.LogWarning("Personal profile not found for doctor: {DoctorId}", currentDoctorId);
+                    return NotFound(ApiResponse<object>.Failure(
+                        "Personal profile not found",
+                        statusCode: 404
+                    ));
+                }
+
+                _logger.LogInformation("Personal profile retrieved successfully for doctor: {DoctorId}", currentDoctorId);
+                return Ok(ApiResponse<DoctorPersonalProfileResponse>.Success(
+                    personalProfile,
+                    "Personal profile retrieved successfully"
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving personal profile for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving personal profile",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        [HttpPut("profile/personal")]
+        [Authorize(Roles = "Doctor")]
+        [ProducesResponseType(typeof(ApiResponse<DoctorProfileResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<DoctorProfileResponse>>> UpdatePersonalInfo(
+            [FromBody] UpdatePersonalInfoRequest request)
+        {
+            var currentDoctorId = GetCurrentDoctorId();
+
+            if (currentDoctorId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to update personal info - invalid token");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "Invalid or missing authentication token",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Update personal info request for doctor: {DoctorId}", currentDoctorId);
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("Invalid model state for UpdatePersonalInfo for doctor: {DoctorId}. Errors: {Errors}",
+                    currentDoctorId, string.Join(", ", errors));
+                return BadRequest(ApiResponse<object>.Failure(
+                    "Invalid request data",
+                    errors,
+                    400
+                ));
+            }
+
+            try
+            {
+                var doctor = await _doctorService.UpdatePersonalInfoAsync(currentDoctorId, request);
+                _logger.LogInformation("Personal info updated successfully for doctor: {DoctorId}", currentDoctorId);
+                return Ok(ApiResponse<DoctorProfileResponse>.Success(
+                    doctor,
+                    "Personal information updated successfully"
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Doctor not found for personal info update: {DoctorId}", currentDoctorId);
+                return NotFound(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 404
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating personal info for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while updating personal information",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        [HttpPut("me/profile-image")]
+        [Authorize(Roles = "Doctor")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ApiResponse<DoctorProfileResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<DoctorProfileResponse>>> UpdateMyProfileImage(
+    [FromForm] UpdateProfileImageRequest request)
+        {
+            // Get current doctor ID from JWT token
+            var currentDoctorId = GetCurrentDoctorId();
+
+            _logger.LogInformation("Update profile image request for doctor: {DoctorId}", currentDoctorId);
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("Invalid model state for UpdateProfileImage for doctor: {DoctorId}. Errors: {Errors}",
+                    currentDoctorId, string.Join(", ", errors));
+                return BadRequest(ApiResponse<object>.Failure(
+                    "Invalid request data",
+                    errors,
+                    400
+                ));
+            }
+
+            try
+            {
+                // Create UpdateDoctorProfileRequest with the profile image
+                var updateRequest = new UpdateDoctorProfileRequest
+                {
+                    ProfileImage = request.ProfileImage
+                };
+
+                var doctor = await _doctorService.UpdateDoctorProfileAsync(currentDoctorId, updateRequest);
+                _logger.LogInformation("Profile image uploaded successfully for doctor: {DoctorId}", currentDoctorId);
+                return Ok(ApiResponse<DoctorProfileResponse>.Success(
+                    doctor,
+                    "Profile image uploaded successfully"
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Doctor not found for profile image update: {DoctorId}", currentDoctorId);
+                return NotFound(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 404
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating profile image for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while updating profile image",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+
         #region Profile Management
         [HttpGet]
         [AllowAnonymous]
@@ -346,70 +523,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        [HttpPut("{id}/profile-image")]
-        [Authorize(Roles = "Doctor,Admin")]
-        [ProducesResponseType(typeof(ApiResponse<DoctorProfileResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<DoctorProfileResponse>>> UpdateProfileImage(
-            Guid id,
-            [FromBody] UpdateProfileImageRequest request)
-        {
-            _logger.LogInformation("Update profile image request for doctor: {DoctorId}", id);
-
-            // Ownership check: Doctors can only update their own profile image unless they're Admin
-            if (!IsAdmin() && !IsAccessingOwnData(id))
-            {
-                _logger.LogWarning("Forbidden: Doctor {CurrentDoctorId} attempted to update profile image of another doctor {DoctorId}", 
-                    GetCurrentDoctorId(), id);
-                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(
-                    "Doctors can only update their own profile image",
-                    statusCode: 403
-                ));
-            }
-
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                _logger.LogWarning("Invalid model state for UpdateProfileImage for doctor: {DoctorId}. Errors: {Errors}", 
-                    id, string.Join(", ", errors));
-                return BadRequest(ApiResponse<object>.Failure(
-                    "Invalid request data",
-                    errors,
-                    400
-                ));
-            }
-
-            try
-            {
-                var doctor = await _doctorService.UpdateProfileImageAsync(id, request.ImageUrl);
-                _logger.LogInformation("Profile image updated successfully for doctor: {DoctorId}", id);
-                return Ok(ApiResponse<DoctorProfileResponse>.Success(
-                    doctor,
-                    "Profile image updated successfully"
-                ));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Doctor not found for profile image update: {DoctorId}", id);
-                return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
-                    statusCode: 404
-                ));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating profile image for doctor: {DoctorId}", id);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while updating profile image",
-                    new[] { ex.Message },
-                    500
-                ));
-            }
-        }
 
         [HttpGet("top-rated")]
         [AllowAnonymous]
@@ -523,35 +636,26 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        [HttpPost("{doctorId}/documents")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [HttpPost("me/documents")]
+        [Authorize(Roles = "Doctor")]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(ApiResponse<DoctorDocumentResponse>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<DoctorDocumentResponse>>> UploadDocument(
-            Guid doctorId,
-            [FromBody] UploadDoctorDocumentRequest request)
+        public async Task<ActionResult<ApiResponse<DoctorDocumentResponse>>> UploadMyDocument(
+            [FromForm] UploadDoctorDocumentRequest request)
         {
-            _logger.LogInformation("Upload document request for doctor: {DoctorId}", doctorId);
-
-            // Ownership check: Doctors can only upload documents for their own profile unless they're Admin
-            if (!IsAdmin() && !IsAccessingOwnData(doctorId))
-            {
-                _logger.LogWarning("Forbidden: Doctor {CurrentDoctorId} attempted to upload document for another doctor {DoctorId}", 
-                    GetCurrentDoctorId(), doctorId);
-                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure(
-                    "Doctors can only upload documents for their own profile",
-                    statusCode: 403
-                ));
-            }
+            // Get current doctor ID from JWT token
+            var currentDoctorId = GetCurrentDoctorId();
+            
+            _logger.LogInformation("Upload document request for doctor: {DoctorId}", currentDoctorId);
 
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
                 _logger.LogWarning("Invalid model state for UploadDocument for doctor: {DoctorId}. Errors: {Errors}", 
-                    doctorId, string.Join(", ", errors));
+                    currentDoctorId, string.Join(", ", errors));
                 return BadRequest(ApiResponse<object>.Failure(
                     "Invalid request data",
                     errors,
@@ -561,8 +665,8 @@ namespace Shuryan.API.Controllers
 
             try
             {
-                var document = await _doctorService.UploadDocumentAsync(doctorId, request);
-                _logger.LogInformation("Document {DocumentId} uploaded successfully for doctor {DoctorId}", document.Id, doctorId);
+                var document = await _doctorService.UploadDocumentAsync(currentDoctorId, request);
+                _logger.LogInformation("Document {DocumentId} uploaded successfully for doctor {DoctorId}", document.Id, currentDoctorId);
 
                 var response = ApiResponse<DoctorDocumentResponse>.Success(
                     document,
@@ -576,7 +680,7 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Bad request on document upload for doctor {DoctorId}", doctorId);
+                _logger.LogWarning(ex, "Bad request on document upload for doctor {DoctorId}", currentDoctorId);
                 return BadRequest(ApiResponse<object>.Failure(
                     ex.Message,
                     statusCode: 400
@@ -584,7 +688,7 @@ namespace Shuryan.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogWarning(ex, "Invalid operation on document upload for doctor {DoctorId}", doctorId);
+                _logger.LogWarning(ex, "Invalid operation on document upload for doctor {DoctorId}", currentDoctorId);
                 return BadRequest(ApiResponse<object>.Failure(
                     ex.Message,
                     statusCode: 400
@@ -592,7 +696,7 @@ namespace Shuryan.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error uploading document for doctor: {DoctorId}", doctorId);
+                _logger.LogError(ex, "Error uploading document for doctor: {DoctorId}", currentDoctorId);
                 return StatusCode(500, ApiResponse<object>.Failure(
                     "An unexpected error occurred while uploading the document",
                     new[] { ex.Message },

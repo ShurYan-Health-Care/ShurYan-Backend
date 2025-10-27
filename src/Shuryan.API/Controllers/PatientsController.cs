@@ -12,6 +12,7 @@ using Shuryan.Application.Interfaces;
 using Shuryan.Core.Enums.Appointments;
 using System.Security.Claims;
 using Shuryan.Application.DTOs.Common.Base;
+using Shuryan.Application.DTOs.Requests.Doctor;
 
 namespace Shuryan.API.Controllers
 {
@@ -1385,11 +1386,12 @@ namespace Shuryan.API.Controllers
 
         #region Profile Image
         [HttpPut("me/profile-image")]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult> UpdateProfileImage([FromBody] UpdateProfileImageRequest request)
+        public async Task<ActionResult> UpdateProfileImage([FromForm] UpdateProfileImageRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -1403,15 +1405,16 @@ namespace Shuryan.API.Controllers
 
             try
             {
-                var result = await _patientService.UpdateProfileImageAsync(currentPatientId, request.ImageUrl);
-                if (!result)
+                // Create UpdatePatientRequest with the profile image
+                var updateRequest = new UpdatePatientRequest
                 {
-                    _logger.LogWarning("Patient not found for profile image update: {PatientId}", currentPatientId);
-                    return NotFound(new { Message = $"Patient with ID {currentPatientId} not found" });
-                }
-
-                _logger.LogInformation("Profile image updated successfully for patient: {PatientId}", currentPatientId);
-                return Ok(new { Message = "Profile image updated successfully", PatientId = currentPatientId });
+                    ProfileImage = request.ProfileImage
+                };
+                
+                var patient = await _patientService.UpdatePatientAsync(currentPatientId, updateRequest);
+                
+                _logger.LogInformation("Profile image uploaded successfully for patient: {PatientId}", currentPatientId);
+                return Ok(new { Message = "Profile image uploaded successfully", PatientId = currentPatientId, ProfileImageUrl = patient.ProfileImageUrl });
             }
             catch (ArgumentException ex)
             {
@@ -1455,10 +1458,4 @@ namespace Shuryan.API.Controllers
         }
         #endregion
     }
-    #region Request Models
-    public class UpdateProfileImageRequest
-    {
-        public string ImageUrl { get; set; } = string.Empty;
-    }
-    #endregion
 }

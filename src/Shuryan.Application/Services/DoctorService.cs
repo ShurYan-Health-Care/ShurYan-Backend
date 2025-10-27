@@ -20,15 +20,18 @@ namespace Shuryan.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<DoctorService> _logger;
+        private readonly IFileUploadService _fileUploadService;
 
         public DoctorService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            ILogger<DoctorService> logger)
+            ILogger<DoctorService> logger,
+            IFileUploadService fileUploadService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _fileUploadService = fileUploadService;
         }
 
         #region Profile Management
@@ -58,19 +61,9 @@ namespace Shuryan.Application.Services
                     DateOfBirth = doctor.BirthDate,
                     MedicalSpecialty = doctor.MedicalSpecialty,
                     MedicalSpecialtyName = doctor.MedicalSpecialty.ToString(),
-                    YearsOfExperience = doctor.YearsOfExperience,
                     Biography = doctor.Biography,
                     VerificationStatus = doctor.VerificationStatus,
-                    VerificationStatusName = doctor.VerificationStatus.ToString(),
-                    VerifiedAt = doctor.VerifiedAt,
-                    ClinicId = clinic?.Id,
-                    ClinicName = clinic?.Name,
-                    AverageRating = doctorReviews.Any() ? doctorReviews.Average(r => r.AverageRating) : null,
-                    TotalReviewsCount = doctorReviews.Count,
-                    CreatedAt = doctor.CreatedAt,
-                    CreatedBy = doctor.CreatedBy,
-                    UpdatedAt = doctor.UpdatedAt,
-                    UpdatedBy = doctor.UpdatedBy
+                    VerificationStatusName = doctor.VerificationStatus.ToString()
                 };
 
                 _logger.LogInformation("Retrieved doctor profile {DoctorId}", doctorId);
@@ -79,6 +72,38 @@ namespace Shuryan.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting doctor profile {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        public async Task<DoctorPersonalProfileResponse?> GetPersonalProfileAsync(Guid doctorId)
+        {
+            try
+            {
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null)
+                    return null;
+
+                var response = new DoctorPersonalProfileResponse
+                {
+                    Id = doctor.Id,
+                    ProfilePictureUrl = doctor.ProfileImageUrl,
+                    FirstName = doctor.FirstName,
+                    LastName = doctor.LastName,
+                    Email = doctor.Email,
+                    PhoneNumber = doctor.PhoneNumber,
+                    DateOfBirth = doctor.BirthDate,
+                    Gender = doctor.Gender ?? Core.Enums.Identity.Gender.Male,
+                    GenderName = (doctor.Gender ?? Core.Enums.Identity.Gender.Male).ToString(),
+                    Biography = doctor.Biography
+                };
+
+                _logger.LogInformation("Retrieved personal profile for doctor {DoctorId}", doctorId);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting personal profile for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -101,8 +126,19 @@ namespace Shuryan.Application.Services
                 if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
                     doctor.PhoneNumber = request.PhoneNumber;
 
-                if (!string.IsNullOrWhiteSpace(request.ProfilePictureUrl))
-                    doctor.ProfileImageUrl = request.ProfilePictureUrl;
+                // Upload profile image if provided
+                if (request.ProfileImage != null)
+                {
+                    // Delete old image if exists
+                    if (!string.IsNullOrWhiteSpace(doctor.ProfileImageUrl))
+                    {
+                        await _fileUploadService.DeleteFileAsync(doctor.ProfileImageUrl);
+                    }
+
+                    // Upload new image
+                    var uploadResult = await _fileUploadService.UploadProfileImageAsync(request.ProfileImage, doctorId.ToString());
+                    doctor.ProfileImageUrl = uploadResult.FileUrl;
+                }
 
                 if (request.Gender.HasValue)
                     doctor.Gender = request.Gender;
@@ -130,6 +166,47 @@ namespace Shuryan.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating doctor profile {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        public async Task<DoctorProfileResponse> UpdatePersonalInfoAsync(Guid doctorId, UpdatePersonalInfoRequest request)
+        {
+            try
+            {
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null)
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+
+                if (!string.IsNullOrWhiteSpace(request.FirstName))
+                    doctor.FirstName = request.FirstName;
+
+                if (!string.IsNullOrWhiteSpace(request.LastName))
+                    doctor.LastName = request.LastName;
+
+                if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+                    doctor.PhoneNumber = request.PhoneNumber;
+
+                if (request.DateOfBirth.HasValue)
+                    doctor.BirthDate = request.DateOfBirth;
+
+                if (request.Gender.HasValue)
+                    doctor.Gender = request.Gender;
+
+                if (!string.IsNullOrWhiteSpace(request.Biography))
+                    doctor.Biography = request.Biography;
+
+                doctor.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Updated personal info for doctor {DoctorId}", doctorId);
+                return await GetDoctorProfileAsync(doctorId)
+                    ?? throw new InvalidOperationException("Failed to retrieve updated doctor profile");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating personal info for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -276,6 +353,8 @@ namespace Shuryan.Application.Services
                 if (doctor == null)
                     throw new ArgumentException($"Doctor with ID {doctorId} not found");
 
+                // This method is kept for backward compatibility
+                // It's recommended to use UpdateDoctorProfileAsync with IFormFile instead
                 doctor.ProfileImageUrl = imageUrl;
                 doctor.UpdatedAt = DateTime.UtcNow;
                 await _unitOfWork.SaveChangesAsync();
@@ -529,11 +608,14 @@ namespace Shuryan.Application.Services
                         $"Please update the existing document (ID: {existingDocument.Id}) instead of uploading a new one.");
                 }
 
+                // Upload document file to Cloudinary
+                var uploadResult = await _fileUploadService.UploadDocumentAsync(request.DocumentFile, doctorId.ToString());
+
                 var document = new DoctorDocument
                 {
                     Id = Guid.NewGuid(),
                     DoctorId = doctorId,
-                    DocumentUrl = request.DocumentUrl,
+                    DocumentUrl = uploadResult.FileUrl,
                     Type = request.Type,
                     Status = VerificationDocumentStatus.Draft, // Start as Draft
                     CreatedAt = DateTime.UtcNow
@@ -747,7 +829,20 @@ namespace Shuryan.Application.Services
                     document.Status != VerificationDocumentStatus.Expired)
                     throw new InvalidOperationException($"Cannot update document with status {document.Status}. Only Draft, Rejected, or Expired documents can be updated.");
 
-                document.DocumentUrl = request.DocumentUrl;
+                // Upload new document file if provided
+                if (request.DocumentFile != null)
+                {
+                    // Delete old document
+                    if (!string.IsNullOrWhiteSpace(document.DocumentUrl))
+                    {
+                        await _fileUploadService.DeleteFileAsync(document.DocumentUrl);
+                    }
+
+                    // Upload new document
+                    var uploadResult = await _fileUploadService.UploadDocumentAsync(request.DocumentFile, document.DoctorId.ToString());
+                    document.DocumentUrl = uploadResult.FileUrl;
+                }
+
                 document.Type = request.Type;
                 // Keep it as Draft after update, doctor needs to submit it
                 document.Status = VerificationDocumentStatus.Draft;

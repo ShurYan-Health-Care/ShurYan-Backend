@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Shuryan.Core.Enums.Doctor;
 using System;
 using System.Collections.Generic;
@@ -10,9 +11,8 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
 {
     public class CreateDoctorDocumentRequest
     {
-        [Required(ErrorMessage = "Document URL is required")]
-        [Url(ErrorMessage = "Invalid URL format")]
-        public string DocumentUrl { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Document file is required")]
+        public IFormFile DocumentFile { get; set; } = null!;
 
         [Required(ErrorMessage = "Document type is required")]
         public DoctorDocumentType Type { get; set; }
