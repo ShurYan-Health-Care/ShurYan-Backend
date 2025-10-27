@@ -1,0 +1,581 @@
+### ============================================
+### ShurYan Backend - Test HTTP Requests
+### ============================================
+### استخدم الملف ده عشان تختبر كل الـ Endpoints
+### في VS Code: اضغط "Send Request" فوق كل request
+### ============================================
+
+@baseUrl = https://localhost:7001
+@accessToken = 
+@refreshToken = 
+@patientId = 
+@pharmacyId = 
+
+### ============================================
+### 1. AUTH CONTROLLER - Registration
+### ============================================
+
+### 1.1 Register Patient (Success Case)
+POST {{baseUrl}}/api/auth/register/patient
+Content-Type: application/json
+
+{
+  "email": "patient.test@shuryan.com",
+  "password": "Test123!@#",
+  "firstName": "Ahmed",
+  "lastName": "Mohamed",
+  "phoneNumber": "01234567890",
+  "dateOfBirth": "1990-01-01"
+}
+
+### 1.2 Register Patient (Duplicate Email - Should Fail)
+POST {{baseUrl}}/api/auth/register/patient
+Content-Type: application/json
+
+{
+  "email": "patient.test@shuryan.com",
+  "password": "Test123!@#",
+  "firstName": "Mohamed",
+  "lastName": "Ali",
+  "phoneNumber": "01098765432",
+  "dateOfBirth": "1992-05-15"
+}
+
+### 1.3 Register Doctor
+POST {{baseUrl}}/api/auth/register/doctor
+Content-Type: application/json
+
+{
+  "email": "doctor.test@shuryan.com",
+  "password": "Test123!@#",
+  "firstName": "Dr. Khaled",
+  "lastName": "Hassan",
+  "phoneNumber": "01111222333",
+  "specialization": "Cardiology",
+  "licenseNumber": "DOC123456"
+}
+
+### 1.4 Register Pharmacy
+POST {{baseUrl}}/api/auth/register/pharmacy
+Content-Type: application/json
+
+{
+  "email": "pharmacy.test@shuryan.com",
+  "password": "Test123!@#",
+  "pharmacyName": "الشفاء الصيدلية",
+  "phoneNumber": "01555666777",
+  "licenseNumber": "PHARM789012"
+}
+
+### ============================================
+### 2. AUTH CONTROLLER - Email Verification
+### ============================================
+
+### 2.1 Verify Email with OTP
+POST {{baseUrl}}/api/auth/verify-email
+Content-Type: application/json
+
+{
+  "email": "patient.test@shuryan.com",
+  "otp": "123456"
+}
+
+### 2.2 Resend Verification OTP
+POST {{baseUrl}}/api/auth/resend-verification
+Content-Type: application/json
+
+{
+  "email": "patient.test@shuryan.com"
+}
+
+### ============================================
+### 3. AUTH CONTROLLER - Login
+### ============================================
+
+### 3.1 Login (Success Case)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "patient.test@shuryan.com",
+  "password": "Test123!@#"
+}
+
+### 3.2 Login (Wrong Password - Should Fail)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "patient.test@shuryan.com",
+  "password": "WrongPassword123"
+}
+
+### 3.3 Google Login
+POST {{baseUrl}}/api/auth/google-login
+Content-Type: application/json
+
+{
+  "idToken": "google-id-token-here",
+  "userType": "Patient"
+}
+
+### ============================================
+### 4. AUTH CONTROLLER - Password Management
+### ============================================
+
+### 4.1 Forgot Password (Request OTP)
+POST {{baseUrl}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "patient.test@shuryan.com"
+}
+
+### 4.2 Reset Password with OTP
+POST {{baseUrl}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "patient.test@shuryan.com",
+  "otp": "654321",
+  "newPassword": "NewPass123!@#"
+}
+
+### 4.3 Change Password (Requires Auth)
+POST {{baseUrl}}/api/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "oldPassword": "Test123!@#",
+  "newPassword": "NewPass456!@#"
+}
+
+### ============================================
+### 5. AUTH CONTROLLER - Token Management
+### ============================================
+
+### 5.1 Refresh Token
+POST {{baseUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### 5.2 Logout
+POST {{baseUrl}}/api/auth/logout
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### ============================================
+### 6. AUTH CONTROLLER - User Info
+### ============================================
+
+### 6.1 Get Current User
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{accessToken}}
+
+### ============================================
+### 7. PATIENTS CONTROLLER - Basic CRUD
+### ============================================
+
+### 7.1 Get Patient by ID
+GET {{baseUrl}}/api/patients/{{patientId}}
+
+### 7.2 Create Patient
+POST {{baseUrl}}/api/patients
+Content-Type: application/json
+
+{
+  "userId": "user-guid-here",
+  "dateOfBirth": "1990-01-01",
+  "gender": "Male",
+  "bloodType": "O+",
+  "height": 175.5,
+  "weight": 70.0,
+  "emergencyContactName": "Mohamed Ali",
+  "emergencyContactPhone": "01234567890"
+}
+
+### 7.3 Update Patient
+PUT {{baseUrl}}/api/patients/{{patientId}}
+Content-Type: application/json
+
+{
+  "height": 176.0,
+  "weight": 72.0,
+  "emergencyContactName": "Mohamed Ali Updated",
+  "emergencyContactPhone": "01234567890"
+}
+
+### 7.4 Delete Patient (Soft Delete)
+DELETE {{baseUrl}}/api/patients/{{patientId}}
+
+### 7.5 Restore Deleted Patient
+POST {{baseUrl}}/api/patients/{{patientId}}/restore
+
+### ============================================
+### 8. PATIENTS CONTROLLER - Query Operations
+### ============================================
+
+### 8.1 Get Patient by Email
+GET {{baseUrl}}/api/patients/email/patient.test@shuryan.com
+
+### 8.2 Get All Patients
+GET {{baseUrl}}/api/patients?includeDeleted=false
+
+### 8.3 Get Paginated Patients
+GET {{baseUrl}}/api/patients/paginated?pageNumber=1&pageSize=10
+
+### 8.4 Search Patients
+POST {{baseUrl}}/api/patients/search
+Content-Type: application/json
+
+{
+  "searchTerm": "Ahmed",
+  "gender": "Male",
+  "bloodType": "O+",
+  "pageNumber": 1,
+  "pageSize": 10
+}
+
+### 8.5 Get Patients with Medical History
+GET {{baseUrl}}/api/patients/with-medical-history
+
+### 8.6 Check Email Unique
+GET {{baseUrl}}/api/patients/check-email/newpatient@test.com
+
+### 8.7 Get Total Patients Count
+GET {{baseUrl}}/api/patients/count?includeDeleted=false
+
+### ============================================
+### 9. PATIENTS CONTROLLER - Medical History
+### ============================================
+
+### 9.1 Get Patient Medical History
+GET {{baseUrl}}/api/patients/{{patientId}}/medical-history
+
+### 9.2 Add Medical History Item
+POST {{baseUrl}}/api/patients/{{patientId}}/medical-history
+Content-Type: application/json
+
+{
+  "condition": "Diabetes Type 2",
+  "diagnosisDate": "2020-05-15",
+  "treatment": "Metformin 500mg twice daily",
+  "notes": "Patient needs regular blood sugar monitoring"
+}
+
+### 9.3 Update Medical History Item
+PUT {{baseUrl}}/api/patients/{{patientId}}/medical-history/item-guid-here
+Content-Type: application/json
+
+{
+  "treatment": "Metformin 850mg twice daily",
+  "notes": "Dosage increased due to high HbA1c"
+}
+
+### 9.4 Delete Medical History Item
+DELETE {{baseUrl}}/api/patients/{{patientId}}/medical-history/item-guid-here
+
+### ============================================
+### 10. PATIENTS CONTROLLER - Appointments
+### ============================================
+
+### 10.1 Get All Appointments
+GET {{baseUrl}}/api/patients/{{patientId}}/appointments
+
+### 10.2 Get Upcoming Appointments
+GET {{baseUrl}}/api/patients/{{patientId}}/appointments/upcoming
+
+### 10.3 Get Past Appointments
+GET {{baseUrl}}/api/patients/{{patientId}}/appointments/past
+
+### 10.4 Get Next Appointment
+GET {{baseUrl}}/api/patients/{{patientId}}/appointments/next
+
+### 10.5 Get Appointments Count
+GET {{baseUrl}}/api/patients/{{patientId}}/appointments/count
+
+### ============================================
+### 11. PATIENTS CONTROLLER - Prescriptions
+### ============================================
+
+### 11.1 Get All Prescriptions
+GET {{baseUrl}}/api/patients/{{patientId}}/prescriptions
+
+### 11.2 Get Active Prescriptions
+GET {{baseUrl}}/api/patients/{{patientId}}/prescriptions/active
+
+### 11.3 Get Specific Prescription
+GET {{baseUrl}}/api/patients/{{patientId}}/prescriptions/prescription-guid-here
+
+### ============================================
+### 12. PATIENTS CONTROLLER - Lab Orders
+### ============================================
+
+### 12.1 Get All Lab Orders
+GET {{baseUrl}}/api/patients/{{patientId}}/lab-orders
+
+### 12.2 Get Pending Lab Orders
+GET {{baseUrl}}/api/patients/{{patientId}}/lab-orders/pending
+
+### 12.3 Get Specific Lab Order
+GET {{baseUrl}}/api/patients/{{patientId}}/lab-orders/order-guid-here
+
+### ============================================
+### 13. PATIENTS CONTROLLER - Address
+### ============================================
+
+### 13.1 Get Patient Address
+GET {{baseUrl}}/api/patients/{{patientId}}/address
+
+### 13.2 Update Patient Address
+PUT {{baseUrl}}/api/patients/{{patientId}}/address
+Content-Type: application/json
+
+{
+  "street": "123 Main Street",
+  "city": "Cairo",
+  "governorate": "Cairo",
+  "postalCode": "11511",
+  "latitude": 30.0444,
+  "longitude": 31.2357
+}
+
+### 13.3 Create Patient Address
+POST {{baseUrl}}/api/patients/address
+Content-Type: application/json
+
+{
+  "patientId": "{{patientId}}",
+  "street": "456 New Street",
+  "city": "Giza",
+  "governorate": "Giza",
+  "postalCode": "12345",
+  "latitude": 30.0131,
+  "longitude": 31.2089
+}
+
+### ============================================
+### 14. PATIENTS CONTROLLER - Profile
+### ============================================
+
+### 14.1 Update Profile Image
+PUT {{baseUrl}}/api/patients/{{patientId}}/profile-image
+Content-Type: application/json
+
+{
+  "imageUrl": "https://example.com/images/patient-profile.jpg"
+}
+
+### 14.2 Remove Profile Image
+DELETE {{baseUrl}}/api/patients/{{patientId}}/profile-image
+
+### ============================================
+### 15. PHARMACIES CONTROLLER - Profile
+### ============================================
+
+### 15.1 Get Pharmacy by ID
+GET {{http://localhost:5117}}/api/pharmacies/{{42f132b1-e21d-4738-9324-2ba9f2be71bd}}
+
+### 15.2 Get Pharmacy by Email
+GET {{baseUrl}}/api/pharmacies/email/pharmacy.test@shuryan.com
+
+### 15.3 Get Current Pharmacy (Requires Auth)
+GET {{baseUrl}}/api/pharmacies/me
+Authorization: Bearer {{accessToken}}
+
+### 15.4 Update Current Pharmacy
+PUT {{baseUrl}}/api/pharmacies/me
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "pharmacyName": "الشفاء الصيدلية - Updated",
+  "phoneNumber": "01555666777",
+  "description": "صيدلية متكاملة تقدم جميع الخدمات الصيدلانية"
+}
+
+### ============================================
+### 16. PHARMACIES CONTROLLER - Working Hours
+### ============================================
+
+### 16.1 Get Working Hours
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/working-hours
+
+### 16.2 Add Working Hours
+POST {{baseUrl}}/api/pharmacies/{{pharmacyId}}/working-hours
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "dayOfWeek": "Monday",
+  "openTime": "09:00:00",
+  "closeTime": "21:00:00",
+  "is24Hours": false
+}
+
+### 16.3 Update Working Hours
+PUT {{baseUrl}}/api/pharmacies/{{pharmacyId}}/working-hours/hours-guid-here
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "openTime": "08:00:00",
+  "closeTime": "22:00:00",
+  "is24Hours": false
+}
+
+### 16.4 Delete Working Hours
+DELETE {{baseUrl}}/api/pharmacies/{{pharmacyId}}/working-hours/hours-guid-here
+Authorization: Bearer {{accessToken}}
+
+### 16.5 Check if Pharmacy is Open
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/is-open
+
+### ============================================
+### 17. PHARMACIES CONTROLLER - Orders
+### ============================================
+
+### 17.1 Get All Orders
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders?pageNumber=1&pageSize=20
+Authorization: Bearer {{accessToken}}
+
+### 17.2 Get Specific Order
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/order-guid-here
+Authorization: Bearer {{accessToken}}
+
+### 17.3 Accept Order
+PUT {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/order-guid-here/accept
+Authorization: Bearer {{accessToken}}
+
+### 17.4 Reject Order
+PUT {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/order-guid-here/reject
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "rejectionReason": "Out of stock for some medications"
+}
+
+### 17.5 Mark Order as Preparing
+PUT {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/order-guid-here/prepare
+Authorization: Bearer {{accessToken}}
+
+### 17.6 Mark Order as Ready
+PUT {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/order-guid-here/ready
+Authorization: Bearer {{accessToken}}
+
+### 17.7 Dispatch Order
+PUT {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/order-guid-here/dispatch
+Authorization: Bearer {{accessToken}}
+
+### 17.8 Mark Order as Delivered
+PUT {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/order-guid-here/deliver
+Authorization: Bearer {{accessToken}}
+
+### 17.9 Get Pending Orders
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/pending
+Authorization: Bearer {{accessToken}}
+
+### 17.10 Get In-Progress Orders
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/in-progress
+Authorization: Bearer {{accessToken}}
+
+### 17.11 Get Completed Orders
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/orders/completed
+Authorization: Bearer {{accessToken}}
+
+### ============================================
+### 18. PHARMACIES CONTROLLER - Search
+### ============================================
+
+### 18.1 Search Pharmacies
+POST {{baseUrl}}/api/pharmacies/search
+Content-Type: application/json
+
+{
+  "name": "الشفاء",
+  "governorate": "Cairo",
+  "isOpen": true,
+  "isVerified": true,
+  "pageNumber": 1,
+  "pageSize": 10
+}
+
+### 18.2 Get Pharmacies by Governorate
+GET {{baseUrl}}/api/pharmacies/governorate/Cairo
+
+### 18.3 Get Nearby Pharmacies
+GET {{baseUrl}}/api/pharmacies/nearby?latitude=30.0444&longitude=31.2357&radiusKm=5
+
+### ============================================
+### 19. PHARMACIES CONTROLLER - Documents
+### ============================================
+
+### 19.1 Get Pharmacy Documents
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/documents
+Authorization: Bearer {{accessToken}}
+
+### 19.2 Upload Document
+POST {{baseUrl}}/api/pharmacies/{{pharmacyId}}/documents
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "documentType": "License",
+  "documentUrl": "https://example.com/documents/pharmacy-license.pdf",
+  "expiryDate": "2025-12-31"
+}
+
+### ============================================
+### 20. PHARMACIES CONTROLLER - Reviews
+### ============================================
+
+### 20.1 Get Pharmacy Reviews
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/reviews
+
+### 20.2 Get Review Statistics
+GET {{baseUrl}}/api/pharmacies/{{pharmacyId}}/reviews/statistics
+
+### ============================================
+### 21. PHARMACIES CONTROLLER - Verification
+### ============================================
+
+### 21.1 Get Pending Verification Pharmacies (Admin/Verifier)
+GET {{baseUrl}}/api/pharmacies/pending-verification
+Authorization: Bearer {{accessToken}}
+
+### 21.2 Verify Pharmacy (Admin/Verifier)
+POST {{baseUrl}}/api/pharmacies/{{pharmacyId}}/verify
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "verificationNotes": "All documents verified successfully"
+}
+
+### 21.3 Reject Verification (Admin/Verifier)
+POST {{baseUrl}}/api/pharmacies/{{pharmacyId}}/reject-verification
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "rejectionReason": "License document is expired"
+}
+
+### ============================================
+### NOTES:
+### ============================================
+### 1. استبدل {{baseUrl}} بالـ URL الفعلي للـ API
+### 2. بعد Login، احفظ الـ accessToken و refreshToken في المتغيرات
+### 3. استبدل {{patientId}} و {{pharmacyId}} بالـ IDs الفعلية
+### 4. بعض الـ Endpoints تحتاج Authorization (Bearer Token)
+### 5. استخدم الـ HTTP file ده في VS Code مع REST Client Extension
+### ============================================

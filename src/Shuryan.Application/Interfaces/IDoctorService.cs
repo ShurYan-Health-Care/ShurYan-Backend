@@ -11,7 +11,10 @@ namespace Shuryan.Application.Interfaces
         #region Profile Management
         Task<DoctorProfileResponse?> GetDoctorProfileAsync(Guid doctorId);
         Task<DoctorPersonalProfileResponse?> GetPersonalProfileAsync(Guid doctorId);
+        Task<DoctorProfessionalInfoResponse?> GetProfessionalInfoAsync(Guid doctorId);
+        Task<DoctorSpecialtyExperienceResponse?> GetSpecialtyExperienceAsync(Guid doctorId);
         Task<DoctorProfileResponse> UpdateDoctorProfileAsync(Guid doctorId, UpdateDoctorProfileRequest request);
+        Task<DoctorSpecialtyExperienceResponse> UpdateSpecialtyExperienceAsync(Guid doctorId, UpdateSpecialtyExperienceRequest request);
         Task<DoctorProfileResponse> UpdatePersonalInfoAsync(Guid doctorId, UpdatePersonalInfoRequest request);
         Task<IEnumerable<DoctorProfileResponse>> GetAllDoctorsAsync(int pageNumber = 1, int pageSize = 10);
         Task<IEnumerable<DoctorProfileResponse>> SearchDoctorsAsync(string searchTerm, int pageNumber = 1, int pageSize = 10);
@@ -37,6 +40,14 @@ namespace Shuryan.Application.Interfaces
         Task<IEnumerable<DoctorDocumentResponse>> GetPendingDocumentsAsync();
         Task<IEnumerable<DoctorDocumentResponse>> GetApprovedDocumentsAsync();
         Task<IEnumerable<DoctorDocumentResponse>> GetRejectedDocumentsAsync();
+        
+        // Specialized Document Management
+        Task<DoctorDocumentResponse> UploadOrUpdateRequiredDocumentAsync(Guid doctorId, UploadDoctorDocumentRequest request);
+        Task<DoctorDocumentResponse> UploadOrUpdateAwardCertificateAsync(Guid doctorId, UploadDoctorDocumentRequest request);
+        Task<DoctorDocumentResponse> UploadOrUpdateResearchPaperAsync(Guid doctorId, UploadDoctorDocumentRequest request);
+        Task<IEnumerable<DoctorDocumentResponse>> GetRequiredDocumentsAsync(Guid doctorId);
+        Task<IEnumerable<DoctorDocumentResponse>> GetResearchPapersAsync(Guid doctorId);
+        Task<IEnumerable<DoctorDocumentResponse>> GetAwardCertificatesAsync(Guid doctorId);
         #endregion
 
         #region Verification
