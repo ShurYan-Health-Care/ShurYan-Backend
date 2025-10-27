@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -26,8 +27,7 @@ namespace Shuryan.Application.DTOs.Requests.Patient
 
         public Gender? Gender { get; set; }
 
-        [Url(ErrorMessage = "Invalid profile image URL format")]
-        public string? ProfileImageUrl { get; set; }
+        public IFormFile? ProfileImage { get; set; }
 
         public UpdateAddressRequest? Address { get; set; }
     }

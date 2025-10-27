@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Shuryan.Core.Enums.Doctor;
 using System;
 using System.Collections.Generic;
@@ -10,8 +11,7 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
 {
     public class UpdateDoctorDocumentRequest
     {
-        [Url(ErrorMessage = "Invalid URL format")]
-        public string? DocumentUrl { get; set; }
+        public IFormFile? DocumentFile { get; set; }
 
         public DoctorDocumentType? Type { get; set; }
     }

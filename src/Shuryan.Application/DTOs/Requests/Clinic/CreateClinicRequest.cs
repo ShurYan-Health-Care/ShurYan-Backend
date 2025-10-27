@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Shuryan.Application.DTOs.Common.Address;
 using System;
 using System.Collections.Generic;
@@ -14,8 +15,7 @@ namespace Shuryan.Application.DTOs.Requests.Clinic
         [StringLength(200, MinimumLength = 3, ErrorMessage = "Clinic name must be between 3-200 characters")]
         public string Name { get; set; } = string.Empty;
 
-        [Url(ErrorMessage = "Invalid facility video URL format")]
-        public string? FacilityVideoUrl { get; set; }
+        public IFormFile? FacilityVideo { get; set; }
 
         [Required(ErrorMessage = "Address is required")]
         public CreateAddressRequest Address { get; set; } = null!;

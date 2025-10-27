@@ -15,24 +15,13 @@ namespace Shuryan.Application.DTOs.Responses.Doctor
         public Gender Gender { get; set; }
         public string GenderName { get; set; } = string.Empty;
         public DateTime? DateOfBirth { get; set; }
-        
-        // Doctor Specific
         public MedicalSpecialty MedicalSpecialty { get; set; }
         public string MedicalSpecialtyName { get; set; } = string.Empty;
-        public int YearsOfExperience { get; set; }
         public string? Biography { get; set; }
         
+
         // Verification
         public VerificationStatus VerificationStatus { get; set; }
         public string VerificationStatusName { get; set; } = string.Empty;
-        public DateTime? VerifiedAt { get; set; }
-        
-        // Clinic
-        public Guid? ClinicId { get; set; }
-        public string? ClinicName { get; set; }
-        
-        // Rating
-        public double? AverageRating { get; set; }
-        public int TotalReviewsCount { get; set; }
     }
 }

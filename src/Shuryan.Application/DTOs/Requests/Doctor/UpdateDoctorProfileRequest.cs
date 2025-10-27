@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Shuryan.Core.Enums.Doctor;
 using Shuryan.Core.Enums.Identity;
 using System;
@@ -16,8 +17,7 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
         [Phone(ErrorMessage = "Invalid phone number")]
         public string? PhoneNumber { get; set; }
 
-        [Url(ErrorMessage = "Invalid profile picture URL")]
-        public string? ProfilePictureUrl { get; set; }
+        public IFormFile? ProfileImage { get; set; }
 
         public Gender? Gender { get; set; }
         
