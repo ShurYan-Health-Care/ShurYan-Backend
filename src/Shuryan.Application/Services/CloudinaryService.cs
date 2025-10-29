@@ -160,6 +160,51 @@ namespace Shuryan.Application.Services
             }
         }
 
+        public async Task<FileUploadDto> UploadClinicImageAsync(IFormFile file, string doctorId)
+        {
+            try
+            {
+                // Validate file
+                ValidateFile(file, _allowedImageExtensions, MaxImageSize, "clinic image");
+
+                // Upload to Cloudinary
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(file.FileName, file.OpenReadStream()),
+                    Folder = $"shuryan/clinics/{doctorId}",
+                    Transformation = new Transformation()
+                        .Width(1200)
+                        .Height(800)
+                        .Crop("fill")
+                        .Quality("auto"),
+                    PublicId = $"clinic_{Guid.NewGuid()}"
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                if (uploadResult.Error != null)
+                {
+                    _logger.LogError("Cloudinary upload error: {Error}", uploadResult.Error.Message);
+                    throw new Exception($"Upload failed: {uploadResult.Error.Message}");
+                }
+
+                _logger.LogInformation("Clinic image uploaded successfully for doctor {DoctorId}: {PublicId}", doctorId, uploadResult.PublicId);
+
+                return new FileUploadDto
+                {
+                    FileName = uploadResult.PublicId,
+                    FileUrl = uploadResult.SecureUrl.ToString(),
+                    FileSize = file.Length,
+                    ContentType = file.ContentType
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading clinic image for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
         public async Task<bool> DeleteFileAsync(string fileUrl)
         {
             try

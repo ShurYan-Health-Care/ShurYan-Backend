@@ -279,6 +279,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
                     b.Property<string>("PhotoUrl")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -493,6 +496,10 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AttachmentUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -500,10 +507,6 @@ namespace Shuryan.Infrastructure.Data.Migrations
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("LabNotes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("LabOrderId")
                         .HasColumnType("uniqueidentifier");
@@ -514,9 +517,22 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Property<Guid?>("LabTestId1")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ResultFileUrl")
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ReferenceRange")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ResultValue")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -673,6 +689,107 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_LaboratoryWorkingHours_Time", "[StartTime] < [EndTime]");
                         });
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.DispensedMedicationItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BatchNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DispensingRecordId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MedicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("QuantityDispensed")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DispensingRecordId");
+
+                    b.HasIndex("MedicationId");
+
+                    b.ToTable("DispensedMedicationItems");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.DispensingRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DispensedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("PatientSignatureConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PharmacistId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PharmacistNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PharmacyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PrescriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReceiptNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrescriptionId");
+
+                    b.ToTable("DispensingRecords");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.Medication", b =>
@@ -882,8 +999,14 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AppointmentId")
+                    b.Property<Guid?>("AppointmentId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -923,6 +1046,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("SharedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -932,13 +1058,146 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AppointmentId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[AppointmentId] IS NOT NULL");
 
                     b.HasIndex("DoctorId");
 
                     b.HasIndex("PatientId");
 
                     b.ToTable("Prescriptions");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.PrescriptionShare", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AccessCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("AllowMultipleViews")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastAccessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MessageToPharmacy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("PharmacyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PrescriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RevocationReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ShareCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ShareUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SharedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrescriptionId");
+
+                    b.ToTable("PrescriptionShares");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.PrescriptionStatusHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdditionalMetadata")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ChangedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ChangedByName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ChangedByRole")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PrescriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PreviousStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrescriptionId");
+
+                    b.ToTable("PrescriptionStatusHistories");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.Identity.RefreshToken", b =>
@@ -1317,14 +1576,77 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Property<decimal>("ConsultationFee")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("SessionDurationMinutes")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("DoctorId", "ConsultationTypeId");
 
                     b.HasIndex("ConsultationTypeId");
 
                     b.ToTable("DoctorConsultations");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.Partners.DoctorPartnerSuggestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LaboratorySuggestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PharmacySuggestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("SuggestedLaboratoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SuggestedPharmacyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DoctorPartnerSuggestions_DoctorId");
+
+                    b.HasIndex("SuggestedLaboratoryId")
+                        .HasDatabaseName("IX_DoctorPartnerSuggestions_LaboratoryId");
+
+                    b.HasIndex("SuggestedPharmacyId")
+                        .HasDatabaseName("IX_DoctorPartnerSuggestions_PharmacyId");
+
+                    b.ToTable("DoctorPartnerSuggestions", (string)null);
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.Medical.Schedules.DoctorAvailability", b =>
@@ -2436,6 +2758,36 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Navigation("Laboratory");
                 });
 
+            modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.DispensedMedicationItem", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.External.Pharmacies.DispensingRecord", "DispensingRecord")
+                        .WithMany("DispensedMedications")
+                        .HasForeignKey("DispensingRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Shuryan.Core.Entities.External.Pharmacies.Medication", "Medication")
+                        .WithMany()
+                        .HasForeignKey("MedicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DispensingRecord");
+
+                    b.Navigation("Medication");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.DispensingRecord", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.External.Pharmacies.Prescription", "Prescription")
+                        .WithMany()
+                        .HasForeignKey("PrescriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Prescription");
+                });
+
             modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.PharmacyOrder", b =>
                 {
                     b.HasOne("Shuryan.Core.Entities.Identity.Patient", "Patient")
@@ -2518,6 +2870,28 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.PrescriptionShare", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.External.Pharmacies.Prescription", "Prescription")
+                        .WithMany()
+                        .HasForeignKey("PrescriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Prescription");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.PrescriptionStatusHistory", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.External.Pharmacies.Prescription", "Prescription")
+                        .WithMany()
+                        .HasForeignKey("PrescriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Prescription");
+                });
+
             modelBuilder.Entity("Shuryan.Core.Entities.Identity.RefreshToken", b =>
                 {
                     b.HasOne("Shuryan.Core.Entities.Identity.User", "User")
@@ -2581,6 +2955,17 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("ConsultationType");
+
+                    b.Navigation("Doctor");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.Partners.DoctorPartnerSuggestion", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.Identity.Doctor", "Doctor")
+                        .WithOne("PartnerSuggestion")
+                        .HasForeignKey("Shuryan.Core.Entities.Medical.Partners.DoctorPartnerSuggestion", "DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Doctor");
                 });
@@ -2872,6 +3257,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Navigation("PrescriptionItems");
                 });
 
+            modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.DispensingRecord", b =>
+                {
+                    b.Navigation("DispensedMedications");
+                });
+
             modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.Medication", b =>
                 {
                     b.Navigation("PrescribedMedications");
@@ -2956,6 +3346,8 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Navigation("LabPrescriptions");
 
                     b.Navigation("Overrides");
+
+                    b.Navigation("PartnerSuggestion");
 
                     b.Navigation("Prescriptions");
 
