@@ -36,6 +36,7 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private IDoctorConsultationRepository? _doctorConsultations;
         private IDoctorOverrideRepository? _doctorOverrides;
         private IDoctorDocumentRepository? _doctorDocuments;
+        private IDoctorPartnerSuggestionRepository? _doctorPartnerSuggestions;
 
         // ==================== Patient Related Fields ====================
         private IPatientRepository? _patients;
@@ -106,6 +107,9 @@ namespace Shuryan.Infrastructure.UnitOfWork
 
         public IDoctorDocumentRepository DoctorDocuments =>
             _doctorDocuments ??= new DoctorDocumentRepository(_context);
+
+        public IDoctorPartnerSuggestionRepository DoctorPartnerSuggestions =>
+            _doctorPartnerSuggestions ??= new DoctorPartnerSuggestionRepository(_context);
 
         // ==================== Patient Related Properties ====================
         public IPatientRepository Patients =>
@@ -216,6 +220,11 @@ namespace Shuryan.Infrastructure.UnitOfWork
         public IRefreshTokenRepository RefreshTokens =>
             _refreshTokens ??= new RefreshTokenRepository(_context);
 
+        // ==================== Generic Repository ====================
+        public IGenericRepository<T> Repository<T>() where T : class
+        {
+            return new GenericRepository<T>(_context);
+        }
 
         // ==================== Transaction Methods ====================
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

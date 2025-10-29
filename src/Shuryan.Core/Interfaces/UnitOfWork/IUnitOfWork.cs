@@ -16,6 +16,7 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
         IDoctorConsultationRepository DoctorConsultations { get; }
         IDoctorOverrideRepository DoctorOverrides { get; }
         IDoctorDocumentRepository DoctorDocuments { get; }
+        IDoctorPartnerSuggestionRepository DoctorPartnerSuggestions { get; }
 
         // ==================== Patient Related Repositories ====================
         IPatientRepository Patients { get; }
@@ -64,6 +65,9 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
         IVerifierRepository Verifiers { get; }
         INotificationRepository Notifications { get; }
         IRefreshTokenRepository RefreshTokens { get; }
+
+        // ==================== Generic Repository ====================
+        IGenericRepository<T> Repository<T>() where T : class;
 
         // ==================== Transaction Methods ====================
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
