@@ -71,6 +71,12 @@ namespace Shuryan.API.Extensions
             services.AddScoped<IAppointmentService, AppointmentService>();
             services.AddScoped<IDoctorService, DoctorService>();
 
+            // Doctor Profile Services
+            services.AddScoped<IClinicService, ClinicService>();
+            services.AddScoped<IDoctorServicePricingService, DoctorServicePricingService>();
+            services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
+            services.AddScoped<IDoctorPartnerService, DoctorPartnerService>();
+
             return services;
         }
         #endregion

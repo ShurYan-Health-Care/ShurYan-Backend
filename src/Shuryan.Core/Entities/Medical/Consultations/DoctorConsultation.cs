@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -9,7 +9,7 @@ using Shuryan.Core.Entities.Identity;
 
 namespace Shuryan.Core.Entities.Medical.Consultations
 {
-    public class DoctorConsultation
+    public class DoctorConsultation : AuditableEntity
 	{
         public decimal ConsultationFee { get; set; }
         public int SessionDurationMinutes { get; set; }
