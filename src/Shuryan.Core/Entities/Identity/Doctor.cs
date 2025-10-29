@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -12,6 +12,7 @@ using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Entities.Medical.Appointments;
 using Shuryan.Core.Entities.Medical.Consultations;
 using Shuryan.Core.Entities.Medical.Schedules;
+using Shuryan.Core.Entities.Medical.Partners;
 using Shuryan.Core.Entities.System.Review;
 using Shuryan.Core.Enums.Doctor;
 using Shuryan.Core.Enums.Identity;
@@ -44,6 +45,7 @@ namespace Shuryan.Core.Entities.Identity
         public virtual ICollection<LabPrescription> LabPrescriptions { get; set; } = new HashSet<LabPrescription>();
         public virtual ICollection<Prescription> Prescriptions { get; set; } = new HashSet<Prescription>();
 		public virtual ICollection<DoctorReview> DoctorReviews { get; set; } = new HashSet<DoctorReview>();
+		public virtual DoctorPartnerSuggestion? PartnerSuggestion { get; set; }
 
 		[NotMapped]
 		public double? AverageRating { get; set; }

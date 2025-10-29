@@ -13,6 +13,8 @@ namespace Shuryan.Application.Interfaces
 
         Task<FileUploadDto> UploadVideoAsync(IFormFile file, string userId);
 
+        Task<FileUploadDto> UploadClinicImageAsync(IFormFile file, string doctorId);
+
         Task<bool> DeleteFileAsync(string fileUrl);
     }
 }
