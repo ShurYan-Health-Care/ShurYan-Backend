@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,5 +19,27 @@ namespace Shuryan.Core.Interfaces.Repositories
 		Task<IEnumerable<Appointment>> GetByStatusAsync(AppointmentStatus status);
 		Task<bool> HasConflictingAppointmentAsync(Guid doctorId, DateTime startTime, DateTime endTime, Guid? excludeAppointmentId = null);
 		Task<int> GetCompletedAppointmentsCountAsync(Guid doctorId);
+
+		// Dashboard Statistics Methods
+		Task<int> GetUniquePatientsCountAsync(Guid doctorId);
+		Task<int> GetTodayAppointmentsCountAsync(Guid doctorId);
+		Task<decimal> GetTotalRevenueAsync(Guid doctorId);
+		Task<decimal> GetMonthlyRevenueAsync(Guid doctorId, int year, int month);
+		Task<int> GetPendingAppointmentsCountAsync(Guid doctorId);
+		Task<int> GetCancelledAppointmentsCountAsync(Guid doctorId);
+
+		// Session Management Methods
+		Task<Appointment?> GetDoctorActiveAppointmentAsync(Guid doctorId, Guid? excludeAppointmentId = null);
+
+		// Paginated Query Methods
+		Task<(IEnumerable<Appointment> Appointments, int TotalCount)> GetByDoctorIdWithFiltersAsync(
+			Guid doctorId,
+			DateTime? startDate,
+			DateTime? endDate,
+			AppointmentStatus? status,
+			int pageNumber,
+			int pageSize,
+			string sortBy,
+			string sortOrder);
 	}
 }

@@ -38,5 +38,17 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<bool> RemoveExceptionalDateAsync(Guid doctorId, Guid exceptionId);
         #endregion
+
+        #region Frontend Integration - New Format
+        /// <summary>
+        /// جلب الجدول الأسبوعي بصيغة الفرونت (array of 7 days with dayOfWeek 0-6)
+        /// </summary>
+        Task<List<DayScheduleSlotResponse>> GetWeeklyScheduleForFrontendAsync(Guid doctorId);
+
+        /// <summary>
+        /// جلب المواعيد الاستثنائية بصيغة الفرونت (مع isClosed flag)
+        /// </summary>
+        Task<List<ExceptionalDateResponse>> GetExceptionalDatesForFrontendAsync(Guid doctorId);
+        #endregion
     }
 }

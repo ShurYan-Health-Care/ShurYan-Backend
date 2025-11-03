@@ -129,6 +129,138 @@ namespace Shuryan.Infrastructure.Repositories.Medical
                 .Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed)
                 .CountAsync();
         }
+
+        // Dashboard Statistics Methods
+        public async Task<int> GetUniquePatientsCountAsync(Guid doctorId)
+        {
+            return await _dbSet
+                .Where(a => a.DoctorId == doctorId)
+                .Select(a => a.PatientId)
+                .Distinct()
+                .CountAsync();
+        }
+
+        public async Task<int> GetTodayAppointmentsCountAsync(Guid doctorId)
+        {
+            var today = DateTime.UtcNow.Date;
+            var tomorrow = today.AddDays(1);
+
+            return await _dbSet
+                .Where(a => a.DoctorId == doctorId
+                    && a.ScheduledStartTime >= today
+                    && a.ScheduledStartTime < tomorrow)
+                .CountAsync();
+        }
+
+        public async Task<decimal> GetTotalRevenueAsync(Guid doctorId)
+        {
+            return await _dbSet
+                .Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed)
+                .SumAsync(a => a.ConsultationFee);
+        }
+
+        public async Task<decimal> GetMonthlyRevenueAsync(Guid doctorId, int year, int month)
+        {
+            var startDate = new DateTime(year, month, 1);
+            var endDate = startDate.AddMonths(1);
+
+            return await _dbSet
+                .Where(a => a.DoctorId == doctorId
+                    && a.Status == AppointmentStatus.Completed
+                    && a.ScheduledStartTime >= startDate
+                    && a.ScheduledStartTime < endDate)
+                .SumAsync(a => a.ConsultationFee);
+        }
+
+        public async Task<int> GetPendingAppointmentsCountAsync(Guid doctorId)
+        {
+            return await _dbSet
+                .Where(a => a.DoctorId == doctorId
+                    && (a.Status == AppointmentStatus.Confirmed || a.Status == AppointmentStatus.CheckedIn))
+                .CountAsync();
+        }
+
+        public async Task<int> GetCancelledAppointmentsCountAsync(Guid doctorId)
+        {
+            return await _dbSet
+                .Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Cancelled)
+                .CountAsync();
+        }
+
+        public async Task<Appointment?> GetDoctorActiveAppointmentAsync(Guid doctorId, Guid? excludeAppointmentId = null)
+        {
+            var query = _dbSet
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor)
+                .Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.InProgress);
+
+            if (excludeAppointmentId.HasValue)
+            {
+                query = query.Where(a => a.Id != excludeAppointmentId.Value);
+            }
+
+            return await query.FirstOrDefaultAsync();
+        }
+
+        public async Task<(IEnumerable<Appointment> Appointments, int TotalCount)> GetByDoctorIdWithFiltersAsync(
+            Guid doctorId,
+            DateTime? startDate,
+            DateTime? endDate,
+            AppointmentStatus? status,
+            int pageNumber,
+            int pageSize,
+            string sortBy,
+            string sortOrder)
+        {
+            // Build base query with necessary includes
+            var query = _dbSet
+                .Include(a => a.Patient)
+                .Where(a => a.DoctorId == doctorId);
+
+            // Apply date range filter
+            if (startDate.HasValue)
+            {
+                var startOfDay = startDate.Value.Date;
+                query = query.Where(a => a.ScheduledStartTime >= startOfDay);
+            }
+
+            if (endDate.HasValue)
+            {
+                var endOfDay = endDate.Value.Date.AddDays(1);
+                query = query.Where(a => a.ScheduledStartTime < endOfDay);
+            }
+
+            // Apply status filter
+            if (status.HasValue)
+            {
+                query = query.Where(a => a.Status == status.Value);
+            }
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply sorting
+            query = sortBy.ToLower() switch
+            {
+                "patientname" => sortOrder.ToLower() == "asc"
+                    ? query.OrderBy(a => a.Patient.FirstName).ThenBy(a => a.Patient.LastName)
+                    : query.OrderByDescending(a => a.Patient.FirstName).ThenByDescending(a => a.Patient.LastName),
+                "status" => sortOrder.ToLower() == "asc"
+                    ? query.OrderBy(a => a.Status).ThenByDescending(a => a.ScheduledStartTime)
+                    : query.OrderByDescending(a => a.Status).ThenByDescending(a => a.ScheduledStartTime),
+                _ => sortOrder.ToLower() == "asc" // Default: appointmentDate
+                    ? query.OrderBy(a => a.ScheduledStartTime)
+                    : query.OrderByDescending(a => a.ScheduledStartTime)
+            };
+
+            // Apply pagination
+            var appointments = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (appointments, totalCount);
+        }
     }
 }
 

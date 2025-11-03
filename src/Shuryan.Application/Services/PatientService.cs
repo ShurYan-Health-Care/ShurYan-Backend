@@ -28,7 +28,7 @@ using Shuryan.Core.Interfaces.UnitOfWork;
 
 namespace Shuryan.Application.Services
 {
-    public class PatientService : IPatientService
+    public partial class PatientService : IPatientService
     {
         private readonly IPatientRepository _patientRepository;
         private readonly IUnitOfWork _unitOfWork;
@@ -151,137 +151,123 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// Update patient information
+        /// Update patient personal information (Partial Update)
+        /// يعني بيحدث بس الحاجات اللي انت بعتها، مش كل الـ fields
         /// </summary>
         public async Task<PatientResponse> UpdatePatientAsync(Guid id, UpdatePatientRequest request)
         {
             try
             {
+                // Validation
                 if (request == null)
                 {
-                    throw new ArgumentNullException(nameof(request));
+                    throw new ArgumentNullException(nameof(request), "Request cannot be null");
                 }
 
+                // Get patient
                 var patient = await _patientRepository.GetByIdAsync(id);
                 if (patient == null)
                 {
                     throw new ArgumentException($"Patient with ID {id} not found");
                 }
 
-                // Update only provided fields (partial update)
+                // Track if any changes were made
+                bool hasChanges = false;
+
+                // Update FirstName (بس لو موجود وفيه قيمة)
                 if (!string.IsNullOrWhiteSpace(request.FirstName))
                 {
-                    patient.FirstName = request.FirstName;
+                    var trimmedFirstName = request.FirstName.Trim();
+                    if (patient.FirstName != trimmedFirstName)
+                    {
+                        patient.FirstName = trimmedFirstName;
+                        hasChanges = true;
+                        _logger.LogInformation("Updated FirstName for patient {PatientId}", id);
+                    }
                 }
 
+                // Update LastName (بس لو موجود وفيه قيمة)
                 if (!string.IsNullOrWhiteSpace(request.LastName))
                 {
-                    patient.LastName = request.LastName;
+                    var trimmedLastName = request.LastName.Trim();
+                    if (patient.LastName != trimmedLastName)
+                    {
+                        patient.LastName = trimmedLastName;
+                        hasChanges = true;
+                        _logger.LogInformation("Updated LastName for patient {PatientId}", id);
+                    }
                 }
 
+                // Update PhoneNumber (بس لو موجود وفيه قيمة)
                 if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
                 {
-                    patient.PhoneNumber = request.PhoneNumber;
-                    patient.PhoneNumberConfirmed = false; // Reset confirmation
+                    var trimmedPhone = request.PhoneNumber.Trim();
+                    if (patient.PhoneNumber != trimmedPhone)
+                    {
+                        patient.PhoneNumber = trimmedPhone;
+                        patient.PhoneNumberConfirmed = false; // Reset confirmation عشان لازم يأكد الرقم الجديد
+                        hasChanges = true;
+                        _logger.LogInformation("Updated PhoneNumber for patient {PatientId}", id);
+                    }
                 }
 
+                // Update BirthDate (بس لو موجود)
                 if (request.BirthDate.HasValue)
                 {
-                    patient.BirthDate = request.BirthDate;
+                    if (patient.BirthDate != request.BirthDate.Value)
+                    {
+                        // Validate birth date (مينفعش يكون في المستقبل)
+                        if (request.BirthDate.Value > DateTime.UtcNow)
+                        {
+                            throw new ArgumentException("Birth date cannot be in the future");
+                        }
+
+                        patient.BirthDate = request.BirthDate.Value;
+                        hasChanges = true;
+                        _logger.LogInformation("Updated BirthDate for patient {PatientId}", id);
+                    }
                 }
 
+                // Update Gender (بس لو موجود)
                 if (request.Gender.HasValue)
                 {
-                    patient.Gender = request.Gender;
+                    if (patient.Gender != request.Gender.Value)
+                    {
+                        patient.Gender = request.Gender.Value;
+                        hasChanges = true;
+                        _logger.LogInformation("Updated Gender for patient {PatientId}", id);
+                    }
                 }
 
-                // Upload profile image if provided
-                if (request.ProfileImage != null)
+                // لو مفيش أي تغييرات، ارجع الـ patient زي ما هو
+                if (!hasChanges)
                 {
-                    // Delete old image if exists
-                    if (!string.IsNullOrWhiteSpace(patient.ProfileImageUrl))
-                    {
-                        await _fileUploadService.DeleteFileAsync(patient.ProfileImageUrl);
-                    }
-
-                    // Upload new image
-                    var uploadResult = await _fileUploadService.UploadProfileImageAsync(request.ProfileImage, id.ToString());
-                    patient.ProfileImageUrl = uploadResult.FileUrl;
+                    _logger.LogInformation("No changes detected for patient {PatientId}", id);
+                    return _mapper.Map<PatientResponse>(patient);
                 }
 
-                // Handle Address - Create if doesn't exist, Update if exists
-                if (request.Address != null)
-                {
-                    // Reload patient with address details
-                    patient = await _patientRepository.GetByIdWithDetailsAsync(id);
-                    
-                    if (patient.Address == null)
-                    {
-                        // Create new address
-                        var newAddress = _mapper.Map<Address>(request.Address);
-                        newAddress.Id = Guid.NewGuid();
-                        newAddress.CreatedAt = DateTime.UtcNow;
-                        
-                        patient.Address = newAddress;
-                        patient.AddressId = newAddress.Id;
-                        
-                        _logger.LogInformation("Created new address for patient {PatientId}", id);
-                    }
-                    else
-                    {
-                        // Update existing address
-                        if (!string.IsNullOrWhiteSpace(request.Address.Street))
-                        {
-                            patient.Address.Street = request.Address.Street;
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(request.Address.City))
-                        {
-                            patient.Address.City = request.Address.City;
-                        }
-
-                        if (request.Address.Governorate.HasValue)
-                        {
-                            patient.Address.Governorate = request.Address.Governorate.Value;
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(request.Address.BuildingNumber))
-                        {
-                            patient.Address.BuildingNumber = request.Address.BuildingNumber;
-                        }
-
-                        if (request.Address.Latitude.HasValue)
-                        {
-                            patient.Address.Latitude = request.Address.Latitude;
-                        }
-
-                        if (request.Address.Longitude.HasValue)
-                        {
-                            patient.Address.Longitude = request.Address.Longitude;
-                        }
-
-                        patient.Address.UpdatedAt = DateTime.UtcNow;
-                        
-                        _logger.LogInformation("Updated address for patient {PatientId}", id);
-                    }
-                }
-
+                // Update metadata
                 patient.UpdatedAt = DateTime.UtcNow;
-                patient.UpdatedBy = patient.Id; // Should be current user ID in real scenario
+                patient.UpdatedBy = id; // Current patient is updating their own data
 
+                // Save changes
                 _patientRepository.Update(patient);
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Updated patient with ID {PatientId}", id);
+                _logger.LogInformation("Successfully updated patient {PatientId}", id);
 
-                // Return updated patient with full details
-                var updatedPatient = await _patientRepository.GetByIdWithDetailsAsync(id);
+                // Return updated patient
+                var updatedPatient = await _patientRepository.GetByIdAsync(id);
                 return _mapper.Map<PatientResponse>(updatedPatient);
+            }
+            catch (ArgumentException)
+            {
+                throw; // Re-throw validation exceptions
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating patient with ID {PatientId}", id);
-                throw;
+                throw new InvalidOperationException($"Failed to update patient: {ex.Message}", ex);
             }
         }
 
@@ -1102,7 +1088,8 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// Update patient address
+        /// Update or create patient address
+        /// لو العنوان موجود هيتحدث، لو مش موجود هيتعمل create
         /// </summary>
         public async Task<AddressResponse> UpdatePatientAddressAsync(Guid patientId, UpdateAddressRequest request)
         {
@@ -1113,61 +1100,98 @@ namespace Shuryan.Application.Services
                     throw new ArgumentNullException(nameof(request));
                 }
 
-                var patient = await _patientRepository.GetByIdWithDetailsAsync(patientId);
+                var patient = await _patientRepository.GetByIdAsync(patientId);
                 if (patient == null)
                 {
                     throw new ArgumentException($"Patient with ID {patientId} not found");
                 }
 
-                if (patient.Address == null)
+                // لو العنوان مش موجود، اعمله create
+                if (patient.AddressId == null)
                 {
-                    throw new InvalidOperationException($"Patient {patientId} does not have an address to update. Create one first.");
-                }
+                    _logger.LogInformation("Creating new address for patient {PatientId}", patientId);
+                    
+                    var newAddress = new Address
+                    {
+                        Id = Guid.NewGuid(),
+                        Street = request.Street ?? string.Empty,
+                        City = request.City ?? string.Empty,
+                        Governorate = request.Governorate ?? Governorate.Cairo,
+                        BuildingNumber = request.BuildingNumber,
+                        Latitude = request.Latitude,
+                        Longitude = request.Longitude,
+                        CreatedAt = DateTime.UtcNow
+                    };
 
-                // Update only provided fields
-                if (!string.IsNullOrWhiteSpace(request.Street))
+                    // Add address using repository
+                    await _unitOfWork.Addresses.AddAsync(newAddress);
+                    
+                    // Link to patient
+                    patient.AddressId = newAddress.Id;
+                    patient.UpdatedAt = DateTime.UtcNow;
+                    
+                    _patientRepository.Update(patient);
+                    await _unitOfWork.SaveChangesAsync();
+                    
+                    _logger.LogInformation("Address created successfully for patient {PatientId}", patientId);
+                    return _mapper.Map<AddressResponse>(newAddress);
+                }
+                else
                 {
-                    patient.Address.Street = request.Street;
+                    // Update existing address (Partial Update)
+                    _logger.LogInformation("Updating existing address for patient {PatientId}", patientId);
+                    
+                    // Load the address using repository
+                    var address = await _unitOfWork.Addresses.GetByIdAsync(patient.AddressId.Value);
+                    if (address == null)
+                    {
+                        throw new InvalidOperationException($"Address with ID {patient.AddressId.Value} not found");
+                    }
+                    
+                    if (!string.IsNullOrWhiteSpace(request.Street))
+                    {
+                        address.Street = request.Street;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(request.City))
+                    {
+                        address.City = request.City;
+                    }
+
+                    if (request.Governorate.HasValue)
+                    {
+                        address.Governorate = request.Governorate.Value;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(request.BuildingNumber))
+                    {
+                        address.BuildingNumber = request.BuildingNumber;
+                    }
+
+                    if (request.Latitude.HasValue)
+                    {
+                        address.Latitude = request.Latitude;
+                    }
+
+                    if (request.Longitude.HasValue)
+                    {
+                        address.Longitude = request.Longitude;
+                    }
+
+                    address.UpdatedAt = DateTime.UtcNow;
+                    patient.UpdatedAt = DateTime.UtcNow;
+
+                    _unitOfWork.Addresses.Update(address);
+                    _patientRepository.Update(patient);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    _logger.LogInformation("Address updated successfully for patient {PatientId}", patientId);
+                    return _mapper.Map<AddressResponse>(address);
                 }
-
-                if (!string.IsNullOrWhiteSpace(request.City))
-                {
-                    patient.Address.City = request.City;
-                }
-
-                if (request.Governorate.HasValue)
-                {
-                    patient.Address.Governorate = request.Governorate.Value;
-                }
-
-                if (!string.IsNullOrWhiteSpace(request.BuildingNumber))
-                {
-                    patient.Address.BuildingNumber = request.BuildingNumber;
-                }
-
-                if (request.Latitude.HasValue)
-                {
-                    patient.Address.Latitude = request.Latitude;
-                }
-
-                if (request.Longitude.HasValue)
-                {
-                    patient.Address.Longitude = request.Longitude;
-                }
-
-                patient.Address.UpdatedAt = DateTime.UtcNow;
-                patient.UpdatedAt = DateTime.UtcNow;
-
-                _patientRepository.Update(patient);
-                await _unitOfWork.SaveChangesAsync();
-
-                _logger.LogInformation("Updated address for patient {PatientId}", patientId);
-
-                return _mapper.Map<AddressResponse>(patient.Address);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating address for patient {PatientId}", patientId);
+                _logger.LogError(ex, "Error updating/creating address for patient {PatientId}", patientId);
                 throw;
             }
         }

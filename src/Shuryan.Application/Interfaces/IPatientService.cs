@@ -42,6 +42,11 @@ namespace Shuryan.Application.Interfaces
         Task<bool> DeleteMedicalHistoryItemAsync(Guid patientId, Guid itemId);
         #endregion
 
+        #region Medical Record Operations (Profile)
+        Task<MedicalRecordResponse?> GetPatientMedicalRecordAsync(Guid patientId);
+        Task<MedicalRecordResponse> UpdatePatientMedicalRecordAsync(Guid patientId, UpdateMedicalRecordRequest request);
+        #endregion
+
         #region Appointments Operations
         Task<IEnumerable<AppointmentResponse>> GetPatientAppointmentsAsync(Guid patientId);
         Task<IEnumerable<AppointmentResponse>> GetUpcomingAppointmentsAsync(Guid patientId);
