@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -35,11 +35,21 @@ namespace Shuryan.Core.Entities.Medical.Appointments
         public string? CancellationReason { get; set; }
         public DateTime? CancelledAt { get; set; }
 
+        /// <summary>
+        /// الوقت الفعلي لبدء الجلسة (عندما يضغط الدكتور "بدء الكشف")
+        /// </summary>
+        public DateTime? ActualStartTime { get; set; }
+
+        /// <summary>
+        /// الوقت الفعلي لانتهاء الجلسة (عندما يضغط الدكتور "إنهاء الجلسة")
+        /// </summary>
+        public DateTime? ActualEndTime { get; set; }
+
         // Navigation Properties
         public virtual Patient Patient { get; set; } = null!;
         public virtual Doctor Doctor { get; set; } = null!;
         public virtual Prescription? Prescription { get; set; }
-        public virtual ConsultationRecord ConsultationRecord { get; set; } = null!;
+        public virtual ConsultationRecord? ConsultationRecord { get; set; }
         public virtual Appointment? PreviousAppointment { get; set; }
         public virtual ICollection<Appointment> FollowUpAppointments { get; set; } = new HashSet<Appointment>();
         public virtual ICollection<LabPrescription> LabPrescription { get; set; } = new HashSet<LabPrescription>();

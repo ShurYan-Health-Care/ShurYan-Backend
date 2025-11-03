@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Identity;
+using Shuryan.Core.Enums.Appointments;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
 using Shuryan.Infrastructure.Repositories.Patients;
@@ -61,6 +62,35 @@ namespace Shuryan.Infrastructure.Repositories.Patients
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<(IEnumerable<Patient> Patients, int TotalCount)> GetDoctorPatientsAsync(
+            Guid doctorId, 
+            int pageNumber, 
+            int pageSize)
+        {
+            // Get patients who have at least one COMPLETED appointment with this doctor
+            var query = _dbSet
+                .Include(p => p.Address)
+                .Include(p => p.Appointments.Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed))
+                .Include(p => p.DoctorReviews.Where(r => r.DoctorId == doctorId))
+                .Where(p => p.Appointments.Any(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed) 
+                    && !p.IsDeleted);
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination and order by last visit date (most recent first)
+            var patients = await query
+                .OrderByDescending(p => p.Appointments
+                    .Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed)
+                    .Max(a => a.ScheduledStartTime))
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return (patients, totalCount);
         }
     }
 }

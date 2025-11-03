@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Shuryan.Application.DTOs.Requests.Clinic;
+using Shuryan.Application.DTOs.Responses.Appointment;
 using Shuryan.Application.DTOs.Responses.Clinic;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.Medical.Consultations;
@@ -260,6 +261,53 @@ namespace Shuryan.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating re-examination pricing for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Frontend Integration
+
+        /// <summary>
+        /// جلب كل الخدمات (كشف عادي + إعادة كشف) في response واحد
+        /// </summary>
+        public async Task<DoctorServicesResponse> GetAllServicesAsync(Guid doctorId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting all services for doctor {DoctorId}", doctorId);
+
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null)
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+
+                // Get regular checkup
+                var regularCheckup = await GetRegularCheckupAsync(doctorId);
+
+                // Get re-examination
+                var reExamination = await GetReExaminationAsync(doctorId);
+
+                var response = new DoctorServicesResponse
+                {
+                    RegularCheckup = new ServiceDetailsResponse
+                    {
+                        Price = regularCheckup?.Price ?? 0,
+                        Duration = regularCheckup?.Duration ?? 30
+                    },
+                    ReExamination = new ServiceDetailsResponse
+                    {
+                        Price = reExamination?.Price ?? 0,
+                        Duration = reExamination?.Duration ?? 20
+                    }
+                };
+
+                _logger.LogInformation("Successfully retrieved all services for doctor {DoctorId}", doctorId);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all services for doctor {DoctorId}", doctorId);
                 throw;
             }
         }

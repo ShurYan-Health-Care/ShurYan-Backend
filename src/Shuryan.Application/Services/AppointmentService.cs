@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Shuryan.Application.DTOs.Common.Pagination;
 using Shuryan.Application.DTOs.Requests.Appointment;
 using Shuryan.Application.DTOs.Responses.Appointment;
 using Shuryan.Application.Interfaces;
@@ -672,6 +673,290 @@ namespace Shuryan.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting appointment count for User {UserId}", userId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Booking System - Frontend Integration
+
+        /// <summary>
+        /// جلب المواعيد المحجوزة بالفعل ليوم معين
+        /// </summary>
+        public async Task<IEnumerable<BookedAppointmentSlotResponse>> GetBookedAppointmentsForDateAsync(Guid doctorId, DateTime date)
+        {
+            try
+            {
+                _logger.LogInformation("Getting booked appointments for doctor {DoctorId} on date {Date}", doctorId, date.ToString("yyyy-MM-dd"));
+
+                // Verify doctor exists
+                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
+                if (doctor == null)
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+
+                // Get start and end of the day
+                var startOfDay = date.Date;
+                var endOfDay = date.Date.AddDays(1).AddSeconds(-1);
+
+                // Get appointments for this day
+                var allAppointments = await _appointmentRepository.GetAllAsync();
+                var bookedAppointments = allAppointments
+                    .Where(a => a.DoctorId == doctorId &&
+                               a.ScheduledStartTime >= startOfDay &&
+                               a.ScheduledStartTime <= endOfDay &&
+                               a.Status != AppointmentStatus.Cancelled &&
+                               a.Status != AppointmentStatus.NoShow)
+                    .OrderBy(a => a.ScheduledStartTime)
+                    .Select(a => new BookedAppointmentSlotResponse
+                    {
+                        AppointmentId = a.Id,
+                        Time = a.ScheduledStartTime.ToString("HH:mm"),
+                        PatientName = a.Patient != null ? $"{a.Patient.FirstName} {a.Patient.LastName}" : null,
+                        ConsultationType = a.ConsultationType == ConsultationTypeEnum.Regular ? 0 : 1
+                    })
+                    .ToList();
+
+                _logger.LogInformation("Found {Count} booked appointments for doctor {DoctorId} on {Date}",
+                    bookedAppointments.Count, doctorId, date.ToString("yyyy-MM-dd"));
+
+                return bookedAppointments;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting booked appointments for doctor {DoctorId} on date {Date}", doctorId, date);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// حجز موعد جديد
+        /// </summary>
+        public async Task<BookedAppointmentResponse> BookAppointmentAsync(Guid patientId, BookAppointmentRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Booking appointment for Patient {PatientId} with Doctor {DoctorId} on {Date} at {Time}",
+                    patientId, request.DoctorId, request.AppointmentDate, request.AppointmentTime);
+
+                // ==================== Validation ====================
+
+                // 1. Validate patient exists
+                var patient = await _patientRepository.GetByIdAsync(patientId);
+                if (patient == null)
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+
+                // 2. Validate doctor exists
+                var doctor = await _doctorRepository.GetByIdAsync(request.DoctorId);
+                if (doctor == null)
+                    throw new ArgumentException($"Doctor with ID {request.DoctorId} not found");
+
+                // 3. Parse date and time
+                if (!DateTime.TryParse(request.AppointmentDate, out var appointmentDate))
+                    throw new ArgumentException("Invalid appointment date format. Expected YYYY-MM-DD");
+
+                var timeParts = request.AppointmentTime.Split(':');
+                if (timeParts.Length != 2 || !int.TryParse(timeParts[0], out var hour) || !int.TryParse(timeParts[1], out var minute))
+                    throw new ArgumentException("Invalid appointment time format. Expected HH:mm");
+
+                var scheduledStartTime = new DateTime(appointmentDate.Year, appointmentDate.Month, appointmentDate.Day, hour, minute, 0);
+
+                // 4. Validate date is not in the past
+                if (scheduledStartTime < DateTime.Now)
+                    throw new InvalidOperationException("لا يمكن حجز موعد في الماضي");
+
+                // 5. Validate consultationType (0 or 1)
+                if (request.ConsultationType != 0 && request.ConsultationType != 1)
+                    throw new ArgumentException("نوع الاستشارة غير صحيح. يجب أن يكون 0 (كشف عادي) أو 1 (إعادة كشف)");
+
+                var consultationType = request.ConsultationType == 0 ? ConsultationTypeEnum.Regular : ConsultationTypeEnum.FollowUp;
+
+                // 6. Get consultation pricing and duration
+                var allConsultationTypes = await _unitOfWork.ConsultationTypes.GetAllAsync();
+                var consultationTypeEntity = allConsultationTypes.FirstOrDefault(ct => ct.ConsultationTypeEnum == consultationType);
+
+                if (consultationTypeEntity == null)
+                    throw new InvalidOperationException("نوع الاستشارة غير موجود في النظام");
+
+                var allDoctorConsultations = await _doctorConsultationRepository.GetAllAsync();
+                var doctorConsultation = allDoctorConsultations.FirstOrDefault(dc =>
+                    dc.DoctorId == request.DoctorId &&
+                    dc.ConsultationTypeId == consultationTypeEntity.Id);
+
+                if (doctorConsultation == null)
+                    throw new InvalidOperationException("الدكتور لم يحدد سعر أو مدة لهذا النوع من الاستشارة");
+
+                var consultationFee = doctorConsultation.ConsultationFee;
+                var durationMinutes = doctorConsultation.SessionDurationMinutes;
+                var scheduledEndTime = scheduledStartTime.AddMinutes(durationMinutes);
+
+                // 7. Check if time slot is available
+                var isAvailable = await IsTimeSlotAvailableAsync(request.DoctorId, scheduledStartTime, scheduledEndTime);
+                if (!isAvailable)
+                    throw new InvalidOperationException($"الفترة الزمنية {request.AppointmentTime} محجوزة بالفعل");
+
+                // ==================== Create Appointment ====================
+
+                var appointment = new Appointment
+                {
+                    Id = Guid.NewGuid(),
+                    PatientId = patientId,
+                    DoctorId = request.DoctorId,
+                    ScheduledStartTime = scheduledStartTime,
+                    ScheduledEndTime = scheduledEndTime,
+                    ConsultationType = consultationType,
+                    ConsultationFee = consultationFee,
+                    SessionDurationMinutes = durationMinutes,
+                    Status = AppointmentStatus.Confirmed,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _appointmentRepository.AddAsync(appointment);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Successfully booked appointment {AppointmentId} for Patient {PatientId}",
+                    appointment.Id, patientId);
+
+                // Return response
+                return new BookedAppointmentResponse
+                {
+                    Id = appointment.Id,
+                    DoctorId = appointment.DoctorId,
+                    PatientId = appointment.PatientId,
+                    AppointmentDate = appointmentDate.ToString("yyyy-MM-dd"),
+                    AppointmentTime = request.AppointmentTime,
+                    ConsultationType = request.ConsultationType,
+                    Status = appointment.Status.ToString(),
+                    TotalAmount = appointment.ConsultationFee,
+                    CreatedAt = appointment.CreatedAt
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error booking appointment for Patient {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// حساب الفترات الزمنية المتاحة ليوم معين (اختياري)
+        /// </summary>
+        public async Task<IEnumerable<AvailableTimeSlotResponse>> GetAvailableTimeSlotsAsync(Guid doctorId, DateTime date, int consultationType)
+        {
+            try
+            {
+                _logger.LogInformation("Calculating available time slots for doctor {DoctorId} on {Date} for consultationType {ConsultationType}",
+                    doctorId, date.ToString("yyyy-MM-dd"), consultationType);
+
+                var slots = new List<AvailableTimeSlotResponse>();
+
+                // Validate doctor exists
+                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
+                if (doctor == null)
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+
+                // Get duration for this consultation type
+                var consultationTypeEnum = consultationType == 0 ? ConsultationTypeEnum.Regular : ConsultationTypeEnum.FollowUp;
+                var allConsultationTypes = await _unitOfWork.ConsultationTypes.GetAllAsync();
+                var consultationTypeEntity = allConsultationTypes.FirstOrDefault(ct => ct.ConsultationTypeEnum == consultationTypeEnum);
+
+                if (consultationTypeEntity == null)
+                    return slots; // Return empty list
+
+                var allDoctorConsultations = await _doctorConsultationRepository.GetAllAsync();
+                var doctorConsultation = allDoctorConsultations.FirstOrDefault(dc =>
+                    dc.DoctorId == doctorId &&
+                    dc.ConsultationTypeId == consultationTypeEntity.Id);
+
+                if (doctorConsultation == null)
+                    return slots; // Return empty list
+
+                var durationMinutes = doctorConsultation.SessionDurationMinutes;
+
+                // TODO: Get schedule (weekly or override) for this date
+                // TODO: Generate time slots based on schedule
+                // TODO: Get booked appointments for this date
+                // TODO: Mark slots as available/booked/past
+
+                // For now, return empty list - this is optional endpoint
+                _logger.LogInformation("Available slots calculation not fully implemented yet (optional feature)");
+
+                return slots;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating available time slots for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Doctor Appointments Management
+
+        /// <summary>
+        /// جلب مواعيد الدكتور مع Pagination والفلاتر
+        /// </summary>
+        public async Task<PaginatedResponse<DoctorAppointmentResponse>> GetDoctorAppointmentsAsync(
+            Guid doctorId, 
+            GetDoctorAppointmentsRequest request)
+        {
+            try
+            {
+                _logger.LogInformation(
+                    "Retrieving appointments for Doctor {DoctorId} - Page: {Page}, Size: {Size}, StartDate: {StartDate}, EndDate: {EndDate}, Status: {Status}",
+                    doctorId, request.PageNumber, request.PageSize, request.StartDate, request.EndDate, request.Status);
+
+                // Get appointments from repository with filters and pagination
+                var (appointments, totalCount) = await _appointmentRepository.GetByDoctorIdWithFiltersAsync(
+                    doctorId,
+                    request.StartDate,
+                    request.EndDate,
+                    request.Status,
+                    request.PageNumber,
+                    request.PageSize,
+                    request.SortBy,
+                    request.SortOrder);
+
+                // Map to response DTOs
+                var appointmentResponses = appointments.Select(a => new DoctorAppointmentResponse
+                {
+                    Id = a.Id,
+                    PatientId = a.PatientId,
+                    PatientName = $"{a.Patient.FirstName} {a.Patient.LastName}",
+                    PatientPhoneNumber = a.Patient.PhoneNumber,
+                    AppointmentDate = a.ScheduledStartTime.ToString("yyyy-MM-dd"),
+                    AppointmentTime = a.ScheduledStartTime.ToString("HH:mm:ss"),
+                    Duration = a.SessionDurationMinutes,
+                    AppointmentType = a.PreviousAppointmentId.HasValue ? "followup" : "regular",
+                    Status = a.Status,
+                    Notes = a.CancellationReason,
+                    Price = a.ConsultationFee
+                }).ToList();
+
+                // Build paginated response
+                var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
+                
+                var paginatedResponse = new PaginatedResponse<DoctorAppointmentResponse>
+                {
+                    PageNumber = request.PageNumber,
+                    PageSize = request.PageSize,
+                    TotalCount = totalCount,
+                    TotalPages = totalPages,
+                    HasPreviousPage = request.PageNumber > 1,
+                    HasNextPage = request.PageNumber < totalPages,
+                    Data = appointmentResponses
+                };
+
+                _logger.LogInformation(
+                    "Retrieved {Count} appointments out of {TotalCount} for Doctor {DoctorId}",
+                    appointmentResponses.Count, totalCount, doctorId);
+
+                return paginatedResponse;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving appointments for Doctor {DoctorId}", doctorId);
                 throw;
             }
         }

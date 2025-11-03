@@ -15,7 +15,7 @@ namespace Shuryan.Application.DTOs.Common.Address
     {
         public string Street { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
-        public string Governorate { get; set; } = string.Empty;
+        public Governorate Governorate { get; set; }
         public string? BuildingNumber { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
