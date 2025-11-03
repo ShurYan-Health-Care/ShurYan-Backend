@@ -23,6 +23,17 @@ namespace Shuryan.Application.DTOs.Responses.Appointment
         public AppointmentStatus Status { get; set; }
         public string? CancellationReason { get; set; }
         public DateTime? CancelledAt { get; set; }
+        
+        // 🆕 Session Times
+        public DateTime? ActualStartTime { get; set; }
+        public DateTime? ActualEndTime { get; set; }
+        
+        // 🆕 Patient Info
+        public string? PatientName { get; set; }
+        public int? PatientAge { get; set; }
+        public string? PatientProfileImageUrl { get; set; }
+        
+        // Navigation Properties
         public PatientBasicResponse? Patient { get; set; }
         public DoctorBasicResponse? Doctor { get; set; }
         public ConsultationRecordResponse? ConsultationRecord { get; set; }

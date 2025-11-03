@@ -1,4 +1,4 @@
-﻿using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.External.Laboratories;
 using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Entities.Medical.Appointments;

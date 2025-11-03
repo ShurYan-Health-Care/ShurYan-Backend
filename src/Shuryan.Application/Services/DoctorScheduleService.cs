@@ -362,5 +362,132 @@ namespace Shuryan.Application.Services
         }
 
         #endregion
+
+        #region Frontend Integration - New Format
+
+        /// <summary>
+        /// جلب الجدول الأسبوعي بصيغة الفرونت (array of 7 days with dayOfWeek 0-6)
+        /// 0=Sunday, 1=Monday, ..., 6=Saturday
+        /// </summary>
+        public async Task<List<DayScheduleSlotResponse>> GetWeeklyScheduleForFrontendAsync(Guid doctorId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting weekly schedule for frontend for doctor {DoctorId}", doctorId);
+
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null)
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+
+                var allAvailabilities = await _unitOfWork.DoctorAvailabilities.GetAllAsync();
+                var doctorAvailabilities = allAvailabilities
+                    .Where(a => a.DoctorId == doctorId)
+                    .ToList();
+
+                // Map from our system enum (1=Saturday, 7=Friday) to frontend format (0=Sunday, 6=Saturday)
+                var schedule = new List<DayScheduleSlotResponse>();
+
+                // Frontend expects: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+                // Our system: 1=Saturday, 2=Sunday, 3=Monday, 4=Tuesday, 5=Wednesday, 6=Thursday, 7=Friday
+                
+                // Sunday (0 in frontend, 2 in our system)
+                schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Sunday, 0));
+                
+                // Monday (1 in frontend, 3 in our system)
+                schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Monday, 1));
+                
+                // Tuesday (2 in frontend, 4 in our system)
+                schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Tuesday, 2));
+                
+                // Wednesday (3 in frontend, 5 in our system)
+                schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Wednesday, 3));
+                
+                // Thursday (4 in frontend, 6 in our system)
+                schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Thursday, 4));
+                
+                // Friday (5 in frontend, 7 in our system)
+                schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Friday, 5));
+                
+                // Saturday (6 in frontend, 1 in our system)
+                schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Saturday, 6));
+
+                _logger.LogInformation("Successfully retrieved weekly schedule for frontend for doctor {DoctorId}", doctorId);
+                return schedule;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting weekly schedule for frontend for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// جلب المواعيد الاستثنائية بصيغة الفرونت (مع isClosed flag)
+        /// </summary>
+        public async Task<List<ExceptionalDateResponse>> GetExceptionalDatesForFrontendAsync(Guid doctorId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting exceptional dates for frontend for doctor {DoctorId}", doctorId);
+
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null)
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+
+                var allOverrides = await _unitOfWork.DoctorOverrides.GetAllAsync();
+                var doctorOverrides = allOverrides
+                    .Where(o => o.DoctorId == doctorId)
+                    .OrderBy(o => o.StartTime)
+                    .ToList();
+
+                var exceptionalDates = doctorOverrides.Select(o => new ExceptionalDateResponse
+                {
+                    Id = o.Id,
+                    Date = o.StartTime.ToString("yyyy-MM-dd"),
+                    IsClosed = o.Type == OverrideType.Unavailable,
+                    FromTime = o.Type == OverrideType.Unavailable ? null : o.StartTime.ToString("HH:mm"),
+                    ToTime = o.Type == OverrideType.Unavailable ? null : o.EndTime.ToString("HH:mm")
+                }).ToList();
+
+                _logger.LogInformation("Successfully retrieved {Count} exceptional dates for frontend for doctor {DoctorId}",
+                    exceptionalDates.Count, doctorId);
+
+                return exceptionalDates;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting exceptional dates for frontend for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Helper method للحصول على معلومات يوم واحد بصيغة الفرونت
+        /// </summary>
+        private DayScheduleSlotResponse GetDayScheduleSlot(List<DoctorAvailability> availabilities, SysDayOfWeek dayOfWeek, int frontendDayNumber)
+        {
+            var availability = availabilities.FirstOrDefault(a => a.DayOfWeek == dayOfWeek);
+
+            if (availability == null)
+            {
+                return new DayScheduleSlotResponse
+                {
+                    DayOfWeek = frontendDayNumber,
+                    IsEnabled = false,
+                    FromTime = null,
+                    ToTime = null
+                };
+            }
+
+            return new DayScheduleSlotResponse
+            {
+                DayOfWeek = frontendDayNumber,
+                IsEnabled = true,
+                FromTime = availability.StartTime.ToString("HH:mm"),
+                ToTime = availability.EndTime.ToString("HH:mm")
+            };
+        }
+
+        #endregion
     }
 }

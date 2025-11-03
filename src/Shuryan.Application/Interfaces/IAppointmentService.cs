@@ -1,3 +1,4 @@
+using Shuryan.Application.DTOs.Common.Pagination;
 using Shuryan.Application.DTOs.Requests.Appointment;
 using Shuryan.Application.DTOs.Responses.Appointment;
 
@@ -28,6 +29,30 @@ namespace Shuryan.Application.Interfaces
         Task<IEnumerable<AppointmentResponse>> GetAppointmentsByDateRangeAsync(DateTime startDate, DateTime endDate);
         Task<bool> IsTimeSlotAvailableAsync(Guid doctorId, DateTime startTime, DateTime endTime);
         Task<int> GetAppointmentsCountAsync(Guid userId, string userRole);
+        #endregion
+
+        #region Booking System - Frontend Integration
+        /// <summary>
+        /// جلب المواعيد المحجوزة بالفعل ليوم معين
+        /// </summary>
+        Task<IEnumerable<BookedAppointmentSlotResponse>> GetBookedAppointmentsForDateAsync(Guid doctorId, DateTime date);
+
+        /// <summary>
+        /// حجز موعد جديد
+        /// </summary>
+        Task<BookedAppointmentResponse> BookAppointmentAsync(Guid patientId, BookAppointmentRequest request);
+
+        /// <summary>
+        /// حساب الفترات الزمنية المتاحة ليوم معين (اختياري)
+        /// </summary>
+        Task<IEnumerable<AvailableTimeSlotResponse>> GetAvailableTimeSlotsAsync(Guid doctorId, DateTime date, int consultationType);
+        #endregion
+
+        #region Doctor Appointments Management
+        /// <summary>
+        /// جلب مواعيد الدكتور مع Pagination والفلاتر
+        /// </summary>
+        Task<PaginatedResponse<DoctorAppointmentResponse>> GetDoctorAppointmentsAsync(Guid doctorId, GetDoctorAppointmentsRequest request);
         #endregion
     }
 }

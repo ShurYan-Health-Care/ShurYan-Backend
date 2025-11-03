@@ -7,8 +7,10 @@ using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
 using Shuryan.Application.Settings;
 using Shuryan.Core.Interfaces.Repositories;
+using Shuryan.Core.Interfaces.Repositories.LaboratoryRepositories;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.Repositories.Doctors;
+using Shuryan.Infrastructure.Repositories.Laboratories;
 using Shuryan.Infrastructure.Repositories.Medical;
 using Shuryan.Infrastructure.Repositories.Patients;
 using Shuryan.Infrastructure.UnitOfWork;
@@ -36,6 +38,8 @@ namespace Shuryan.API.Extensions
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IDoctorRepository, DoctorRepository>();
             services.AddScoped<IDoctorConsultationRepository, DoctorConsultationRepository>();
+            services.AddScoped<IConsultationRecordRepository, ConsultationRecordRepository>();
+            services.AddScoped<ILabPrescriptionRepository, LabPrescriptionRepository>();
 
             return services;
         }
@@ -77,6 +81,20 @@ namespace Shuryan.API.Extensions
             services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
             services.AddScoped<IDoctorPartnerService, DoctorPartnerService>();
 
+            // Laboratory Services
+            services.AddScoped<ILaboratoryService, LaboratoryService>();
+            services.AddScoped<ILaboratoryDocumentService, LaboratoryDocumentService>();
+            services.AddScoped<ILabPrescriptionService, LabPrescriptionService>();
+            services.AddScoped<ILabOrderService, LabOrderService>();
+
+            // Prescription Service
+            services.AddScoped<IPrescriptionService, PrescriptionService>();
+
+            // Session Management Services
+            services.AddScoped<ISessionService, SessionService>();
+            services.AddScoped<IDocumentationService, DocumentationService>();
+            services.AddScoped<ILabTestService, LabTestService>();
+
             return services;
         }
         #endregion
@@ -116,6 +134,9 @@ namespace Shuryan.API.Extensions
                         Email = "support@shuryan.com"
                     }
                 });
+
+                // Custom Schema ID to avoid conflicts
+                options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
 
                 // Add JWT Authentication to Swagger
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
