@@ -1426,6 +1426,12 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("ActualEndTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ActualStartTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CancellationReason")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -3281,8 +3287,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Shuryan.Core.Entities.Medical.Appointments.Appointment", b =>
                 {
-                    b.Navigation("ConsultationRecord")
-                        .IsRequired();
+                    b.Navigation("ConsultationRecord");
 
                     b.Navigation("DoctorReview");
 

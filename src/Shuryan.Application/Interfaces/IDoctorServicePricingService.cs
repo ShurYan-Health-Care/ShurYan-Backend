@@ -1,4 +1,5 @@
 using Shuryan.Application.DTOs.Requests.Clinic;
+using Shuryan.Application.DTOs.Responses.Appointment;
 using Shuryan.Application.DTOs.Responses.Clinic;
 using System;
 using System.Threading.Tasks;
@@ -32,6 +33,13 @@ namespace Shuryan.Application.Interfaces
         /// تحديث سعر ومدة إعادة الكشف
         /// </summary>
         Task<ServicePricingResponse> UpdateReExaminationAsync(Guid doctorId, UpdateServicePricingRequest request);
+        #endregion
+
+        #region Frontend Integration
+        /// <summary>
+        /// جلب كل الخدمات (كشف عادي + إعادة كشف) في response واحد
+        /// </summary>
+        Task<DoctorServicesResponse> GetAllServicesAsync(Guid doctorId);
         #endregion
     }
 }
