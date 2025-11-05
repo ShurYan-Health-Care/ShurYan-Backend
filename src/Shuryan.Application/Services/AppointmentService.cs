@@ -108,8 +108,38 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException("Scheduled end time must be after start time");
                 }
 
+                // تحويل الأوقات من Local Time (Egypt) لـ UTC
+                // الـ client بيبعت الأوقات بتوقيت مصر، لازم نحولهم لـ UTC قبل الحفظ
+                var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+                
+                DateTime scheduledStartTimeUtc;
+                DateTime scheduledEndTimeUtc;
+                
+                // تحقق لو الـ DateTime جاي من الـ client بـ DateTimeKind.Unspecified (يعني local time)
+                if (request.ScheduledStartTime.Kind == DateTimeKind.Unspecified)
+                {
+                    // نعتبره Egypt time ونحوله لـ UTC
+                    scheduledStartTimeUtc = TimeZoneInfo.ConvertTimeToUtc(request.ScheduledStartTime, egyptTimeZone);
+                    scheduledEndTimeUtc = TimeZoneInfo.ConvertTimeToUtc(request.ScheduledEndTime, egyptTimeZone);
+                }
+                else if (request.ScheduledStartTime.Kind == DateTimeKind.Local)
+                {
+                    // لو جاي كـ Local، نحوله لـ UTC
+                    scheduledStartTimeUtc = request.ScheduledStartTime.ToUniversalTime();
+                    scheduledEndTimeUtc = request.ScheduledEndTime.ToUniversalTime();
+                }
+                else
+                {
+                    // لو جاي كـ UTC، نستخدمه زي ما هو
+                    scheduledStartTimeUtc = request.ScheduledStartTime;
+                    scheduledEndTimeUtc = request.ScheduledEndTime;
+                }
+
+                _logger.LogInformation("Appointment times - Local: {LocalStart} to {LocalEnd}, UTC: {UtcStart} to {UtcEnd}",
+                    request.ScheduledStartTime, request.ScheduledEndTime, scheduledStartTimeUtc, scheduledEndTimeUtc);
+
                 // 4. Validate appointment is in the future
-                if (request.ScheduledStartTime <= DateTime.UtcNow)
+                if (scheduledStartTimeUtc <= DateTime.UtcNow)
                 {
                     throw new ArgumentException("Appointment must be scheduled for a future date and time");
                 }
@@ -117,8 +147,8 @@ namespace Shuryan.Application.Services
                 // 5. Check for conflicting appointments
                 var hasConflict = await _appointmentRepository.HasConflictingAppointmentAsync(
                     request.DoctorId, 
-                    request.ScheduledStartTime, 
-                    request.ScheduledEndTime);
+                    scheduledStartTimeUtc, 
+                    scheduledEndTimeUtc);
 
                 if (hasConflict)
                 {
@@ -144,8 +174,8 @@ namespace Shuryan.Application.Services
                 {
                     PatientId = request.PatientId,
                     DoctorId = request.DoctorId,
-                    ScheduledStartTime = request.ScheduledStartTime,
-                    ScheduledEndTime = request.ScheduledEndTime,
+                    ScheduledStartTime = scheduledStartTimeUtc, // نستخدم الـ UTC time
+                    ScheduledEndTime = scheduledEndTimeUtc,     // نستخدم الـ UTC time
                     ConsultationType = request.ConsultationType,
                     ConsultationFee = doctorConsultation.ConsultationFee,
                     SessionDurationMinutes = doctorConsultation.SessionDurationMinutes,

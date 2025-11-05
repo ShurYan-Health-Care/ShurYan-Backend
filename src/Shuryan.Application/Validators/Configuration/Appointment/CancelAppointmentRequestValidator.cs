@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,9 +13,9 @@ namespace Shuryan.Application.Validators.Configuration.Appointment
         public CancelAppointmentRequestValidator()
         {
             RuleFor(x => x.CancellationReason)
-                .NotEmpty()
                 .Length(5, 500)
-                .WithMessage("Cancellation reason must be between 5 and 500 characters");
+                .When(x => !string.IsNullOrWhiteSpace(x.CancellationReason))
+                .WithMessage("Cancellation reason must be between 5 and 500 characters when provided");
         }
     }
 }
