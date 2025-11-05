@@ -783,9 +783,16 @@ namespace Shuryan.Application.Services
                 if (doctor == null)
                     throw new ArgumentException($"Doctor with ID {doctorId} not found");
 
-                // جلب مواعيد اليوم
-                var today = DateTime.UtcNow.Date;
-                var todayAppointments = await _unitOfWork.Appointments.GetByDoctorIdAndDateAsync(doctorId, today);
+                // جلب مواعيد اليوم (بتوقيت مصر)
+                var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+                var nowEgypt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, egyptTimeZone);
+                var todayEgypt = nowEgypt.Date;
+                
+                _logger.LogInformation("Current time - UTC: {UtcNow}, Egypt: {EgyptNow}, Today (Egypt): {TodayEgypt}",
+                    DateTime.UtcNow, nowEgypt, todayEgypt);
+                
+                // نجيب appointments اللي تاريخها = today (المخزون في الـ DB كـ Egypt local time)
+                var todayAppointments = await _unitOfWork.Appointments.GetByDoctorIdAndDateAsync(doctorId, todayEgypt);
 
                 // تحويل الـ Appointments لـ Response DTOs
                 var appointmentResponses = todayAppointments.Select(a => new TodayAppointmentResponse
@@ -1072,55 +1079,275 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// حساب أقرب موعد متاح للدكتور
+        /// حساب أقرب موعد متاح للدكتور بناءً على:
+        /// - الجدول الأسبوعي الثابت (DoctorAvailability)
+        /// - الأيام الاستثنائية (DoctorOverride) - بتعمل override على الأيام الثابتة
+        /// - المواعيد المحجوزة (Confirmed, CheckedIn, InProgress)
+        /// - مدة الجلسة من DoctorConsultation
         /// </summary>
         private async Task<DateTime?> GetNextAvailableSlotAsync(Guid doctorId)
         {
             try
             {
-                // جلب المواعيد المؤكدة للدكتور
-                var appointments = await _unitOfWork.Appointments.GetAllAsync();
-                var doctorAppointments = appointments
-                    .Where(a => a.DoctorId == doctorId && 
-                           a.Status == Core.Enums.Appointments.AppointmentStatus.Confirmed &&
-                           a.ScheduledStartTime > DateTime.UtcNow)
-                    .OrderBy(a => a.ScheduledStartTime)
+                // نستخدم UTC للحسابات الداخلية
+                var nowUtc = DateTime.UtcNow;
+                
+                // نحول لـ Egypt timezone (UTC+2) عشان نقارن بأوقات العمل المحلية
+                var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+                var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, egyptTimeZone);
+                
+                var searchStartDate = nowLocal.Date;
+                var searchEndDate = searchStartDate.AddDays(30); // نبحث في أول 30 يوم
+
+                _logger.LogDebug("Calculating next available slot for doctor {DoctorId}. Current time: UTC={UtcTime}, Local={LocalTime}", 
+                    doctorId, nowUtc, nowLocal);
+
+                // 1. جلب الجدول الأسبوعي الثابت
+                var regularAvailabilities = await _unitOfWork.DoctorAvailabilities.GetByDoctorIdAsync(doctorId);
+                if (!regularAvailabilities.Any())
+                    return null; // الدكتور مضافش أي أيام عمل
+
+                // 2. جلب الأيام الاستثنائية في الفترة القادمة
+                // نحول الـ search dates لـ UTC عشان نقارن بالـ database
+                var searchStartDateUtc = TimeZoneInfo.ConvertTimeToUtc(searchStartDate, egyptTimeZone);
+                var searchEndDateUtc = TimeZoneInfo.ConvertTimeToUtc(searchEndDate, egyptTimeZone);
+                
+                var overrides = await _unitOfWork.DoctorOverrides.GetByDoctorIdAndDateRangeAsync(
+                    doctorId, searchStartDateUtc, searchEndDateUtc);
+
+                // 3. جلب كل المواعيد المحجوزة (مش بس Confirmed) - بنستخدم method محسنة
+                var activeStatuses = new List<Core.Enums.Appointments.AppointmentStatus>
+                {
+                    Core.Enums.Appointments.AppointmentStatus.Confirmed,
+                    Core.Enums.Appointments.AppointmentStatus.CheckedIn,
+                    Core.Enums.Appointments.AppointmentStatus.InProgress
+                };
+                
+                var bookedAppointments = (await _unitOfWork.Appointments.GetByDoctorIdAndDateRangeAsync(
+                    doctorId, nowUtc, searchEndDateUtc, activeStatuses))
                     .ToList();
 
-                // جلب أوقات العمل الأساسية للدكتور
-                var availabilities = await _unitOfWork.DoctorAvailabilities.GetByDoctorIdAsync(doctorId);
+                _logger.LogInformation("=== BOOKED APPOINTMENTS DEBUG ===");
+                _logger.LogInformation("Doctor ID: {DoctorId}", doctorId);
+                _logger.LogInformation("Search Range: {Start} to {End} (UTC)", nowUtc, searchEndDateUtc);
+                _logger.LogInformation("Found {Count} booked appointments", bookedAppointments.Count);
                 
-                // نبحث عن أقرب slot متاح في الأيام القادمة
-                var currentDate = DateTime.UtcNow.Date;
-                for (int i = 0; i < 14; i++) // نبحث في أول 14 يوم
+                // CRITICAL FIX: ALL appointments in database are stored as Egypt local time (not UTC)
+                // We need to convert them to UTC for proper comparison
+                var correctedAppointments = new List<Core.Entities.Medical.Appointments.Appointment>();
+                
+                if (bookedAppointments.Any())
                 {
-                    var checkDate = currentDate.AddDays(i);
-                    var dayOfWeek = (Core.Enums.SysDayOfWeek)((int)checkDate.DayOfWeek);
-                    
-                    var dayAvailability = availabilities.FirstOrDefault(a => a.DayOfWeek == dayOfWeek);
-                    if (dayAvailability != null)
+                    foreach (var apt in bookedAppointments)
                     {
-                        var slotTime = checkDate.Add(dayAvailability.StartTime.ToTimeSpan());
-                        if (slotTime > DateTime.UtcNow)
+                        _logger.LogInformation("  - Appointment {Id}: {Start} to {End} (stored in DB), Status: {Status}", 
+                            apt.Id, apt.ScheduledStartTime, apt.ScheduledEndTime, apt.Status);
+                        
+                        // ALWAYS treat database times as Egypt local time and convert to UTC
+                        var correctedStart = TimeZoneInfo.ConvertTimeToUtc(
+                            DateTime.SpecifyKind(apt.ScheduledStartTime, DateTimeKind.Unspecified), 
+                            egyptTimeZone);
+                        var correctedEnd = TimeZoneInfo.ConvertTimeToUtc(
+                            DateTime.SpecifyKind(apt.ScheduledEndTime, DateTimeKind.Unspecified), 
+                            egyptTimeZone);
+                        
+                        _logger.LogWarning("    >>> CONVERTED TO UTC: {Start} to {End}",
+                            correctedStart, correctedEnd);
+                        
+                        // Create a corrected copy
+                        var correctedApt = new Core.Entities.Medical.Appointments.Appointment
                         {
-                            // تحقق إذا كان الموعد مشغول
-                            var isBooked = doctorAppointments.Any(a => 
-                                a.ScheduledStartTime.Date == checkDate && 
-                                a.ScheduledStartTime.TimeOfDay >= dayAvailability.StartTime.ToTimeSpan() &&
-                                a.ScheduledStartTime.TimeOfDay < dayAvailability.EndTime.ToTimeSpan());
-                            
-                            if (!isBooked)
+                            Id = apt.Id,
+                            DoctorId = apt.DoctorId,
+                            PatientId = apt.PatientId,
+                            ScheduledStartTime = correctedStart,
+                            ScheduledEndTime = correctedEnd,
+                            Status = apt.Status,
+                            ConsultationType = apt.ConsultationType,
+                            SessionDurationMinutes = apt.SessionDurationMinutes
+                        };
+                        correctedAppointments.Add(correctedApt);
+                    }
+                    
+                    // Replace with corrected appointments
+                    bookedAppointments = correctedAppointments;
+                }
+                else
+                {
+                    _logger.LogWarning("NO BOOKED APPOINTMENTS FOUND! This might be the problem.");
+                }
+                _logger.LogInformation("=================================");
+
+                // 4. جلب مدة الجلسة الافتراضية (Regular Consultation)
+                var consultations = await _unitOfWork.DoctorConsultations.GetByDoctorIdAsync(doctorId);
+                var regularConsultation = consultations
+                    .FirstOrDefault(c => c.ConsultationType.ConsultationTypeEnum == Core.Enums.Appointments.ConsultationTypeEnum.Regular);
+                
+                int sessionDurationMinutes = regularConsultation?.SessionDurationMinutes ?? 30; // default 30 minutes
+
+                // 5. نبحث يوم بيوم عن أول slot متاح
+                for (int dayOffset = 0; dayOffset < 30; dayOffset++)
+                {
+                    var checkDate = searchStartDate.AddDays(dayOffset);
+                    
+                    // تحويل System.DayOfWeek إلى SysDayOfWeek بشكل صحيح
+                    var dayOfWeek = checkDate.DayOfWeek switch
+                    {
+                        DayOfWeek.Saturday => Core.Enums.SysDayOfWeek.Saturday,
+                        DayOfWeek.Sunday => Core.Enums.SysDayOfWeek.Sunday,
+                        DayOfWeek.Monday => Core.Enums.SysDayOfWeek.Monday,
+                        DayOfWeek.Tuesday => Core.Enums.SysDayOfWeek.Tuesday,
+                        DayOfWeek.Wednesday => Core.Enums.SysDayOfWeek.Wednesday,
+                        DayOfWeek.Thursday => Core.Enums.SysDayOfWeek.Thursday,
+                        DayOfWeek.Friday => Core.Enums.SysDayOfWeek.Friday,
+                        _ => Core.Enums.SysDayOfWeek.Saturday
+                    };
+
+                    // تحقق من وجود override لهذا اليوم
+                    var dayOverrides = overrides
+                        .Where(o => o.StartTime.Date == checkDate)
+                        .OrderBy(o => o.StartTime)
+                        .ToList();
+
+                    // تحديد أوقات العمل لهذا اليوم
+                    List<(TimeOnly Start, TimeOnly End)> workingHours = new List<(TimeOnly, TimeOnly)>();
+
+                    // لو فيه override من نوع Unavailable بيغطي اليوم كله، نتخطى اليوم
+                    var fullDayUnavailable = dayOverrides.Any(o => 
+                        o.Type == Core.Enums.Appointments.OverrideType.Unavailable &&
+                        o.StartTime.TimeOfDay == TimeSpan.Zero &&
+                        o.EndTime.Date > checkDate);
+
+                    if (fullDayUnavailable)
+                        continue;
+
+                    // 1. نبدأ بالجدول الثابت
+                    var regularSchedule = regularAvailabilities
+                        .Where(a => a.DayOfWeek == dayOfWeek)
+                        .ToList();
+
+                    foreach (var schedule in regularSchedule)
+                    {
+                        workingHours.Add((schedule.StartTime, schedule.EndTime));
+                    }
+
+                    // 2. نضيف الأوقات الاستثنائية Available (أوقات إضافية)
+                    var availableOverrides = dayOverrides
+                        .Where(o => o.Type == Core.Enums.Appointments.OverrideType.Available)
+                        .ToList();
+
+                    foreach (var ovr in availableOverrides)
+                    {
+                        workingHours.Add((TimeOnly.FromDateTime(ovr.StartTime), TimeOnly.FromDateTime(ovr.EndTime)));
+                    }
+
+                    // لو مفيش أي أوقات عمل (لا ثابتة ولا استثنائية)، نتخطى اليوم
+                    if (!workingHours.Any())
+                        continue;
+
+                    // 3. نجهز الأوقات الـ Unavailable عشان نستبعدها من الـ slots
+                    var unavailableOverrides = dayOverrides
+                        .Where(o => o.Type == Core.Enums.Appointments.OverrideType.Unavailable)
+                        .ToList();
+
+                    // 6. تقسيم أوقات العمل إلى slots بناءً على مدة الجلسة
+                    foreach (var (workStart, workEnd) in workingHours)
+                    {
+                        var currentSlotTime = checkDate.Add(workStart.ToTimeSpan());
+                        var workEndDateTime = checkDate.Add(workEnd.ToTimeSpan());
+
+                        _logger.LogDebug("Processing work hours for doctor {DoctorId} on {Date}: {Start} to {End}, Session: {Duration}min", 
+                            doctorId, checkDate.ToString("yyyy-MM-dd"), workStart, workEnd, sessionDurationMinutes);
+
+                        // نسمح بالـ slots اللي بتبدأ قبل نهاية وقت العمل
+                        // (حتى لو الجلسة هتنتهي بعد وقت العمل بشوية)
+                        while (currentSlotTime < workEndDateTime)
+                        {
+                            var slotEnd = currentSlotTime.AddMinutes(sessionDurationMinutes);
+
+                            // تحقق إن الـ slot في المستقبل (مقارنة بالـ local time)
+                            if (currentSlotTime <= nowLocal)
                             {
-                                return slotTime;
+                                _logger.LogDebug("Skipping slot {SlotTime} - in the past (now: {Now})", currentSlotTime, nowLocal);
+                                currentSlotTime = currentSlotTime.AddMinutes(sessionDurationMinutes);
+                                continue;
                             }
+
+                            // نحول الـ slot لـ UTC عشان نقارنه بالـ overrides والـ appointments
+                            var currentSlotTimeUtc = TimeZoneInfo.ConvertTimeToUtc(currentSlotTime, egyptTimeZone);
+                            var slotEndUtc = TimeZoneInfo.ConvertTimeToUtc(slotEnd, egyptTimeZone);
+
+                            // تحقق إن الـ slot مش بيتداخل مع وقت Unavailable
+                            bool isInUnavailableTime = unavailableOverrides.Any(u =>
+                                // الـ slot يتداخل مع unavailable time
+                                (currentSlotTimeUtc >= u.StartTime && currentSlotTimeUtc < u.EndTime) ||
+                                (slotEndUtc > u.StartTime && slotEndUtc <= u.EndTime) ||
+                                (currentSlotTimeUtc <= u.StartTime && slotEndUtc >= u.EndTime));
+
+                            if (isInUnavailableTime)
+                            {
+                                _logger.LogDebug("Skipping slot {SlotTime} (UTC: {SlotTimeUtc}) - unavailable override", 
+                                    currentSlotTime, currentSlotTimeUtc);
+                                currentSlotTime = currentSlotTime.AddMinutes(sessionDurationMinutes);
+                                continue;
+                            }
+
+                            // نجيب المواعيد المحجوزة في نفس اليوم بس (عشان نحسن الـ performance)
+                            var dayAppointments = bookedAppointments
+                                .Where(a => a.ScheduledStartTime.Date == currentSlotTimeUtc.Date)
+                                .ToList();
+
+                            _logger.LogDebug("=== CHECKING SLOT: {SlotLocal} (UTC: {SlotUtc}) ===", currentSlotTime, currentSlotTimeUtc);
+                            _logger.LogDebug("  Slot End: {SlotEndLocal} (UTC: {SlotEndUtc})", slotEnd, slotEndUtc);
+                            _logger.LogDebug("  Day has {Count} appointments", dayAppointments.Count);
+
+                            // تحقق إن الـ slot مش محجوز
+                            bool isBooked = false;
+                            foreach (var apt in dayAppointments)
+                            {
+                                bool overlap1 = currentSlotTimeUtc >= apt.ScheduledStartTime && currentSlotTimeUtc < apt.ScheduledEndTime;
+                                bool overlap2 = slotEndUtc > apt.ScheduledStartTime && slotEndUtc <= apt.ScheduledEndTime;
+                                bool overlap3 = currentSlotTimeUtc <= apt.ScheduledStartTime && slotEndUtc >= apt.ScheduledEndTime;
+                                
+                                _logger.LogDebug("    Comparing with appointment {Id}: {Start} to {End} (UTC)", 
+                                    apt.Id, apt.ScheduledStartTime, apt.ScheduledEndTime);
+                                _logger.LogDebug("      Overlap checks: start-in={O1}, end-in={O2}, covers={O3}", 
+                                    overlap1, overlap2, overlap3);
+                                
+                                if (overlap1 || overlap2 || overlap3)
+                                {
+                                    isBooked = true;
+                                    _logger.LogWarning("    >>> CONFLICT DETECTED! Slot overlaps with appointment {Id}", apt.Id);
+                                    break;
+                                }
+                            }
+
+                            if (isBooked)
+                            {
+                                _logger.LogDebug("  RESULT: Slot is BOOKED - skipping");
+                            }
+                            else
+                            {
+                                // لقينا أول slot متاح! نرجعه بـ UTC
+                                _logger.LogInformation("  RESULT: Slot is AVAILABLE! ✓✓✓");
+                                _logger.LogInformation(">>> FOUND NEXT AVAILABLE SLOT for doctor {DoctorId}: Local={SlotTime}, UTC={SlotTimeUtc}", 
+                                    doctorId, currentSlotTime, currentSlotTimeUtc);
+                                return currentSlotTimeUtc;
+                            }
+
+                            currentSlotTime = currentSlotTime.AddMinutes(sessionDurationMinutes);
                         }
+                        
+                        _logger.LogDebug("Finished processing work hours {Start}-{End}, last slot checked: {LastSlot}", 
+                            workStart, workEnd, currentSlotTime.AddMinutes(-sessionDurationMinutes));
                     }
                 }
 
-                return null;
+                return null; // مفيش slots متاحة في الـ 30 يوم القادمة
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error calculating next available slot for doctor {DoctorId}", doctorId);
                 return null;
             }
         }
@@ -1322,6 +1549,7 @@ namespace Shuryan.Application.Services
 
         /// <summary>
         /// الحصول على السجل الطبي الكامل لمريض معين
+        /// بسيط جداً - بيرجع كل الـ MedicalHistoryItems بتاعت المريض
         /// </summary>
         public async Task<PatientMedicalRecordResponse?> GetPatientMedicalRecordAsync(Guid patientId, Guid doctorId)
         {
@@ -1352,50 +1580,33 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                // جلب السجل الطبي للمريض
+                // جلب السجل الطبي للمريض - كل الـ items
                 var allMedicalHistory = await _unitOfWork.MedicalHistoryItems.GetAllAsync();
                 var patientMedicalHistory = allMedicalHistory
                     .Where(m => m.PatientId == patientId)
+                    .OrderByDescending(m => m.CreatedAt)
                     .ToList();
 
-                // تجميع حسب النوع
-                var drugAllergies = patientMedicalHistory
-                    .Where(m => m.Type == Core.Enums.MedicalHistoryType.DrugAllergy)
-                    .Select(m => ParseDrugAllergy(m))
-                    .ToList();
-
-                var currentMedications = patientMedicalHistory
-                    .Where(m => m.Type == Core.Enums.MedicalHistoryType.CurrentMedication)
-                    .Select(m => ParseCurrentMedication(m))
-                    .ToList();
-
-                var chronicDiseases = patientMedicalHistory
-                    .Where(m => m.Type == Core.Enums.MedicalHistoryType.ChronicDisease)
-                    .Select(m => ParseChronicDisease(m))
-                    .ToList();
-
-                var previousSurgeries = patientMedicalHistory
-                    .Where(m => m.Type == Core.Enums.MedicalHistoryType.PreviousSurgery)
-                    .Select(m => ParsePreviousSurgery(m))
-                    .ToList();
-
-                // تاريخ آخر تحديث
-                var lastUpdated = patientMedicalHistory.Any() 
-                    ? patientMedicalHistory.Max(m => m.UpdatedAt ?? m.CreatedAt) 
-                    : (DateTime?)null;
+                // Map to response - بسيط جداً
+                var medicalHistoryItems = patientMedicalHistory.Select(m => new MedicalHistoryItemResponse
+                {
+                    Id = m.Id,
+                    Type = m.Type,
+                    TypeName = GetMedicalHistoryTypeName(m.Type),
+                    Text = m.Text,
+                    CreatedAt = m.CreatedAt,
+                    UpdatedAt = m.UpdatedAt
+                }).ToList();
 
                 var response = new PatientMedicalRecordResponse
                 {
                     PatientId = patientId,
                     PatientFullName = $"{patient.FirstName} {patient.LastName}",
-                    LastUpdatedAt = lastUpdated,
-                    DrugAllergies = drugAllergies,
-                    CurrentMedications = currentMedications,
-                    ChronicDiseases = chronicDiseases,
-                    PreviousSurgeries = previousSurgeries
+                    MedicalHistory = medicalHistoryItems
                 };
 
-                _logger.LogInformation("Successfully retrieved medical record for patient {PatientId}", patientId);
+                _logger.LogInformation("Successfully retrieved medical record for patient {PatientId} - {Count} items", 
+                    patientId, medicalHistoryItems.Count);
                 return response;
             }
             catch (Exception ex)
@@ -1403,6 +1614,21 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error getting medical record for patient {PatientId}", patientId);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// جلب اسم نوع المعلومة الطبية بالعربي
+        /// </summary>
+        private string GetMedicalHistoryTypeName(Core.Enums.MedicalHistoryType type)
+        {
+            return type switch
+            {
+                Core.Enums.MedicalHistoryType.DrugAllergy => "الحساسية من الأدوية",
+                Core.Enums.MedicalHistoryType.ChronicDisease => "الأمراض المزمنة",
+                Core.Enums.MedicalHistoryType.CurrentMedication => "الأدوية الحالية",
+                Core.Enums.MedicalHistoryType.PreviousSurgery => "العمليات الجراحية السابقة",
+                _ => type.ToString()
+            };
         }
 
         /// <summary>
@@ -1583,89 +1809,6 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error getting prescriptions for patient {PatientId}", patientId);
                 throw;
             }
-        }
-
-        #endregion
-
-        #region Helper Methods for Medical Record Parsing
-
-        /// <summary>
-        /// تحليل نص الحساسية من الأدوية
-        /// النص المتوقع: "اسم الدواء|الأثر"
-        /// </summary>
-        private DrugAllergyResponse ParseDrugAllergy(Core.Entities.Shared.MedicalHistoryItem item)
-        {
-            var parts = item.Text.Split('|');
-            return new DrugAllergyResponse
-            {
-                Id = item.Id,
-                DrugName = parts.Length > 0 ? parts[0].Trim() : item.Text,
-                Reaction = parts.Length > 1 ? parts[1].Trim() : string.Empty,
-                CreatedAt = item.CreatedAt
-            };
-        }
-
-        /// <summary>
-        /// تحليل نص الأدوية الحالية
-        /// النص المتوقع: "اسم الدواء|الجرعة|التكرار|تاريخ البدء|السبب"
-        /// </summary>
-        private CurrentMedicationResponse ParseCurrentMedication(Core.Entities.Shared.MedicalHistoryItem item)
-        {
-            var parts = item.Text.Split('|');
-            DateTime? startDate = null;
-            
-            if (parts.Length > 3 && DateTime.TryParse(parts[3].Trim(), out var parsedDate))
-            {
-                startDate = parsedDate;
-            }
-
-            return new CurrentMedicationResponse
-            {
-                Id = item.Id,
-                MedicationName = parts.Length > 0 ? parts[0].Trim() : item.Text,
-                Dosage = parts.Length > 1 ? parts[1].Trim() : string.Empty,
-                Frequency = parts.Length > 2 ? parts[2].Trim() : string.Empty,
-                StartDate = startDate,
-                Reason = parts.Length > 4 ? parts[4].Trim() : string.Empty,
-                CreatedAt = item.CreatedAt
-            };
-        }
-
-        /// <summary>
-        /// تحليل نص الأمراض المزمنة
-        /// النص المتوقع: "اسم المرض"
-        /// </summary>
-        private ChronicDiseaseResponse ParseChronicDisease(Core.Entities.Shared.MedicalHistoryItem item)
-        {
-            return new ChronicDiseaseResponse
-            {
-                Id = item.Id,
-                DiseaseName = item.Text.Trim(),
-                CreatedAt = item.CreatedAt
-            };
-        }
-
-        /// <summary>
-        /// تحليل نص العمليات الجراحية
-        /// النص المتوقع: "اسم العملية|تاريخ العملية"
-        /// </summary>
-        private PreviousSurgeryResponse ParsePreviousSurgery(Core.Entities.Shared.MedicalHistoryItem item)
-        {
-            var parts = item.Text.Split('|');
-            DateTime? surgeryDate = null;
-            
-            if (parts.Length > 1 && DateTime.TryParse(parts[1].Trim(), out var parsedDate))
-            {
-                surgeryDate = parsedDate;
-            }
-
-            return new PreviousSurgeryResponse
-            {
-                Id = item.Id,
-                SurgeryName = parts.Length > 0 ? parts[0].Trim() : item.Text,
-                SurgeryDate = surgeryDate,
-                CreatedAt = item.CreatedAt
-            };
         }
 
         #endregion

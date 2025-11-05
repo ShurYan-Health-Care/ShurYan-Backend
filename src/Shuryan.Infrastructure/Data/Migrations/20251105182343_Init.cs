@@ -104,6 +104,27 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Conversations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserRole = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastMessageAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Conversations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LabTests",
                 columns: table => new
                 {
@@ -376,6 +397,35 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ConversationMessages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ConversationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Role = table.Column<int>(type: "int", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SuggestionsJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ActionsJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ContextJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TokenCount = table.Column<int>(type: "int", nullable: true),
+                    ResponseTimeMs = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ConversationMessages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ConversationMessages_Conversations_ConversationId",
+                        column: x => x.ConversationId,
+                        principalTable: "Conversations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Patients",
                 columns: table => new
                 {
@@ -554,6 +604,8 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Status = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
                     CancellationReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActualStartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActualEndTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1649,6 +1701,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ConversationMessages_ConversationId",
+                table: "ConversationMessages",
+                column: "ConversationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DispensedMedicationItems_DispensingRecordId",
                 table: "DispensedMedicationItems",
                 column: "DispensingRecordId");
@@ -1995,6 +2052,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 name: "ConsultationRecords");
 
             migrationBuilder.DropTable(
+                name: "ConversationMessages");
+
+            migrationBuilder.DropTable(
                 name: "DispensedMedicationItems");
 
             migrationBuilder.DropTable(
@@ -2068,6 +2128,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Clinics");
+
+            migrationBuilder.DropTable(
+                name: "Conversations");
 
             migrationBuilder.DropTable(
                 name: "DispensingRecords");

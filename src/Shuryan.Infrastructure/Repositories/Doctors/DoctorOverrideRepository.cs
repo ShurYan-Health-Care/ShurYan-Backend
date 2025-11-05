@@ -28,11 +28,12 @@ namespace Shuryan.Infrastructure.Repositories.Doctors
             DateTime startDate,
             DateTime endDate)
         {
+            // نجيب أي override بيتقاطع مع الـ range (مش بس اللي جواه بالكامل)
             return await _dbSet
                 .Where(do_override =>
                     do_override.DoctorId == doctorId
-                    && do_override.StartTime >= startDate
-                    && do_override.EndTime <= endDate)
+                    && do_override.StartTime < endDate  // بيبدأ قبل نهاية الـ range
+                    && do_override.EndTime > startDate) // بينتهي بعد بداية الـ range
                 .OrderBy(do_override => do_override.StartTime)
                 .ToListAsync();
         }

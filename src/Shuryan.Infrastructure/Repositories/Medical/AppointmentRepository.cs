@@ -62,15 +62,38 @@ namespace Shuryan.Infrastructure.Repositories.Medical
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Appointment>> GetByDoctorIdAndDateRangeAsync(
+            Guid doctorId, 
+            DateTime startDate, 
+            DateTime endDate, 
+            List<AppointmentStatus>? statuses = null)
+        {
+            var query = _dbSet
+                .AsNoTracking() // نتأكد إن الـ query بيجيب أحدث بيانات من الـ database
+                .Where(a => a.DoctorId == doctorId
+                    && a.ScheduledStartTime >= startDate
+                    && a.ScheduledStartTime < endDate);
+
+            // لو فيه statuses محددة، نفلتر بيها
+            if (statuses != null && statuses.Any())
+            {
+                query = query.Where(a => statuses.Contains(a.Status));
+            }
+
+            return await query
+                .OrderBy(a => a.ScheduledStartTime)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Appointment>> GetUpcomingAppointmentsAsync(Guid userId, bool isDoctor)
         {
             var now = DateTime.UtcNow;
             IQueryable<Appointment> query = _dbSet;
 
             if (isDoctor)
-                query = query.Include(a => a.Doctor).Where(a => a.DoctorId == userId);
+                query = query.Include(a => a.Patient).Where(a => a.DoctorId == userId);
             else
-                query = query.Include(a => a.Patient).Where(a => a.PatientId == userId);
+                query = query.Include(a => a.Doctor).Where(a => a.PatientId == userId);
 
             return await query
                 .Where(a => a.ScheduledStartTime >= now
@@ -85,11 +108,11 @@ namespace Shuryan.Infrastructure.Repositories.Medical
             IQueryable<Appointment> query = _dbSet;
 
             if (isDoctor)
-                query = query.Include(a => a.Doctor)
+                query = query.Include(a => a.Patient)
                              .Include(a => a.DoctorReview)
                              .Where(a => a.DoctorId == userId);
             else
-                query = query.Include(a => a.Patient)
+                query = query.Include(a => a.Doctor)
                              .Include(a => a.DoctorReview)
                              .Where(a => a.PatientId == userId);
 
@@ -111,11 +134,13 @@ namespace Shuryan.Infrastructure.Repositories.Medical
 
         public async Task<bool> HasConflictingAppointmentAsync(Guid doctorId, DateTime startTime, DateTime endTime, Guid? excludeAppointmentId = null)
         {
-            var query = _dbSet.Where(a =>
-                a.DoctorId == doctorId
-                && a.Status != AppointmentStatus.Cancelled
-                && a.Status != AppointmentStatus.NoShow
-                && ((a.ScheduledStartTime < endTime && a.ScheduledEndTime > startTime)));
+            var query = _dbSet
+                .AsNoTracking() // نتأكد إن الـ query بيجيب أحدث بيانات من الـ database
+                .Where(a =>
+                    a.DoctorId == doctorId
+                    && a.Status != AppointmentStatus.Cancelled
+                    && a.Status != AppointmentStatus.NoShow
+                    && ((a.ScheduledStartTime < endTime && a.ScheduledEndTime > startTime)));
 
             if (excludeAppointmentId.HasValue)
                 query = query.Where(a => a.Id != excludeAppointmentId.Value);
