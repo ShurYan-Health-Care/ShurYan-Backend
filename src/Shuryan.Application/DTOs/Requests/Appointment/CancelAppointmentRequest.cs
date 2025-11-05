@@ -9,9 +9,8 @@ namespace Shuryan.Application.DTOs.Requests.Appointment
 {
     public class CancelAppointmentRequest
     {
-        [Required(ErrorMessage = "Cancellation reason is required")]
         [StringLength(500, MinimumLength = 5, ErrorMessage = "Cancellation reason must be between 5-500 characters")]
-        public string CancellationReason { get; set; } = string.Empty;
+        public string? CancellationReason { get; set; }
     }
 }
 

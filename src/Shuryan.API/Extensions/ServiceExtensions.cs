@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.OpenApi.Models;
 using Shuryan.Application.Interfaces;
 using Shuryan.Application.Services;
+using Shuryan.Application.Services.AI;
 using Shuryan.Application.Services.Auth;
 using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
@@ -94,6 +95,10 @@ namespace Shuryan.API.Extensions
             services.AddScoped<ISessionService, SessionService>();
             services.AddScoped<IDocumentationService, DocumentationService>();
             services.AddScoped<ILabTestService, LabTestService>();
+
+            // AI Chat Services
+            services.AddHttpClient<IGeminiAIService, GeminiAIService>();
+            services.AddScoped<IChatService, ChatService>();
 
             return services;
         }

@@ -12,8 +12,8 @@ using Shuryan.Infrastructure.Data;
 namespace Shuryan.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    [Migration("20251031191847_AddActualSessionTimesToAppointment")]
-    partial class AddActualSessionTimesToAppointment
+    [Migration("20251105182343_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1953,6 +1953,97 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.ToTable("PharmacyDocuments");
                 });
 
+            modelBuilder.Entity("Shuryan.Core.Entities.System.Conversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastMessageAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("UserRole")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Conversations");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.System.ConversationMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActionsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContextJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ResponseTimeMs")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SuggestionsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TokenCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.ToTable("ConversationMessages");
+                });
+
             modelBuilder.Entity("Shuryan.Core.Entities.System.EmailVerification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3034,6 +3125,17 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Navigation("Pharmacy");
                 });
 
+            modelBuilder.Entity("Shuryan.Core.Entities.System.ConversationMessage", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.System.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+                });
+
             modelBuilder.Entity("Shuryan.Core.Entities.System.EmailVerification", b =>
                 {
                     b.HasOne("Shuryan.Core.Entities.Identity.User", "User")
@@ -3304,6 +3406,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
             modelBuilder.Entity("Shuryan.Core.Entities.Medical.Consultations.ConsultationType", b =>
                 {
                     b.Navigation("Consultations");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.System.Conversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.Identity.Laboratory", b =>

@@ -14,6 +14,7 @@ namespace Shuryan.Core.Interfaces.Repositories
 		Task<IEnumerable<Appointment>> GetByPatientIdAsync(Guid patientId);
 		Task<IEnumerable<Appointment>> GetByDoctorIdAsync(Guid doctorId);
 		Task<IEnumerable<Appointment>> GetByDoctorIdAndDateAsync(Guid doctorId, DateTime date);
+		Task<IEnumerable<Appointment>> GetByDoctorIdAndDateRangeAsync(Guid doctorId, DateTime startDate, DateTime endDate, List<AppointmentStatus>? statuses = null);
 		Task<IEnumerable<Appointment>> GetUpcomingAppointmentsAsync(Guid userId, bool isDoctor);
 		Task<IEnumerable<Appointment>> GetPastAppointmentsAsync(Guid userId, bool isDoctor);
 		Task<IEnumerable<Appointment>> GetByStatusAsync(AppointmentStatus status);
