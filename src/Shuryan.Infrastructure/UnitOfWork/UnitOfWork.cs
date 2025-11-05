@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Storage;
 using Shuryan.Core.Interfaces.Repositories;
+using Shuryan.Core.Interfaces.Repositories.ChatRepositories;
 using Shuryan.Core.Interfaces.Repositories.ClinicRepositories;
 using Shuryan.Core.Interfaces.Repositories.Pharmacies;
 using Shuryan.Core.Interfaces.Repositories.LaboratoryRepositories;
@@ -20,6 +21,7 @@ using Shuryan.Infrastructure.Repositories.Laboratories;
 using Shuryan.Infrastructure.Repositories.Reviews;
 using Shuryan.Infrastructure.Repositories.Medications;
 using Shuryan.Infrastructure.Repositories.Shared;
+using Shuryan.Infrastructure.Repositories.Chat;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.Repositories;
 
@@ -85,6 +87,10 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private IVerifierRepository? _verifiers;
         private INotificationRepository? _notifications;
         private IRefreshTokenRepository? _refreshTokens;
+
+        // ==================== Chat/AI Bot Fields ====================
+        private IConversationRepository? _conversations;
+        private IConversationMessageRepository? _conversationMessages;
 
 
         public UnitOfWork(ShuryanDbContext context)
@@ -219,6 +225,13 @@ namespace Shuryan.Infrastructure.UnitOfWork
 
         public IRefreshTokenRepository RefreshTokens =>
             _refreshTokens ??= new RefreshTokenRepository(_context);
+
+        // ==================== Chat/AI Bot Properties ====================
+        public IConversationRepository Conversations =>
+            _conversations ??= new ConversationRepository(_context);
+
+        public IConversationMessageRepository ConversationMessages =>
+            _conversationMessages ??= new ConversationMessageRepository(_context);
 
         // ==================== Generic Repository ====================
         public IGenericRepository<T> Repository<T>() where T : class
