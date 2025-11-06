@@ -74,7 +74,6 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private IPharmacyWorkingHoursRepository? _pharmacyWorkingHours;
         private IPrescribedMedicationRepository? _prescribedMedications;
         private IDispensingRecordRepository? _dispensingRecords;
-        private IPrescriptionShareRepository? _prescriptionShares;
         private IPharmacyDocumentRepository? _pharmacyDocuments;
 
         // ==================== Review Related Fields ====================
@@ -87,6 +86,9 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private IVerifierRepository? _verifiers;
         private INotificationRepository? _notifications;
         private IRefreshTokenRepository? _refreshTokens;
+
+        // ==================== Payment Related Fields ====================
+        private IPaymentRepository? _payments;
 
         // ==================== Chat/AI Bot Fields ====================
         private IConversationRepository? _conversations;
@@ -197,9 +199,6 @@ namespace Shuryan.Infrastructure.UnitOfWork
         public IDispensingRecordRepository DispensingRecords =>
             _dispensingRecords ??= new DispensingRecordRepository(_context);
 
-        public IPrescriptionShareRepository PrescriptionShares =>
-            _prescriptionShares ??= new PrescriptionShareRepository(_context);
-
         public IPharmacyDocumentRepository PharmacyDocuments =>
             _pharmacyDocuments ??= new PharmacyDocumentRepository(_context);
 
@@ -225,6 +224,10 @@ namespace Shuryan.Infrastructure.UnitOfWork
 
         public IRefreshTokenRepository RefreshTokens =>
             _refreshTokens ??= new RefreshTokenRepository(_context);
+
+        // ==================== Payment Related Properties ====================
+        public IPaymentRepository Payments =>
+            _payments ??= new Shuryan.Infrastructure.Repositories.Payments.PaymentRepository(_context);
 
         // ==================== Chat/AI Bot Properties ====================
         public IConversationRepository Conversations =>

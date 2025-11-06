@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.External.Pharmacies;
 using System;
@@ -13,30 +13,41 @@ namespace Shuryan.Infrastructure.Data.Configurations.PrescriptionConfigurations
     {
         public void Configure(EntityTypeBuilder<PrescribedMedication> builder)
         {
+            // Table Mapping
+            builder.ToTable("PrescribedMedications");
+
+            // Composite Primary Key
             builder.HasKey(pm => new { pm.MedicationPrescriptionId, pm.MedicationId });
 
-            // تحديد خصائص الحقول الإلزامية
-            builder.Property(pm => pm.Dosage)
-                .IsRequired()
-                .HasMaxLength(100);
+            // Properties
+            builder.Property(pm => pm.MedicationPrescriptionId).IsRequired();
+            builder.Property(pm => pm.MedicationId).IsRequired();
+            builder.Property(pm => pm.Dosage).IsRequired().HasMaxLength(100);
+            builder.Property(pm => pm.Frequency).IsRequired().HasMaxLength(100);
+            builder.Property(pm => pm.DurationDays).IsRequired();
+            builder.Property(pm => pm.SpecialInstructions).IsRequired(false).HasMaxLength(500);
 
-            builder.Property(pm => pm.Frequency)
-                .IsRequired()
-                .HasMaxLength(100);
+            // Indexes
+            builder.HasIndex(pm => pm.MedicationPrescriptionId)
+                .HasDatabaseName("IX_PrescribedMedication_PrescriptionId");
 
-            // تعريف العلاقة مع الروشتة (الروشتة تحتوي على أدوية موصوفة)
+            builder.HasIndex(pm => pm.MedicationId)
+                .HasDatabaseName("IX_PrescribedMedication_MedicationId");
+
+            // Prescription Relationship (Many-to-One)
             builder.HasOne(pm => pm.MedicationPrescription)
                 .WithMany(p => p.PrescribedMedications)
                 .HasForeignKey(pm => pm.MedicationPrescriptionId)
-                .OnDelete(DeleteBehavior.Cascade); // لو الروشتة اتمسحت، امسح الأدوية اللي جواها
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // تعريف العلاقة مع كتالوج الأدوية
+            // Medication Relationship (Many-to-One)
             builder.HasOne(pm => pm.Medication)
                 .WithMany(m => m.PrescribedMedications)
                 .HasForeignKey(pm => pm.MedicationId)
-                .OnDelete(DeleteBehavior.Restrict); // امنع مسح دواء من الكتالوج لو مكتوب في أي روشتة
+                .OnDelete(DeleteBehavior.Restrict);
 
-
+            // Check Constraint - Ensure DurationDays is positive
+            builder.HasCheckConstraint("CK_PrescribedMedication_Duration", "[DurationDays] > 0");
         }
     }
 }

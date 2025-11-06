@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.System.Review;
 using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
@@ -16,41 +11,38 @@ namespace Shuryan.Infrastructure.Data.Configurations.ReviewConfigurations
 		{
 			base.Configure(builder);
 
-			builder.HasKey(dr => dr.Id);
+			// Table Mapping
+			builder.ToTable("DoctorReviews");
 
-			builder.Property(dr => dr.OverallSatisfaction)
-				.IsRequired();
+			// Properties
+			builder.Property(dr => dr.AppointmentId).IsRequired();
+			builder.Property(dr => dr.PatientId).IsRequired();
+			builder.Property(dr => dr.DoctorId).IsRequired();
 
-			builder.Property(dr => dr.WaitingTime)
-				.IsRequired();
+			builder.Property(dr => dr.OverallSatisfaction).IsRequired();
+			builder.Property(dr => dr.WaitingTime).IsRequired();
+			builder.Property(dr => dr.CommunicationQuality).IsRequired();
+			builder.Property(dr => dr.ClinicCleanliness).IsRequired();
+			builder.Property(dr => dr.ValueForMoney).IsRequired();
+			builder.Property(dr => dr.Comment).IsRequired(false).HasMaxLength(500);
+			builder.Property(dr => dr.IsAnonymous).IsRequired().HasDefaultValue(false);
+			builder.Property(dr => dr.IsEdited).IsRequired().HasDefaultValue(false);
+			builder.Property(dr => dr.DoctorReply).IsRequired(false).HasMaxLength(300);
+			builder.Property(dr => dr.DoctorRepliedAt).IsRequired(false);
 
-			builder.Property(dr => dr.CommunicationQuality)
-				.IsRequired();
+			// Indexes
+			builder.HasIndex(dr => dr.AppointmentId)
+				.IsUnique()
+				.HasDatabaseName("IX_DoctorReview_AppointmentId");
 
-			builder.Property(dr => dr.ClinicCleanliness)
-				.IsRequired();
+			builder.HasIndex(dr => dr.PatientId)
+				.HasDatabaseName("IX_DoctorReview_PatientId");
 
-			builder.Property(dr => dr.ValueForMoney)
-				.IsRequired();
+			builder.HasIndex(dr => dr.DoctorId)
+				.HasDatabaseName("IX_DoctorReview_DoctorId");
 
-			builder.Property(dr => dr.Comment)
-				.HasMaxLength(500);
-
-			builder.Property(dr => dr.IsAnonymous)
-				.IsRequired()
-				.HasDefaultValue(false);
-
-			builder.Property(dr => dr.IsEdited)
-				.IsRequired()
-				.HasDefaultValue(false);
-
-			builder.Property(dr => dr.CreatedAt)
-				.IsRequired()
-				.HasDefaultValueSql("GETUTCDATE()");
-
-			// For the future: Reply of Dr.
-			builder.Property(dr => dr.DoctorReply)
-				.HasMaxLength(300);
+			builder.HasIndex(dr => dr.IsAnonymous)
+				.HasDatabaseName("IX_DoctorReview_IsAnonymous");
 
 			// Relationships
 			builder.HasOne(dr => dr.Appointment)

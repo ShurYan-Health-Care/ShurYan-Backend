@@ -7,9 +7,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Shuryan.Core.Entities.Identity
 {
-    /// <summary>
-    /// بيمثل الصيدلية كـ "مستخدم" في النظام له حساب وصلاحيات
-    /// </summary>
     public class Pharmacy : User
     {
         public string Name { get; set; } = string.Empty;

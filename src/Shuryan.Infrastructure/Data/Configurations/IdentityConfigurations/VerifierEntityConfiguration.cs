@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,22 +13,33 @@ namespace Shuryan.Infrastructure.Data.Configurations.IdentityConfigurations
     {
         public void Configure(EntityTypeBuilder<Verifier> builder)
         {
+            // Table Mapping
             builder.ToTable("Verifiers");
 
-            builder.Property(dv => dv.CreatedByAdminId)
-                   .IsRequired();
+            // Properties
+            builder.Property(v => v.CreatedByAdminId).IsRequired();
 
-            // Relationships
-            builder.HasMany(dv => dv.VerifiedDoctors)
-                   .WithOne(d => d.Verifier)
-                   .HasForeignKey(d => d.VerifierId)
-                   .OnDelete(DeleteBehavior.NoAction);
+            // Indexes
+            builder.HasIndex(v => v.CreatedByAdminId)
+                .HasDatabaseName("IX_Verifier_CreatedByAdminId");
 
-            // Relationships
-            builder.HasMany(dv => dv.VerifiedLabors)
-                   .WithOne(d => d.Verifier)
-                   .HasForeignKey(d => d.VerifierId)
-                   .OnDelete(DeleteBehavior.NoAction);
+            // Relationships - Verified Doctors
+            builder.HasMany(v => v.VerifiedDoctors)
+                .WithOne(d => d.Verifier)
+                .HasForeignKey(d => d.VerifierId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Relationships - Verified Laboratories
+            builder.HasMany(v => v.VerifiedLabors)
+                .WithOne(l => l.Verifier)
+                .HasForeignKey(l => l.VerifierId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Relationships - Verified Pharmacies
+            builder.HasMany(v => v.VerifiedPharmacies)
+                .WithOne(p => p.Verifier)
+                .HasForeignKey(p => p.VerifierId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

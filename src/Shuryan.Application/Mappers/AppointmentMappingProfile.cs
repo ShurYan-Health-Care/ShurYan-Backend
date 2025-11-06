@@ -1,7 +1,8 @@
 using AutoMapper;
 using Shuryan.Application.DTOs.Requests.Appointment;
 using Shuryan.Application.DTOs.Responses.Appointment;
-using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.Medical.Consultations;
 
 namespace Shuryan.Application.Mappers
 {

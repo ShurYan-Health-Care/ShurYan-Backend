@@ -5,7 +5,7 @@ using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Shuryan.Application.DTOs.Responses.Session;
 using Shuryan.Application.Interfaces;
-using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Medical;
 using Shuryan.Core.Enums.Appointments;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Core.Interfaces.UnitOfWork;

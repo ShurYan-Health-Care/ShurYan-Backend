@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,23 +14,32 @@ namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
 	{
         public override void Configure(EntityTypeBuilder<ClinicPhoneNumber> builder)
         {
-			base.Configure(builder);
+            base.Configure(builder);
 
-			builder.HasKey(cpn => cpn.Id);
+            // Table Mapping
+            builder.ToTable("ClinicPhoneNumbers");
 
-            builder.Property(cpn => cpn.Number)
-                   .IsRequired()
-                   .HasMaxLength(20);
+            // Properties
+            builder.Property(cpn => cpn.ClinicId).IsRequired();
+            builder.Property(cpn => cpn.Number).IsRequired().HasMaxLength(20);
+            builder.Property(cpn => cpn.Type).IsRequired().HasConversion<int>();
 
-            builder.Property(cpn => cpn.Type)
-                   .HasConversion<int>()
-                   .IsRequired();
+            // Indexes
+            builder.HasIndex(cpn => cpn.ClinicId)
+                .HasDatabaseName("IX_ClinicPhoneNumber_ClinicId");
 
-            // Relationships
+            builder.HasIndex(cpn => new { cpn.ClinicId, cpn.Type })
+                .HasDatabaseName("IX_ClinicPhoneNumber_Clinic_Type");
+
+            builder.HasIndex(cpn => new { cpn.ClinicId, cpn.Number })
+                .IsUnique()
+                .HasDatabaseName("IX_ClinicPhoneNumber_Clinic_Number");
+
+            // Clinic Relationship (Many-to-One)
             builder.HasOne(cpn => cpn.Clinic)
-                   .WithMany(c => c.PhoneNumbers)
-                   .HasForeignKey(cpn => cpn.ClinicId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(c => c.PhoneNumbers)
+                .HasForeignKey(cpn => cpn.ClinicId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -8,17 +8,15 @@ using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.External.Laboratories
 {
-    // كل عنصر (تحليل) موجود فالروشته
     public class LabPrescriptionItem : AuditableEntity
-	{
-
+    {
         [ForeignKey("LabPrescription")]
-        public Guid LabPrescriptionId { get; set; } // التحليل ده يخص أي روشتة؟
+        public Guid LabPrescriptionId { get; set; }
 
         [ForeignKey("LabTest")]
-        public Guid LabTestId { get; set; } // التحليل نفسه من جدول التحاليل الموجوده فالسيستم
+        public Guid LabTestId { get; set; }
 
-        public string? DoctorNotes { get; set; } // ملاحظات خاصة بهذا التحليل من الدكتور
+        public string? DoctorNotes { get; set; }
 
         // Navigation Properties
         public virtual LabPrescription LabPrescription { get; set; } = null!;

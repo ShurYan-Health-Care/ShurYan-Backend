@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,8 +15,6 @@ namespace Shuryan.Core.Entities.Common
 {
     public class DoctorDocument : AuditableEntity
 	{
-		[Required, MaxLength(500)]
-		[RegularExpression(@"^https?://.*", ErrorMessage = "Must be a valid URL")]
 		public string DocumentUrl { get; set; } = string.Empty;
         public DoctorDocumentType Type { get; set; }
         public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.Pending;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -11,11 +11,8 @@ using Shuryan.Core.Enums.Clinic;
 namespace Shuryan.Core.Entities.External.Clinic
 {
     public class ClinicPhoneNumber : AuditableEntity
-	{
-
-        [Required, Phone, MaxLength(20)]
+    {
         public string Number { get; set; } = string.Empty;
-
         public ClinicPhoneNumberType Type { get; set; }
 
         [ForeignKey("Clinic")]

@@ -16,35 +16,40 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 		{
 			base.Configure(builder);
 
-			builder.HasKey(lr => lr.Id);
+			// Table Mapping
+			builder.ToTable("LabResults");
 
-			builder.Property(lr => lr.ResultValue)
-				   .IsRequired()
-				   .HasMaxLength(500);
+			// Properties
+			builder.Property(lr => lr.LabOrderId).IsRequired();
+			builder.Property(lr => lr.LabTestId).IsRequired();
+			builder.Property(lr => lr.ResultValue).IsRequired().HasMaxLength(500);
+			builder.Property(lr => lr.ReferenceRange).IsRequired(false).HasMaxLength(200);
+			builder.Property(lr => lr.Unit).IsRequired(false).HasMaxLength(50);
+			builder.Property(lr => lr.Notes).IsRequired(false).HasMaxLength(1000);
+			builder.Property(lr => lr.AttachmentUrl).IsRequired(false).HasMaxLength(500);
 
-			builder.Property(lr => lr.ReferenceRange)
-				   .HasMaxLength(200);
+			// Indexes
+			builder.HasIndex(lr => lr.LabOrderId)
+				.HasDatabaseName("IX_LabResult_LabOrderId");
 
-			builder.Property(lr => lr.Unit)
-				   .HasMaxLength(50);
+			builder.HasIndex(lr => lr.LabTestId)
+				.HasDatabaseName("IX_LabResult_LabTestId");
 
-			builder.Property(lr => lr.Notes)
-				   .HasMaxLength(1000);
+			builder.HasIndex(lr => new { lr.LabOrderId, lr.LabTestId })
+				.IsUnique()
+				.HasDatabaseName("IX_LabResult_Order_Test");
 
-			builder.Property(lr => lr.AttachmentUrl)
-				   .HasMaxLength(500);
-
-
-			// Relationships
+			// LabOrder Relationship (Many-to-One)
 			builder.HasOne(lr => lr.LabOrder)
-				   .WithMany(lo => lo.LabResults)
-				   .HasForeignKey(lr => lr.LabOrderId)
-				   .OnDelete(DeleteBehavior.Cascade);
+				.WithMany(lo => lo.LabResults)
+				.HasForeignKey(lr => lr.LabOrderId)
+				.OnDelete(DeleteBehavior.Cascade);
 
+			// LabTest Relationship (Many-to-One)
 			builder.HasOne(lr => lr.LabTest)
-				   .WithMany()
-				   .HasForeignKey(lr => lr.LabTestId)
-				   .OnDelete(DeleteBehavior.Restrict);
+				.WithMany(lt => lt.LabResults)
+				.HasForeignKey(lr => lr.LabTestId)
+				.OnDelete(DeleteBehavior.Restrict);
 		}
 	}
 }
