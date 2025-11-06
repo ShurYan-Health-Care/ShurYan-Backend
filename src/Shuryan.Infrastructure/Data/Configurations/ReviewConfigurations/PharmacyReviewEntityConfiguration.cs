@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.System.Review;
 using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
@@ -16,22 +11,30 @@ namespace Shuryan.Infrastructure.Data.Configurations.ReviewConfigurations
 		{
 			base.Configure(builder);
 
-			builder.HasKey(pr => pr.Id);
+			// Table Mapping
+			builder.ToTable("PharmacyReviews");
 
 			// Properties
+			builder.Property(pr => pr.PharmacyOrderId).IsRequired();
+			builder.Property(pr => pr.PatientId).IsRequired();
+			builder.Property(pr => pr.PharmacyId).IsRequired();
 			builder.Property(pr => pr.OverallSatisfaction).IsRequired();
 			builder.Property(pr => pr.MedicationAvailability).IsRequired();
 			builder.Property(pr => pr.ServiceQuality).IsRequired();
 			builder.Property(pr => pr.DeliverySpeed).IsRequired();
 			builder.Property(pr => pr.ValueForMoney).IsRequired();
+			builder.Property(pr => pr.IsEdited).IsRequired().HasDefaultValue(false);
 
-			builder.Property(pr => pr.IsEdited)
-				.IsRequired()
-				.HasDefaultValue(false);
+			// Indexes
+			builder.HasIndex(pr => pr.PharmacyOrderId)
+				.IsUnique()
+				.HasDatabaseName("IX_PharmacyReview_PharmacyOrderId");
 
-			builder.Property(pr => pr.CreatedAt)
-				.IsRequired()
-				.HasDefaultValueSql("GETUTCDATE()");
+			builder.HasIndex(pr => pr.PatientId)
+				.HasDatabaseName("IX_PharmacyReview_PatientId");
+
+			builder.HasIndex(pr => pr.PharmacyId)
+				.HasDatabaseName("IX_PharmacyReview_PharmacyId");
 
 			// Relationships
 			builder.HasOne(pr => pr.PharmacyOrder)

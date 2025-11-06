@@ -9,23 +9,18 @@ using Shuryan.Core.Entities.Base;
 namespace Shuryan.Core.Entities.External.Laboratories
 {
     public class LabResult : AuditableEntity
-	{
-
+    {
         [ForeignKey("LabOrder")]
-        public Guid LabOrderId { get; set; } // النتيجة دي خاصة بأي Order ؟ (الطلب اللي المعمل استلمه)
+        public Guid LabOrderId { get; set; }
 
         [ForeignKey("LabTest")]
-        public Guid LabTestId { get; set; } // التحليل نفسه من جدول التحاليل اللي النتيجة ده تخصه
+        public Guid LabTestId { get; set; }
 
-        public string ResultValue { get; set; } = string.Empty; // قيمة النتيجة (نص أو رقم)
-        
-        public string? ReferenceRange { get; set; } // المدى الطبيعي للنتيجة
-        
-        public string? Unit { get; set; } // وحدة القياس (mg/dL, g/dL, etc.)
-        
-        public string? Notes { get; set; } // ملاحظات من المعمل
-        
-        public string? AttachmentUrl { get; set; } // رابط ملف PDF بالنتيجة
+        public string ResultValue { get; set; } = string.Empty;
+        public string? ReferenceRange { get; set; }
+        public string? Unit { get; set; }
+        public string? Notes { get; set; }
+        public string? AttachmentUrl { get; set; }
 
         // Navigation Properties
         public virtual LabOrder LabOrder { get; set; } = null!;

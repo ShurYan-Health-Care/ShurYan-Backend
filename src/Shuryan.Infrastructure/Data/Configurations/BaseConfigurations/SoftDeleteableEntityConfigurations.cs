@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,10 +16,14 @@ namespace Shuryan.Infrastructure.Data.Configurations.BaseConfigurations
 			base.Configure(builder);
 
 			builder.Property(e => e.IsDeleted).IsRequired().HasDefaultValue(false);
-
 			builder.Property(e => e.DeletedAt).IsRequired(false);
-
 			builder.Property(e => e.DeletedBy).IsRequired(false);
+
+			// Global Query Filter - automatically exclude soft-deleted records
+			builder.HasQueryFilter(e => !e.IsDeleted);
+
+			builder.HasIndex(e => e.IsDeleted)
+				.HasDatabaseName($"IX_{typeof(TEntity).Name}_IsDeleted");
 		}
 	}
 }

@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.System;
 using Shuryan.Core.Enums.Notifications;
 using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
@@ -17,44 +12,39 @@ namespace Shuryan.Infrastructure.Data.Configurations
 		{
 			base.Configure(builder);
 
-			builder.HasKey(n => n.Id);
+			// Table Mapping
+			builder.ToTable("Notifications");
 
 			// Properties
-			builder.Property(n => n.Title)
-                .IsRequired()
-				.HasMaxLength(100);
+			builder.Property(n => n.UserId).IsRequired();
+			builder.Property(n => n.Type).IsRequired().HasConversion<int>();
+			builder.Property(n => n.Title).IsRequired().HasMaxLength(100);
+			builder.Property(n => n.Message).IsRequired().HasMaxLength(500);
+			builder.Property(n => n.RelatedEntityType).IsRequired(false).HasMaxLength(50);
+			builder.Property(n => n.RelatedEntityId).IsRequired(false);
+			builder.Property(n => n.IsRead).IsRequired().HasDefaultValue(false);
+			builder.Property(n => n.ReadAt).IsRequired(false);
+			builder.Property(n => n.Priority).IsRequired().HasConversion<int>().HasDefaultValue(NotificationPriority.Normal);
+			builder.Property(n => n.DeliveryMethod).IsRequired().HasConversion<int>().HasDefaultValue(NotificationDeliveryMethod.InApp);
+			builder.Property(n => n.IsSent).IsRequired().HasDefaultValue(false);
+			builder.Property(n => n.SentAt).IsRequired(false);
+			builder.Property(n => n.FailureReason).IsRequired(false).HasMaxLength(500);
 
-			builder.Property(n => n.Message)
-				.IsRequired()
-				.HasMaxLength(500);
+			// Indexes
+			builder.HasIndex(n => n.UserId)
+				.HasDatabaseName("IX_Notification_UserId");
 
-			builder.Property(n => n.RelatedEntityType)
-				.HasMaxLength(50);
+			builder.HasIndex(n => n.IsRead)
+				.HasDatabaseName("IX_Notification_IsRead");
 
-			builder.Property(n => n.Type)
-				.HasConversion<int>()
-				.IsRequired();
+			builder.HasIndex(n => new { n.UserId, n.IsRead })
+				.HasDatabaseName("IX_Notification_User_IsRead");
 
-			builder.Property(n => n.Priority)
-				.HasConversion<int>()
-				.IsRequired()
-				.HasDefaultValue(NotificationPriority.Normal);
+			builder.HasIndex(n => n.Type)
+				.HasDatabaseName("IX_Notification_Type");
 
-			builder.Property(n => n.DeliveryMethod)
-				.HasConversion<int>()
-				.IsRequired()
-				.HasDefaultValue(NotificationDeliveryMethod.InApp);
-
-			builder.Property(n => n.IsRead)
-				.IsRequired()
-				.HasDefaultValue(false);
-
-			builder.Property(n => n.IsSent)
-				.IsRequired()
-				.HasDefaultValue(false);
-
-			builder.Property(n => n.FailureReason)
-				.HasMaxLength(500);
+			builder.HasIndex(n => new { n.RelatedEntityType, n.RelatedEntityId })
+				.HasDatabaseName("IX_Notification_RelatedEntity");
 
 
 			// Relationships

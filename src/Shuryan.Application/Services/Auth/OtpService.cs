@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.System;
+using Shuryan.Core.Enums;
 using Shuryan.Infrastructure.Data;
 using Shuryan.Shared.Configurations;
 
@@ -36,7 +37,7 @@ namespace Shuryan.Application.Services.Auth
             var otpCode = GenerateSecureOtp(_emailSettings.OtpLength);
 
             // Determine expiration based on verification type
-            var expirationMinutes = verificationType == VerificationTypes.PasswordReset
+            var expirationMinutes = verificationType == Core.Entities.System.VerificationTypes.PasswordReset
                 ? _emailSettings.PasswordResetOtpExpirationMinutes
                 : _emailSettings.VerificationOtpExpirationMinutes;
 

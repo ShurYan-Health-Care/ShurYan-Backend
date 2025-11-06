@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Entities.System.Review;
@@ -17,48 +17,82 @@ namespace Shuryan.Infrastructure.Data.Configurations.PharmacyConfigurations
         {
             base.Configure(builder);
 
-            builder.HasKey(po => po.Id);
+            // Table Mapping
+            builder.ToTable("PharmacyOrders");
 
-            builder.Property(po => po.OrderNumber)
-                .IsRequired()
-                .HasMaxLength(50);
+            // Properties
+            builder.Property(po => po.OrderNumber).IsRequired().HasMaxLength(50);
+            builder.Property(po => po.PatientId).IsRequired();
+            builder.Property(po => po.PharmacyId).IsRequired();
+            builder.Property(po => po.PrescriptionId).IsRequired(false);
+            builder.Property(po => po.Status).IsRequired().HasConversion<int>();
+            builder.Property(po => po.TotalCost).IsRequired().HasPrecision(10, 2);
+            builder.Property(po => po.DeliveryFee).IsRequired().HasPrecision(10, 2);
+            builder.Property(po => po.DeliveryType).IsRequired().HasConversion<int>();
+            builder.Property(po => po.EstimatedDeliveryTime).IsRequired(false);
+            builder.Property(po => po.DeliveryPersonPhone).IsRequired().HasMaxLength(20);
+            builder.Property(po => po.DeliveryPersonName).IsRequired(false).HasMaxLength(100);
+            builder.Property(po => po.DeliveryNotes).IsRequired(false).HasMaxLength(500);
+            builder.Property(po => po.ActualDeliveryTime).IsRequired(false);
+            builder.Property(po => po.PatientConfirmed).IsRequired(false);
+            builder.Property(po => po.PatientConfirmedAt).IsRequired(false);
+            builder.Property(po => po.PatientNotes).IsRequired(false).HasMaxLength(1000);
+            builder.Property(po => po.PatientDigitalSignature).IsRequired(false).HasMaxLength(5000);
 
+            // Indexes
+            builder.HasIndex(po => po.OrderNumber)
+                .IsUnique()
+                .HasDatabaseName("IX_PharmacyOrder_OrderNumber");
 
-            builder.Property(po => po.TotalCost)
-                .HasColumnType("decimal(18,2)");
+            builder.HasIndex(po => po.PatientId)
+                .HasDatabaseName("IX_PharmacyOrder_PatientId");
 
-            builder.Property(po => po.DeliveryFee)
-                .HasColumnType("decimal(18,2)");
+            builder.HasIndex(po => po.PharmacyId)
+                .HasDatabaseName("IX_PharmacyOrder_PharmacyId");
 
-            builder.Property(po => po.Status)
-                .HasConversion<string>()
-                .HasMaxLength(50);
+            builder.HasIndex(po => po.Status)
+                .HasDatabaseName("IX_PharmacyOrder_Status");
 
-            builder.Property(po => po.DeliveryType)
-                .HasConversion<int>()
-                .HasMaxLength(50);
+            builder.HasIndex(po => new { po.PharmacyId, po.Status })
+                .HasDatabaseName("IX_PharmacyOrder_Pharmacy_Status");
 
+            builder.HasIndex(po => new { po.PatientId, po.Status })
+                .HasDatabaseName("IX_PharmacyOrder_Patient_Status");
+
+            // Patient Relationship (Many-to-One)
             builder.HasOne(po => po.Patient)
                 .WithMany(p => p.PharmacyOrders)
                 .HasForeignKey(po => po.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Pharmacy Relationship (Many-to-One)
             builder.HasOne(po => po.Pharmacy)
-                .WithMany(ph => ph.Orders) 
+                .WithMany(ph => ph.Orders)
                 .HasForeignKey(po => po.PharmacyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-			builder.HasOne(po => po.Prescription)
-				.WithOne(p => p.PharmacyOrder)
-				.HasForeignKey<PharmacyOrder>(po => po.PrescriptionId)
-				.IsRequired(false)
+            // Prescription Relationship (One-to-One, Optional)
+            builder.HasOne(po => po.Prescription)
+                .WithOne(p => p.PharmacyOrder)
+                .HasForeignKey<PharmacyOrder>(po => po.PrescriptionId)
+                .IsRequired(false)
 				.OnDelete(DeleteBehavior.SetNull);
 
-			builder.HasOne(po => po.PharmacyReview)
-	                .WithOne(pr => pr.PharmacyOrder)
-	                .HasForeignKey<PharmacyReview>(pr => pr.PharmacyOrderId)
-	                .IsRequired(false)
-	                .OnDelete(DeleteBehavior.Restrict);
-		}
+            // Pharmacy Review Relationship (One-to-One, Optional)
+            builder.HasOne(po => po.PharmacyReview)
+                .WithOne(pr => pr.PharmacyOrder)
+                .HasForeignKey<PharmacyReview>(pr => pr.PharmacyOrderId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Order Items Relationship (One-to-Many)
+            builder.HasMany(po => po.OrderItems)
+                .WithOne(oi => oi.PharmacyOrder)
+                .HasForeignKey(oi => oi.PharmacyOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Check Constraints - Ensure costs are non-negative
+            builder.HasCheckConstraint("CK_PharmacyOrder_Costs", "[TotalCost] >= 0 AND [DeliveryFee] >= 0");
+        }
     }
 }

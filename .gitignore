@@ -1,6 +1,0 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
-/src/Shuryan.API/appsettings.Development.json
-/src/Shuryan.API/appsettings.json

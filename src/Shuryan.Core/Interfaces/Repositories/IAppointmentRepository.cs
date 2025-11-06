@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Medical;
 using Shuryan.Core.Enums.Appointments;
 
 namespace Shuryan.Core.Interfaces.Repositories
