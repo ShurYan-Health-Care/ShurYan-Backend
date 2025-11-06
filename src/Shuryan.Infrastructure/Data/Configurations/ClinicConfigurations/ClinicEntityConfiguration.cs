@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,47 +18,56 @@ namespace Shuryan.Infrastructure.Data.Configurations.ClinicConfigurations
         {
             base.Configure(builder);
 
-            builder.HasKey(c => c.Id);
+            // Table Mapping
+            builder.ToTable("Clinics");
 
-            builder.Property(c => c.Name)
-                   .IsRequired()
-                   .HasMaxLength(200);
+            // Properties
+            builder.Property(c => c.Name).IsRequired().HasMaxLength(200);
+            builder.Property(c => c.ClinicStatus).IsRequired().HasConversion<int>().HasDefaultValue(Status.Active);
+            builder.Property(c => c.FacilityVideoUrl).IsRequired(false).HasMaxLength(500);
+            builder.Property(c => c.DoctorId).IsRequired();
+            builder.Property(c => c.AddressId).IsRequired();
 
-            builder.Property(c => c.ClinicStatus)
-                   .HasConversion<int>()
-                   .IsRequired()
-                   .HasDefaultValue(Status.Active);
+            // Indexes
+            builder.HasIndex(c => c.DoctorId)
+                .IsUnique()
+                .HasDatabaseName("IX_Clinic_DoctorId");
 
-			builder.Property(c => c.FacilityVideoUrl)
-				   .HasMaxLength(500);
+            builder.HasIndex(c => c.ClinicStatus)
+                .HasDatabaseName("IX_Clinic_Status");
 
+            builder.HasIndex(c => c.AddressId)
+                .HasDatabaseName("IX_Clinic_AddressId");
 
-			// Relationships
+            // Doctor Relationship (One-to-One)
 			builder.HasOne(c => c.Doctor)
                    .WithOne(d => d.Clinic)
                    .HasForeignKey<Clinic>(c => c.DoctorId)
                    .OnDelete(DeleteBehavior.Cascade);
 
+            // Address Relationship (One-to-One)
 			builder.HasOne(c => c.Address)
 	               .WithOne()
 	               .HasForeignKey<Clinic>(c => c.AddressId)
 	               .OnDelete(DeleteBehavior.Cascade);
 
+            // Photos Relationship (One-to-Many)
 			builder.HasMany(c => c.Photos)
                    .WithOne(p => p.Clinic)
                    .HasForeignKey(p => p.ClinicId)
                    .OnDelete(DeleteBehavior.Cascade);
 
+            // Phone Numbers Relationship (One-to-Many)
             builder.HasMany(c => c.PhoneNumbers)
                    .WithOne(pn => pn.Clinic)
                    .HasForeignKey(pn => pn.ClinicId)
                    .OnDelete(DeleteBehavior.Cascade);
 
+            // Offered Services Relationship (One-to-Many)
             builder.HasMany(c => c.OfferedServices)
                    .WithOne(os => os.Clinic)
                    .HasForeignKey(os => os.ClinicId)
                    .OnDelete(DeleteBehavior.Cascade);
-
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,30 +17,31 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
         {
             base.Configure(builder);
 
-            builder.HasKey(dd => dd.Id);
+            // Table Mapping
+            builder.ToTable("DoctorDocuments");
 
-			builder.Property(dd => dd.DocumentUrl)
-				   .IsRequired()
-				   .HasMaxLength(500);
-			
-            builder.Property(dd => dd.Type)
-                   .HasConversion<int>()
-                   .IsRequired();
+            // Properties
+            builder.Property(dd => dd.DoctorId).IsRequired();
+            builder.Property(dd => dd.DocumentUrl).IsRequired().HasMaxLength(500);
+            builder.Property(dd => dd.Type).IsRequired().HasConversion<int>();
+            builder.Property(dd => dd.Status).IsRequired().HasConversion<int>().HasDefaultValue(VerificationDocumentStatus.Pending);
+            builder.Property(dd => dd.RejectionReason).IsRequired(false).HasMaxLength(500);
 
-			builder.Property(dd => dd.Status)
-				   .HasConversion<int>()
-				   .IsRequired()
-				   .HasDefaultValue(VerificationDocumentStatus.Pending);
+            // Indexes
+            builder.HasIndex(dd => dd.DoctorId)
+                .HasDatabaseName("IX_DoctorDocument_DoctorId");
 
-			builder.Property(dd => dd.RejectionReason)
-				   .HasMaxLength(500);
+            builder.HasIndex(dd => dd.Status)
+                .HasDatabaseName("IX_DoctorDocument_Status");
 
+            builder.HasIndex(dd => new { dd.DoctorId, dd.Type })
+                .HasDatabaseName("IX_DoctorDocument_Doctor_Type");
 
-			// Relationships
-			builder.HasOne(dd => dd.Doctor)
-                   .WithMany(d => d.VerificationDocuments)
-                   .HasForeignKey(dd => dd.DoctorId)
-                   .OnDelete(DeleteBehavior.Cascade);
+            // Doctor Relationship (Many-to-One)
+            builder.HasOne(dd => dd.Doctor)
+                .WithMany(d => d.VerificationDocuments)
+                .HasForeignKey(dd => dd.DoctorId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

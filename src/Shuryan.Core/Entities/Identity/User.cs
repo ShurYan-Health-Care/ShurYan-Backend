@@ -27,58 +27,21 @@ namespace Shuryan.Core.Entities.Identity
 		public DateTime? DeletedAt { get; set; }
 		public Guid? DeletedBy { get; set; } // User ID who deleted this record
 
-
 		[Phone, MaxLength(20)]
 		public override string? PhoneNumber { get; set; }
 
 		[Required, EmailAddress, MaxLength(200)]
 		public override string Email { get; set; } = string.Empty;
 
-
+        public DateTime? EmailVerifiedAt { get; set; }
+        public DateTime? LastLoginAt { get; set; }
+        public string? LastLoginIp { get; set; }
 
         // ==================== OAuth Fields ====================
 
-        /// <summary>
-        /// OAuth provider (Google, Facebook, etc.)
-        /// </summary>
-        [MaxLength(50)]
         public string? OAuthProvider { get; set; }
-
-        /// <summary>
-        /// OAuth provider user ID
-        /// </summary>
-        [MaxLength(255)]
         public string? OAuthProviderId { get; set; }
-
-        /// <summary>
-        /// Profile picture URL from OAuth or uploaded
-        /// </summary>
-        [MaxLength(500)]
         public string? ProfilePictureUrl { get; set; }
-
-        /// <summary>
-        /// Whether account was created via OAuth
-        /// </summary>
         public bool IsOAuthAccount { get; set; } = false;
-
-        // ==================== Email Verification ====================
-
-        /// <summary>
-        /// Date when email was verified
-        /// </summary>
-        public DateTime? EmailVerifiedAt { get; set; }
-
-        // ==================== Login Tracking ====================
-
-        /// <summary>
-        /// Last login date
-        /// </summary>
-        public DateTime? LastLoginAt { get; set; }
-
-        /// <summary>
-        /// Last login IP address
-        /// </summary>
-        [MaxLength(50)]
-        public string? LastLoginIp { get; set; }
     }
 }

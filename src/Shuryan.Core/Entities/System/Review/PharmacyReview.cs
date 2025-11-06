@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
+using System;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Shuryan.Core.Entities.Identity;
-using Shuryan.Core.Entities.External.Pharmacies;
+using System.ComponentModel.DataAnnotations.Schema;
 using Shuryan.Core.Entities.Base;
+using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Core.Entities.Identity;
 
 namespace Shuryan.Core.Entities.System.Review
 {

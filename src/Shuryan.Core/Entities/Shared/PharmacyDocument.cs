@@ -1,30 +1,23 @@
-﻿using Shuryan.Core.Entities.Base;
+using System;
+using System.ComponentModel.DataAnnotations.Schema;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Pharmacy;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Shuryan.Core.Entities.Shared
 {
-    /// <summary>
-    /// بيمثل مستند توثيق خاص بالصيدلية (زي الترخيص أو السجل التجاري)
-    /// </summary>
     public class PharmacyDocument : AuditableEntity
 	{
-        [Required, MaxLength(500)]
-        [RegularExpression(@"^https?://.*", ErrorMessage = "Must be a valid URL")]
+        [ForeignKey("Pharmacy")]
+        public Guid PharmacyId { get; set; }
+
         public string DocumentUrl { get; set; } = string.Empty;
         public PharmacyDocumentType Type { get; set; }
         public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.Pending;
 		public string? RejectionReason { get; set; }
-        [ForeignKey("Pharmacy")]
-        public Guid PharmacyId { get; set; }
+
+        // Navigation Properties
         public virtual Pharmacy Pharmacy { get; set; } = null!;
     }
 }

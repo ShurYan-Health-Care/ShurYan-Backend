@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,81 +15,83 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
     {
         public void Configure(EntityTypeBuilder<Laboratory> builder)
         {
-			builder.ToTable("Laboratories");
+            // Table Mapping
+            builder.ToTable("Laboratories");
 
-			builder.Property(l => l.Name)
-                   .IsRequired()
-                   .HasMaxLength(200);
+            // Properties
+            builder.Property(l => l.Name).IsRequired().HasMaxLength(200);
+            builder.Property(l => l.Description).IsRequired(false).HasMaxLength(1000);
+            builder.Property(l => l.WhatsAppNumber).IsRequired(false).HasMaxLength(20);
+            builder.Property(l => l.Website).IsRequired(false).HasMaxLength(500);
+            builder.Property(l => l.LaboratoryStatus).IsRequired().HasConversion<int>().HasDefaultValue(Status.Active);
+            builder.Property(l => l.OffersHomeSampleCollection).IsRequired().HasDefaultValue(false);
+            builder.Property(l => l.HomeSampleCollectionFee).IsRequired(false).HasPrecision(10, 2);
+            builder.Property(l => l.VerificationStatus).IsRequired().HasConversion<int>().HasDefaultValue(VerificationStatus.Unverified);
+            builder.Property(l => l.VerifiedAt).IsRequired(false);
+            builder.Property(l => l.VerifierId).IsRequired(false);
+            builder.Property(l => l.AddressId).IsRequired(false);
 
-            builder.Property(l => l.Description)
-                   .HasMaxLength(1000);
+            // Ignore NotMapped Properties
+            builder.Ignore(l => l.AverageRating);
+            builder.Ignore(l => l.TotalReviewsCount);
 
-            builder.Property(l => l.WhatsAppNumber)
-                   .HasMaxLength(20);
-
-            builder.Property(l => l.Website)
-                   .HasMaxLength(200);
-
-            builder.Property(l => l.LaboratoryStatus)
-                   .HasConversion<int>()
-                   .IsRequired()
-                   .HasDefaultValue(Status.Active);
-
-			builder.Property(l => l.OffersHomeSampleCollection)
-				   .IsRequired()
-				   .HasDefaultValue(false);
-
-			builder.Property(l => l.HomeSampleCollectionFee)
-                   .HasPrecision(10, 2);
-
-
-            builder.Property(l => l.VerificationStatus)
-                   .HasConversion<int>()
-                   .IsRequired()
-                   .HasDefaultValue(VerificationStatus.Unverified);
-
-            // Relationships
+            // Verifier Relationship (Many-to-One, Optional)
             builder.HasOne(l => l.Verifier)
-                   .WithMany()
-                   .HasForeignKey(l => l.VerifierId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(v => v.VerifiedLabors)
+                .HasForeignKey(l => l.VerifierId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-			builder.HasOne(l => l.Address)
-	               .WithOne()
-	               .HasForeignKey<Laboratory>(l => l.AddressId)
-	               .OnDelete(DeleteBehavior.Cascade);
+            // Address Relationship (One-to-One, Optional)
+            builder.HasOne(l => l.Address)
+                .WithOne()
+                .HasForeignKey<Laboratory>(l => l.AddressId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-			builder.HasMany(l => l.VerificationDocuments)
-                   .WithOne(ld => ld.Laboratory)
-                   .HasForeignKey(ld => ld.LaboratoryId)
-                   .OnDelete(DeleteBehavior.Cascade);
+            // Verification Documents Relationship (One-to-Many)
+            builder.HasMany(l => l.VerificationDocuments)
+                .WithOne(ld => ld.Laboratory)
+                .HasForeignKey(ld => ld.LaboratoryId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // Working Hours Relationship (One-to-Many)
             builder.HasMany(l => l.WorkingHours)
-                   .WithOne(wh => wh.Laboratory)
-                   .HasForeignKey(wh => wh.LaboratoryId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(wh => wh.Laboratory)
+                .HasForeignKey(wh => wh.LaboratoryId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // Lab Services Relationship (One-to-Many)
             builder.HasMany(l => l.LabServices)
-                   .WithOne(ls => ls.Laboratory)
-                   .HasForeignKey(ls => ls.LaboratoryId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(ls => ls.Laboratory)
+                .HasForeignKey(ls => ls.LaboratoryId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // Lab Orders Relationship (One-to-Many)
             builder.HasMany(l => l.LabOrders)
-                   .WithOne(lo => lo.Laboratory)
-                   .HasForeignKey(lo => lo.LaboratoryId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(lo => lo.Laboratory)
+                .HasForeignKey(lo => lo.LaboratoryId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-			builder.HasMany(l => l.LaboratoryReviews)
-	            .WithOne(lr => lr.Laboratory)
-	            .HasForeignKey(lr => lr.LaboratoryId)
-	            .OnDelete(DeleteBehavior.Restrict);
+            // Laboratory Reviews Relationship (One-to-Many)
+            builder.HasMany(l => l.LaboratoryReviews)
+                .WithOne(lr => lr.Laboratory)
+                .HasForeignKey(lr => lr.LaboratoryId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-			// Indexes
-			builder.HasIndex(l => l.Name).HasDatabaseName("IX_Laboratory_Name");
+            // Indexes
+            builder.HasIndex(l => l.Name)
+                .HasDatabaseName("IX_Laboratory_Name");
 
-            // Constraints
-			builder.HasCheckConstraint("CK_Laboratory_HomeSampleFee", "[HomeSampleCollectionFee] IS NULL OR [HomeSampleCollectionFee] >= 0");
+            builder.HasIndex(l => l.VerificationStatus)
+                .HasDatabaseName("IX_Laboratory_VerificationStatus");
 
-		}
+            builder.HasIndex(l => l.AddressId)
+                .HasDatabaseName("IX_Laboratory_AddressId");
+
+            builder.HasIndex(l => new { l.LaboratoryStatus, l.OffersHomeSampleCollection })
+                .HasDatabaseName("IX_Laboratory_Status_HomeCollection");
+
+            // Check Constraint
+            builder.HasCheckConstraint("CK_Laboratory_HomeSampleFee", "[HomeSampleCollectionFee] IS NULL OR [HomeSampleCollectionFee] >= 0");
+        }
 	}
 }

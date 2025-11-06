@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Medical.Consultations;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
 using System;

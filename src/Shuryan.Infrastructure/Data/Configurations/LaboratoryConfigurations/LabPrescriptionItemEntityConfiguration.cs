@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,21 +16,36 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 		{
 			base.Configure(builder);
 
-			builder.HasKey(lpi => lpi.Id);
+			// Table Mapping
+			builder.ToTable("LabPrescriptionItems");
 
-			builder.Property(lpi => lpi.DoctorNotes)
-				   .HasMaxLength(500);
+			// Properties
+			builder.Property(lpi => lpi.LabPrescriptionId).IsRequired();
+			builder.Property(lpi => lpi.LabTestId).IsRequired();
+			builder.Property(lpi => lpi.DoctorNotes).IsRequired(false).HasMaxLength(500);
 
-			// Relationships
+			// Indexes
+			builder.HasIndex(lpi => lpi.LabPrescriptionId)
+				.HasDatabaseName("IX_LabPrescriptionItem_LabPrescriptionId");
+
+			builder.HasIndex(lpi => lpi.LabTestId)
+				.HasDatabaseName("IX_LabPrescriptionItem_LabTestId");
+
+			builder.HasIndex(lpi => new { lpi.LabPrescriptionId, lpi.LabTestId })
+				.IsUnique()
+				.HasDatabaseName("IX_LabPrescriptionItem_Prescription_Test");
+
+			// LabPrescription Relationship (Many-to-One)
 			builder.HasOne(lpi => lpi.LabPrescription)
-				   .WithMany(lp => lp.Items)
-				   .HasForeignKey(lpi => lpi.LabPrescriptionId)
-				   .OnDelete(DeleteBehavior.Cascade);
+				.WithMany(lp => lp.Items)
+				.HasForeignKey(lpi => lpi.LabPrescriptionId)
+				.OnDelete(DeleteBehavior.Cascade);
 
+			// LabTest Relationship (Many-to-One)
 			builder.HasOne(lpi => lpi.LabTest)
-				   .WithMany(lt => lt.PrescriptionItems)
-				   .HasForeignKey(lpi => lpi.LabTestId)
-				   .OnDelete(DeleteBehavior.Restrict);
+				.WithMany(lt => lt.PrescriptionItems)
+				.HasForeignKey(lpi => lpi.LabTestId)
+				.OnDelete(DeleteBehavior.Restrict);
 		}
 	}
 }

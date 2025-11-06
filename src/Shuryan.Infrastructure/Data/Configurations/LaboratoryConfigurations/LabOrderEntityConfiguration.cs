@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,58 +16,76 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
     {
         public override void Configure(EntityTypeBuilder<LabOrder> builder)
         {
-			base.Configure(builder);
+            base.Configure(builder);
 
-            builder.HasKey(lo => lo.Id);
+            // Table Mapping
+            builder.ToTable("LabOrders");
 
-            builder.Property(lo => lo.Status)
-                   .HasConversion<int>()
-                   .IsRequired()
-                   .HasDefaultValue(LabOrderStatus.PendingPayment);
+            // Properties
+            builder.Property(lo => lo.LabPrescriptionId).IsRequired();
+            builder.Property(lo => lo.LaboratoryId).IsRequired();
+            builder.Property(lo => lo.PatientId).IsRequired();
+            builder.Property(lo => lo.Status).IsRequired().HasConversion<int>().HasDefaultValue(LabOrderStatus.PendingPayment);
+            builder.Property(lo => lo.SampleCollectionType).IsRequired().HasConversion<int>().HasDefaultValue(SampleCollectionType.LabVisit);
+            builder.Property(lo => lo.TestsTotalCost).IsRequired().HasPrecision(10, 2);
+            builder.Property(lo => lo.SampleCollectionDeliveryCost).IsRequired().HasPrecision(10, 2).HasDefaultValue(0);
+            builder.Property(lo => lo.ConfirmedByLabAt).IsRequired(false);
+            builder.Property(lo => lo.CancellationReason).IsRequired(false).HasMaxLength(500);
+            builder.Property(lo => lo.CancelledAt).IsRequired(false);
 
-			builder.Property(lo => lo.SampleCollectionType)
-                   .HasConversion<int>()
-                   .IsRequired()
-				   .HasDefaultValue(SampleCollectionType.LabVisit);
+            // Indexes
+            builder.HasIndex(lo => lo.LabPrescriptionId)
+                .IsUnique()
+                .HasDatabaseName("IX_LabOrder_LabPrescriptionId");
 
-			builder.Property(lo => lo.TestsTotalCost)
-                   .IsRequired()
-                   .HasPrecision(10, 2);
+            builder.HasIndex(lo => lo.LaboratoryId)
+                .HasDatabaseName("IX_LabOrder_LaboratoryId");
 
-			builder.Property(lo => lo.SampleCollectionDeliveryCost)
-                   .HasPrecision(10, 2)
-				   .HasDefaultValue(0);
+            builder.HasIndex(lo => lo.PatientId)
+                .HasDatabaseName("IX_LabOrder_PatientId");
 
-			builder.Property(lo => lo.CancellationReason)
-				   .HasMaxLength(500);
+            builder.HasIndex(lo => lo.Status)
+                .HasDatabaseName("IX_LabOrder_Status");
 
-			builder.HasOne(lo => lo.LabPrescription)
-				   .WithOne(lp => lp.LabOrder)
-				   .HasForeignKey<LabOrder>(lo => lo.LabPrescriptionId)
-				   .OnDelete(DeleteBehavior.Restrict);
+            builder.HasIndex(lo => new { lo.LaboratoryId, lo.Status })
+                .HasDatabaseName("IX_LabOrder_Laboratory_Status");
 
-			builder.HasOne(lo => lo.Laboratory)
-				   .WithMany(l => l.LabOrders)
-				   .HasForeignKey(lo => lo.LaboratoryId)
-				   .OnDelete(DeleteBehavior.Restrict);
+            builder.HasIndex(lo => new { lo.PatientId, lo.Status })
+                .HasDatabaseName("IX_LabOrder_Patient_Status");
 
-			builder.HasOne(lo => lo.Patient)
-				   .WithMany(p => p.LabOrders)
-				   .HasForeignKey(lo => lo.PatientId)
-				   .OnDelete(DeleteBehavior.Restrict);
+            // LabPrescription Relationship (One-to-One)
+            builder.HasOne(lo => lo.LabPrescription)
+                .WithOne(lp => lp.LabOrder)
+                .HasForeignKey<LabOrder>(lo => lo.LabPrescriptionId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-			builder.HasMany(lo => lo.LabResults)
-				   .WithOne(lr => lr.LabOrder)
-				   .HasForeignKey(lr => lr.LabOrderId)
-				   .OnDelete(DeleteBehavior.Cascade);
+            // Laboratory Relationship (Many-to-One)
+            builder.HasOne(lo => lo.Laboratory)
+                .WithMany(l => l.LabOrders)
+                .HasForeignKey(lo => lo.LaboratoryId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-			builder.HasOne(lo => lo.LaboratoryReview)
-					.WithOne(lr => lr.LabOrder)
-					.HasForeignKey<LaboratoryReview>(lr => lr.LabOrderId)
-					.IsRequired(false)
-					.OnDelete(DeleteBehavior.Restrict);
+            // Patient Relationship (Many-to-One)
+            builder.HasOne(lo => lo.Patient)
+                .WithMany(p => p.LabOrders)
+                .HasForeignKey(lo => lo.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-			builder.HasCheckConstraint("CK_LabOrder_Costs", "[TestsTotalCost] >= 0 AND [SampleCollectionDeliveryCost] >= 0");
-		}
-	}
+            // Lab Results Relationship (One-to-Many)
+            builder.HasMany(lo => lo.LabResults)
+                .WithOne(lr => lr.LabOrder)
+                .HasForeignKey(lr => lr.LabOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Laboratory Review Relationship (One-to-One, Optional)
+            builder.HasOne(lo => lo.LaboratoryReview)
+                .WithOne(lr => lr.LabOrder)
+                .HasForeignKey<LaboratoryReview>(lr => lr.LabOrderId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Check Constraint - Ensure costs are non-negative
+            builder.HasCheckConstraint("CK_LabOrder_Costs", "[TestsTotalCost] >= 0 AND [SampleCollectionDeliveryCost] >= 0");
+        }
+    }
 }

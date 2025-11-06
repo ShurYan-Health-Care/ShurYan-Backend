@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,34 +16,43 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 		{
 			base.Configure(builder);
 
-			builder.HasKey(lt => lt.Id);
+			// Table Mapping
+			builder.ToTable("LabTests");
 
-			builder.Property(lt => lt.Name)
-				   .IsRequired()
-				   .HasMaxLength(200);
+			// Properties
+			builder.Property(lt => lt.Name).IsRequired().HasMaxLength(200);
+			builder.Property(lt => lt.Code).IsRequired().HasMaxLength(50);
+			builder.Property(lt => lt.Category).IsRequired().HasConversion<int>();
+			builder.Property(lt => lt.SpecialInstructions).IsRequired(false).HasMaxLength(500);
 
-			builder.Property(lt => lt.Code)
-				   .IsRequired()
-				   .HasMaxLength(50);
+			// Indexes
+			builder.HasIndex(lt => lt.Code)
+				.IsUnique()
+				.HasDatabaseName("IX_LabTest_Code");
 
-			builder.Property(lt => lt.Category)
-				   .HasConversion<int>()
-				   .IsRequired();
+			builder.HasIndex(lt => lt.Name)
+				.HasDatabaseName("IX_LabTest_Name");
 
-			builder.Property(lt => lt.SpecialInstructions)
-				   .HasMaxLength(500);
+			builder.HasIndex(lt => lt.Category)
+				.HasDatabaseName("IX_LabTest_Category");
 
-
-			// Relationships
+			// Lab Services Relationship (One-to-Many)
 			builder.HasMany(lt => lt.LabServices)
-				   .WithOne(ls => ls.LabTest)
-				   .HasForeignKey(ls => ls.LabTestId)
-				   .OnDelete(DeleteBehavior.Restrict);
+				.WithOne(ls => ls.LabTest)
+				.HasForeignKey(ls => ls.LabTestId)
+				.OnDelete(DeleteBehavior.Restrict);
 
+			// Prescription Items Relationship (One-to-Many)
 			builder.HasMany(lt => lt.PrescriptionItems)
-				   .WithOne(lpi => lpi.LabTest)
-				   .HasForeignKey(lpi => lpi.LabTestId)
-				   .OnDelete(DeleteBehavior.Restrict);
+				.WithOne(lpi => lpi.LabTest)
+				.HasForeignKey(lpi => lpi.LabTestId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			// Lab Results Relationship (One-to-Many)
+			builder.HasMany(lt => lt.LabResults)
+				.WithOne(lr => lr.LabTest)
+				.HasForeignKey(lr => lr.LabTestId)
+				.OnDelete(DeleteBehavior.Restrict);
 		}
 	}
 }
