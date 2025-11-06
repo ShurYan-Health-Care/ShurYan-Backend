@@ -188,7 +188,7 @@ namespace Shuryan.Application.Services
 
         public async Task<IEnumerable<PharmacyOrderResponse>> GetPendingOrdersAsync(Guid pharmacyId)
         {
-            var orders = await _unitOfWork.PharmacyOrders.GetPagedOrdersForPharmacyAsync(pharmacyId, PharmacyOrderStatus.PaidPendingLabConfirmation, 1, 100);
+            var orders = await _unitOfWork.PharmacyOrders.GetPagedOrdersForPharmacyAsync(pharmacyId, PharmacyOrderStatus.PaidPendingPharmacyConfirmation, 1, 100);
             return _mapper.Map<IEnumerable<PharmacyOrderResponse>>(orders);
         }
 

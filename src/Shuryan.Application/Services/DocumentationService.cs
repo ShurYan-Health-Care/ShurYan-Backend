@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Shuryan.Application.DTOs.Requests.Documentation;
 using Shuryan.Application.DTOs.Responses.Documentation;
 using Shuryan.Application.Interfaces;
-using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Medical.Consultations;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Core.Interfaces.UnitOfWork;
 

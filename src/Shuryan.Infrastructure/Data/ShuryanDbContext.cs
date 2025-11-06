@@ -9,8 +9,8 @@ using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.External.Clinic;
 using Shuryan.Core.Entities.External.Laboratories;
 using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Core.Entities.External.Payments;
 using Shuryan.Core.Entities.Identity;
-using Shuryan.Core.Entities.Medical.Appointments;
 using Shuryan.Core.Entities.Medical.Consultations;
 using Shuryan.Core.Entities.Medical.Schedules;
 using Shuryan.Core.Entities.Shared;
@@ -18,6 +18,7 @@ using Shuryan.Core.Entities.System.Review;
 using Shuryan.Core.Entities.System;
 using Shuryan.Core.Entities.Base;
 using System.Linq.Expressions;
+using Shuryan.Core.Entities.Medical;
 
 namespace Shuryan.Infrastructure.Data
 {
@@ -59,8 +60,6 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<Prescription> Prescriptions { get; set; }
 		public DbSet<DispensingRecord> DispensingRecords { get; set; }
 		public DbSet<DispensedMedicationItem> DispensedMedicationItems { get; set; }
-		public DbSet<PrescriptionShare> PrescriptionShares { get; set; }
-		public DbSet<PrescriptionStatusHistory> PrescriptionStatusHistories { get; set; }
 
 		/// <summary>
 		/// Identity Entities
@@ -110,6 +109,9 @@ namespace Shuryan.Infrastructure.Data
 		// Chat/AI Bot
 		public DbSet<Conversation> Conversations { get; set; }
 		public DbSet<ConversationMessage> ConversationMessages { get; set; }
+		// Payment
+		public DbSet<Payment> Payments { get; set; }
+		public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 		#endregion
 
 		protected override void OnModelCreating(ModelBuilder builder)

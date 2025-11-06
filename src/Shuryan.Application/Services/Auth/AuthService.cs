@@ -16,6 +16,7 @@ using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Entities.System;
+using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Identity;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Shared.Configurations;
@@ -100,7 +101,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     patient.Id,
                     patient.Email,
-                    VerificationTypes.EmailVerification,
+                    Core.Entities.System.VerificationTypes.EmailVerification,
                     ipAddress);
 
                 await _emailService.SendVerificationOtpAsync(
@@ -171,7 +172,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     doctor.Id,
                     doctor.Email,
-                    VerificationTypes.EmailVerification,
+                    Core.Entities.System.VerificationTypes.EmailVerification,
                     ipAddress);
 
                 await _emailService.SendVerificationOtpAsync(
@@ -237,7 +238,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     laboratory.Id,
                     laboratory.Email,
-                    VerificationTypes.EmailVerification,
+                    Core.Entities.System.VerificationTypes.EmailVerification,
                     ipAddress);
 
                 await _emailService.SendVerificationOtpAsync(
@@ -305,7 +306,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     pharmacy.Id,
                     pharmacy.Email,
-                    VerificationTypes.EmailVerification,
+                    Core.Entities.System.VerificationTypes.EmailVerification,
                     ipAddress);
 
                 await _emailService.SendVerificationOtpAsync(
@@ -346,7 +347,7 @@ namespace Shuryan.Application.Services.Auth
                 var isValid = await _otpService.ValidateOtpAsync(
                     dto.Email,
                     dto.OtpCode,
-                    VerificationTypes.EmailVerification);
+                    Core.Entities.System.VerificationTypes.EmailVerification);
 
                 if (!isValid)
                 {
@@ -421,7 +422,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     user.Id,
                     user.Email,
-                    VerificationTypes.EmailVerification);
+                    Core.Entities.System.VerificationTypes.EmailVerification);
 
                 await _emailService.SendVerificationOtpAsync(
                     user.Email,
@@ -685,7 +686,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     user.Id,
                     user.Email,
-                    VerificationTypes.PasswordReset);
+                    Core.Entities.System.VerificationTypes.PasswordReset);
 
                 await _emailService.SendPasswordResetOtpAsync(
                     user.Email,
@@ -717,7 +718,7 @@ namespace Shuryan.Application.Services.Auth
                 var isValid = await _otpService.ValidateOtpAsync(
                     dto.Email,
                     dto.OtpCode,
-                    VerificationTypes.PasswordReset);
+                    Core.Entities.System.VerificationTypes.PasswordReset);
 
                 if (!isValid)
                 {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,25 +16,34 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
         {
             base.Configure(builder);
 
-            builder.HasKey(da => da.Id);
+            // Table Mapping
+            builder.ToTable("DoctorAvailabilities");
 
-            builder.Property(da => da.DayOfWeek)
-                   .HasConversion<int>()
-                   .IsRequired();
+            // Properties
+            builder.Property(da => da.DoctorId).IsRequired();
+            builder.Property(da => da.DayOfWeek).IsRequired().HasConversion<int>();
+            builder.Property(da => da.StartTime).IsRequired();
+            builder.Property(da => da.EndTime).IsRequired();
 
-			builder.Property(da => da.StartTime)
-				   .IsRequired();
+            // Indexes
+            builder.HasIndex(da => da.DoctorId)
+                .HasDatabaseName("IX_DoctorAvailability_DoctorId");
 
-			builder.Property(da => da.EndTime)
-				   .IsRequired();
+            builder.HasIndex(da => new { da.DoctorId, da.DayOfWeek })
+                .HasDatabaseName("IX_DoctorAvailability_Doctor_Day");
 
-			// Relationships
-			builder.HasOne(da => da.Doctor)
-                   .WithMany(d => d.Availabilities)
-                   .HasForeignKey(da => da.DoctorId)
-                   .OnDelete(DeleteBehavior.Cascade);
+            builder.HasIndex(da => new { da.DoctorId, da.DayOfWeek, da.StartTime, da.EndTime })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0")
+                .HasDatabaseName("IX_DoctorAvailability_Unique");
 
-            // Constraints
+            // Doctor Relationship (Many-to-One)
+            builder.HasOne(da => da.Doctor)
+                .WithMany(d => d.Availabilities)
+                .HasForeignKey(da => da.DoctorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Check Constraint - Ensure StartTime is before EndTime
             builder.HasCheckConstraint("CK_DoctorAvailability_TimeValidation", "[StartTime] < [EndTime]");
         }
     }

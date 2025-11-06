@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.System.Review;
 using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
@@ -16,22 +11,30 @@ namespace Shuryan.Infrastructure.Data.Configurations.ReviewConfigurations
 		{
 			base.Configure(builder);
 
-			builder.HasKey(lr => lr.Id);
+			// Table Mapping
+			builder.ToTable("LaboratoryReviews");
 
 			// Properties
+			builder.Property(lr => lr.LabOrderId).IsRequired();
+			builder.Property(lr => lr.PatientId).IsRequired();
+			builder.Property(lr => lr.LaboratoryId).IsRequired();
 			builder.Property(lr => lr.OverallSatisfaction).IsRequired();
 			builder.Property(lr => lr.ResultAccuracy).IsRequired();
 			builder.Property(lr => lr.DeliverySpeed).IsRequired();
 			builder.Property(lr => lr.ServiceQuality).IsRequired();
 			builder.Property(lr => lr.ValueForMoney).IsRequired();
+			builder.Property(lr => lr.IsEdited).IsRequired().HasDefaultValue(false);
 
-			builder.Property(lr => lr.IsEdited)
-				.IsRequired()
-				.HasDefaultValue(false);
+			// Indexes
+			builder.HasIndex(lr => lr.LabOrderId)
+				.IsUnique()
+				.HasDatabaseName("IX_LaboratoryReview_LabOrderId");
 
-			builder.Property(lr => lr.CreatedAt)
-				.IsRequired()
-				.HasDefaultValueSql("GETUTCDATE()");
+			builder.HasIndex(lr => lr.PatientId)
+				.HasDatabaseName("IX_LaboratoryReview_PatientId");
+
+			builder.HasIndex(lr => lr.LaboratoryId)
+				.HasDatabaseName("IX_LaboratoryReview_LaboratoryId");
 
 			// Relationships
 			builder.HasOne(lr => lr.LabOrder)

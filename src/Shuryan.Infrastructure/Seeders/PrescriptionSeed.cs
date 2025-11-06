@@ -44,7 +44,6 @@ namespace Shuryan.Infrastructure.Seeders
                     PrescriptionNumber = $"RX-{DateTime.UtcNow.Year}-{random.Next(10000, 99999)}",
                     DigitalSignature = $"DR-{appointment.DoctorId.ToString().Substring(0, 8)}",
                     GeneralInstructions = "تناول الدواء بعد الأكل مع كمية كافية من الماء",
-                    FollowUpInstructions = "مراجعة بعد أسبوع إذا لم يحدث تحسن",
                     CreatedAt = appointment.ScheduledStartTime.AddHours(1)
                 };
                 prescriptions.Add(prescription);

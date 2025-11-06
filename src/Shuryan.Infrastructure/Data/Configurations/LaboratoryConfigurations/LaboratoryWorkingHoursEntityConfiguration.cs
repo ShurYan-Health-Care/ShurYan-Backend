@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,31 +12,38 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 {
     public class LaboratoryWorkingHoursEntityConfiguration : AuditableEntityConfiguration<LabWorkingHours>
     {
-		public override void Configure(EntityTypeBuilder<LabWorkingHours> builder)
+        public override void Configure(EntityTypeBuilder<LabWorkingHours> builder)
         {
             base.Configure(builder);
 
-            builder.HasKey(wh => wh.Id);
+            // Table Mapping
+            builder.ToTable("LabWorkingHours");
 
-            builder.Property(wh => wh.Day)
-                   .HasConversion<int>()
-                   .IsRequired();
+            // Properties
+            builder.Property(wh => wh.LaboratoryId).IsRequired();
+            builder.Property(wh => wh.Day).IsRequired().HasConversion<int>();
+            builder.Property(wh => wh.StartTime).IsRequired();
+            builder.Property(wh => wh.EndTime).IsRequired();
+            builder.Property(wh => wh.IsActive).IsRequired().HasDefaultValue(true);
 
-			builder.Property(wh => wh.StartTime)
-				   .IsRequired();
+            // Indexes
+            builder.HasIndex(wh => wh.LaboratoryId)
+                .HasDatabaseName("IX_LabWorkingHours_LaboratoryId");
 
-			builder.Property(wh => wh.EndTime)
-				   .IsRequired();
+            builder.HasIndex(wh => new { wh.LaboratoryId, wh.Day })
+                .HasDatabaseName("IX_LabWorkingHours_Laboratory_Day");
 
-			builder.Property(wh => wh.IsActive)
-                   .IsRequired()
-                   .HasDefaultValue(true);
+            builder.HasIndex(wh => new { wh.LaboratoryId, wh.Day, wh.StartTime, wh.EndTime })
+                .IsUnique()
+                .HasDatabaseName("IX_LabWorkingHours_Unique");
 
+            // Laboratory Relationship (Many-to-One)
             builder.HasOne(wh => wh.Laboratory)
-                   .WithMany(l => l.WorkingHours)
-                   .HasForeignKey(wh => wh.LaboratoryId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(l => l.WorkingHours)
+                .HasForeignKey(wh => wh.LaboratoryId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // Check Constraint - Ensure StartTime is before EndTime
             builder.HasCheckConstraint("CK_LaboratoryWorkingHours_Time", "[StartTime] < [EndTime]");
         }
     }

@@ -89,7 +89,7 @@ namespace Shuryan.API.Extensions
             services.AddScoped<ILabOrderService, LabOrderService>();
 
             // Prescription Service
-            services.AddScoped<IPrescriptionService, PrescriptionService>();
+            //services.AddScoped<IPrescriptionService, PrescriptionService>();
 
             // Session Management Services
             services.AddScoped<ISessionService, SessionService>();
@@ -99,6 +99,9 @@ namespace Shuryan.API.Extensions
             // AI Chat Services
             services.AddHttpClient<IGeminiAIService, GeminiAIService>();
             services.AddScoped<IChatService, ChatService>();
+
+            // Payment Service
+            services.AddScoped<IPaymentService, PaymentService>();
 
             return services;
         }

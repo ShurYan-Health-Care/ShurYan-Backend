@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -13,9 +13,7 @@ using Shuryan.Core.Enums.Laboratory;
 namespace Shuryan.Core.Entities.Shared
 {
     public class LaboratoryDocument : AuditableEntity
-	{
-        [Required, MaxLength(500)]
-        [RegularExpression(@"^https?://.*", ErrorMessage = "Must be a valid URL")]
+    {
         public string DocumentUrl { get; set; } = string.Empty;
         public LaboratoryDocumentType Type { get; set; }
         public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.Pending;

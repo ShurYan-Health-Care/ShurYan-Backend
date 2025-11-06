@@ -3,7 +3,6 @@ using Shuryan.Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load local configuration file (not committed to Git)
 builder.Configuration.AddJsonFile("appsettings.Development.Local.json", optional: true, reloadOnChange: true);
 
 #region Infrastructure Configuration 

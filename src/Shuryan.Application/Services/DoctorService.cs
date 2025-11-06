@@ -6,6 +6,7 @@ using Shuryan.Application.DTOs.Responses.Doctor;
 using Shuryan.Application.Extensions;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.Medical;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Doctor;
 using Shuryan.Core.Enums.Identity;
@@ -1134,7 +1135,7 @@ namespace Shuryan.Application.Services
                 
                 // CRITICAL FIX: ALL appointments in database are stored as Egypt local time (not UTC)
                 // We need to convert them to UTC for proper comparison
-                var correctedAppointments = new List<Core.Entities.Medical.Appointments.Appointment>();
+                var correctedAppointments = new List<Appointment>();
                 
                 if (bookedAppointments.Any())
                 {
@@ -1155,7 +1156,7 @@ namespace Shuryan.Application.Services
                             correctedStart, correctedEnd);
                         
                         // Create a corrected copy
-                        var correctedApt = new Core.Entities.Medical.Appointments.Appointment
+                        var correctedApt = new Core.Entities.Medical.Appointment
                         {
                             Id = apt.Id,
                             DoctorId = apt.DoctorId,

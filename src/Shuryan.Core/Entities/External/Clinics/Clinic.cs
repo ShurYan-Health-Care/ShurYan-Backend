@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -18,8 +18,6 @@ namespace Shuryan.Core.Entities.External.Clinic
     {
         public string Name { get; set; } = string.Empty;
         public Status ClinicStatus { get; set; } = Status.Active;
-        [Required, MaxLength(500)]
-        [RegularExpression(@"^https?://.*", ErrorMessage = "Must be a valid URL")]
         public string? FacilityVideoUrl { get; set; }
 
         [ForeignKey("Doctor")]

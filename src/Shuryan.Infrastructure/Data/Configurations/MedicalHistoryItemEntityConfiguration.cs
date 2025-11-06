@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Common;
-using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.Shared;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
@@ -17,21 +11,29 @@ namespace Shuryan.Infrastructure.Data.Configurations
 		{
 			base.Configure(builder);
 
-			builder.HasKey(mhi => mhi.Id);
+			// Table Mapping
+			builder.ToTable("MedicalHistoryItems");
 
-			builder.Property(mhi => mhi.Type)
-				   .HasConversion<int>()
-				   .IsRequired();
+			// Properties
+			builder.Property(mhi => mhi.PatientId).IsRequired();
+			builder.Property(mhi => mhi.Type).IsRequired().HasConversion<int>();
+			builder.Property(mhi => mhi.Text).IsRequired().HasMaxLength(1000);
 
-			builder.Property(mhi => mhi.Text)
-				   .IsRequired()
-				   .HasMaxLength(1000);
+			// Indexes
+			builder.HasIndex(mhi => mhi.PatientId)
+				.HasDatabaseName("IX_MedicalHistoryItem_PatientId");
+
+			builder.HasIndex(mhi => mhi.Type)
+				.HasDatabaseName("IX_MedicalHistoryItem_Type");
+
+			builder.HasIndex(mhi => new { mhi.PatientId, mhi.Type })
+				.HasDatabaseName("IX_MedicalHistoryItem_Patient_Type");
 
 			// Relationships
 			builder.HasOne(mhi => mhi.Patient)
-				   .WithMany(p => p.MedicalHistory)
-				   .HasForeignKey(mhi => mhi.PatientId)
-				   .OnDelete(DeleteBehavior.Cascade);
+				.WithMany(p => p.MedicalHistory)
+				.HasForeignKey(mhi => mhi.PatientId)
+				.OnDelete(DeleteBehavior.Cascade);
 		}
 	}
 }

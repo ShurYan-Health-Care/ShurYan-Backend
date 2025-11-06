@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.External.Pharmacies;
-using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.Medical.Consultations;
 using Shuryan.Core.Entities.System.Review;
 using Shuryan.Core.Enums.Appointments;
 using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
@@ -19,74 +20,82 @@ namespace Shuryan.Infrastructure.Data.Configurations
 		{
 			base.Configure(builder);
 
-			builder.HasKey(a => a.Id);
-			builder.Property(a => a.Id)
-					.ValueGeneratedOnAdd();
+			// Table Mapping
+			builder.ToTable("Appointments");
 
-			// Properties Configuration
-			builder.Property(a => a.ScheduledStartTime)
-				   .IsRequired();
+			// Properties
+			builder.Property(a => a.PatientId).IsRequired();
+			builder.Property(a => a.DoctorId).IsRequired();
+			builder.Property(a => a.PreviousAppointmentId).IsRequired(false);
+			builder.Property(a => a.ScheduledStartTime).IsRequired();
 
-			builder.Property(a => a.ScheduledEndTime)
-				   .IsRequired();
+			builder.Property(a => a.ScheduledEndTime).IsRequired();
+			builder.Property(a => a.ConsultationType).IsRequired().HasConversion<int>();
+			builder.Property(a => a.ConsultationFee).IsRequired().HasPrecision(10, 2);
+			builder.Property(a => a.SessionDurationMinutes).IsRequired();
+			builder.Property(a => a.Status).IsRequired().HasConversion<int>().HasDefaultValue(AppointmentStatus.Confirmed);
+			builder.Property(a => a.CancellationReason).IsRequired(false).HasMaxLength(500);
+			builder.Property(a => a.CancelledAt).IsRequired(false);
+			builder.Property(a => a.ActualStartTime).IsRequired(false);
+			builder.Property(a => a.ActualEndTime).IsRequired(false);
 
-			builder.Property(a => a.ConsultationFee)
-				   .IsRequired()
-				   .HasPrecision(10, 2);
+			// Indexes
+			builder.HasIndex(a => a.PatientId)
+				.HasDatabaseName("IX_Appointment_PatientId");
 
-			builder.Property(a => a.SessionDurationMinutes)
-				   .IsRequired();
+			builder.HasIndex(a => a.DoctorId)
+				.HasDatabaseName("IX_Appointment_DoctorId");
 
-			builder.Property(a => a.ConsultationType)
-				   .HasConversion<int>()
-				   .IsRequired();
+			builder.HasIndex(a => a.Status)
+				.HasDatabaseName("IX_Appointment_Status");
 
-			builder.Property(a => a.Status)
-				   .HasConversion<int>()
-				   .IsRequired()
-				   .HasDefaultValue(AppointmentStatus.Confirmed);
+			builder.HasIndex(a => a.ScheduledStartTime)
+				.HasDatabaseName("IX_Appointment_ScheduledStartTime");
 
-			builder.Property(a => a.CancellationReason)
-				   .HasMaxLength(500);
+			builder.HasIndex(a => new { a.DoctorId, a.ScheduledStartTime })
+				.HasDatabaseName("IX_Appointment_Doctor_StartTime");
+
+			builder.HasIndex(a => new { a.PatientId, a.Status })
+				.HasDatabaseName("IX_Appointment_Patient_Status");
 
 
 			// Relationships
 			builder.HasOne(a => a.Patient)
-				   .WithMany(p => p.Appointments)
-				   .HasForeignKey(a => a.PatientId)
-				   .OnDelete(DeleteBehavior.Restrict);
+				.WithMany(p => p.Appointments)
+				.HasForeignKey(a => a.PatientId)
+				.OnDelete(DeleteBehavior.Restrict);
 
 			builder.HasOne(a => a.Doctor)
-				   .WithMany(d => d.Appointments)
-				   .HasForeignKey(a => a.DoctorId)
-				   .OnDelete(DeleteBehavior.Restrict);
-
-			builder.HasOne(a => a.ConsultationRecord)
-				   .WithOne(cr => cr.Appointment)
-				   .HasForeignKey<ConsultationRecord>(cr => cr.AppointmentId)
-				   .OnDelete(DeleteBehavior.Cascade);
+				.WithMany(d => d.Appointments)
+				.HasForeignKey(a => a.DoctorId)
+				.OnDelete(DeleteBehavior.Restrict);
 
 			builder.HasOne(a => a.PreviousAppointment)
-				   .WithMany(a => a.FollowUpAppointments)
-				   .HasForeignKey(a => a.PreviousAppointmentId)
-				   .OnDelete(DeleteBehavior.Restrict);
-
-			builder.HasMany(a => a.LabPrescription)
-				   .WithOne(lp => lp.Appointment)
-				   .HasForeignKey(lp => lp.AppointmentId)
-				   .OnDelete(DeleteBehavior.Cascade);
+				.WithMany(a => a.FollowUpAppointments)
+				.HasForeignKey(a => a.PreviousAppointmentId)
+				.OnDelete(DeleteBehavior.Restrict);
 
 			builder.HasOne(a => a.Prescription)
-				   .WithOne(p => p.Appointment)
-				   .HasForeignKey<Prescription>(p => p.AppointmentId)
-				   .IsRequired(false)
-				   .OnDelete(DeleteBehavior.Cascade);
+				.WithOne(p => p.Appointment)
+				.HasForeignKey<Prescription>(p => p.AppointmentId)
+				.IsRequired(false)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasOne(a => a.ConsultationRecord)
+				.WithOne(cr => cr.Appointment)
+				.HasForeignKey<ConsultationRecord>(cr => cr.AppointmentId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasMany(a => a.LabPrescription)
+				.WithOne(lp => lp.Appointment)
+				.HasForeignKey(lp => lp.AppointmentId)
+				.OnDelete(DeleteBehavior.Cascade);
 
 			builder.HasOne(a => a.DoctorReview)
-					.WithOne(dr => dr.Appointment)
-					.HasForeignKey<DoctorReview>(dr => dr.AppointmentId)
-					.IsRequired(false)
-					.OnDelete(DeleteBehavior.Restrict);
+				.WithOne(dr => dr.Appointment)
+				.HasForeignKey<DoctorReview>(dr => dr.AppointmentId)
+				.IsRequired(false)
+				.OnDelete(DeleteBehavior.Restrict);
 
 			// Check Constraints
 			builder.HasCheckConstraint("CK_Appointment_TimeValidation", "[ScheduledStartTime] < [ScheduledEndTime]");

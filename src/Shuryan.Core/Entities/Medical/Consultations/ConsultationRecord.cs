@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Core.Entities.Base;
 
-namespace Shuryan.Core.Entities.Medical.Appointments
+namespace Shuryan.Core.Entities.Medical.Consultations
 {
     public class ConsultationRecord : AuditableEntity
 	{

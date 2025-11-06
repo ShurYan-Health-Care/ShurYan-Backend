@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -9,34 +9,34 @@ namespace Shuryan.Core.Enums.Pharmacy
 {
     public enum PharmacyOrderStatus
     {
-        [Description("في انتظار الموافقة والدفع من المريض")]
-        PendingPayment = 1,
+        [Description("في انتظار رد الصيدلية")]
+        PendingPharmacyResponse = 1,
 
-        [Description("تم الدفع - في انتظار تأكيد الصيدله")]
-        PaidPendingLabConfirmation = 2,
+        [Description("في انتظار تأكيد المريض")]
+        WaitingForPatientConfirmation = 2,
 
-        [Description("تم استلام الطلب")]
-        Received = 3,
+        [Description("في انتظار الدفع")]
+        PendingPayment = 3,
 
-        [Description("جاري التحقق من التوفر")]
-        VerificationInProgress = 4,
+        [Description("تم الدفع - في انتظار تأكيد الصيدلية")]
+        PaidPendingPharmacyConfirmation = 4,
 
         [Description("تم تأكيد الطلب")]
-        Confirmed = 3,
+        Confirmed = 5,
 
         [Description("جاري تحضير الطلب")]
-        PreparationInProgress = 5,
+        PreparationInProgress = 6,
 
         [Description("خرج للتوصيل")]
-        OutForDelivery = 6,
+        OutForDelivery = 7,
 
         [Description("جاهز للاستلام")]
-        ReadyForPickup = 7,
+        ReadyForPickup = 8,
 
         [Description("تم التسليم")]
-        Delivered = 8,
+        Delivered = 9,
 
         [Description("ملغي")]
-        Cancelled = 9
+        Cancelled = 10
     }
 }

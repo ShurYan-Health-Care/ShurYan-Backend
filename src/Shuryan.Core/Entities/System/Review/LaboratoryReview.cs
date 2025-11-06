@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -7,13 +7,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.External.Laboratories;
+using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.Base;
 
 namespace Shuryan.Core.Entities.System.Review
 {
     public class LaboratoryReview : AuditableEntity
 	{
-
 		[ForeignKey("LabOrder")]
 		public Guid LabOrderId { get; set; }
 
@@ -37,7 +37,6 @@ namespace Shuryan.Core.Entities.System.Review
 
 		[Range(1, 5)]
 		public int ValueForMoney { get; set; } // القيمة مقابل السعر
-
 
 		public bool IsEdited { get; set; } = false;
 

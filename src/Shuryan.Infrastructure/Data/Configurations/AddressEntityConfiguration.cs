@@ -1,15 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Common;
-using Shuryan.Core.Entities.Identity;
-using Shuryan.Core.Entities.External;
-using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shuryan.Core.Entities.Shared;
+using Shuryan.Infrastructure.Data.Configurations.BaseConfigurations;
 
 namespace Shuryan.Infrastructure.Data.Configurations
 {
@@ -19,33 +11,23 @@ namespace Shuryan.Infrastructure.Data.Configurations
 		{
 			base.Configure(builder);
 
-			builder.Property(a => a.Street)
-				   .IsRequired()
-				   .HasMaxLength(200);
+			// Table Mapping
+			builder.ToTable("Addresses");
 
-			builder.Property(a => a.City)
-				   .IsRequired()
-				   .HasMaxLength(100);
+			// Properties
+			builder.Property(a => a.Street).IsRequired().HasMaxLength(200);
+			builder.Property(a => a.City).IsRequired().HasMaxLength(100);
+			builder.Property(a => a.Governorate).IsRequired().HasConversion<int>();
+			builder.Property(a => a.BuildingNumber).IsRequired(false).HasMaxLength(50);
+			builder.Property(a => a.Latitude).IsRequired(false).HasPrecision(18, 12);
+			builder.Property(a => a.Longitude).IsRequired(false).HasPrecision(18, 12);
 
-			builder.Property(a => a.BuildingNumber)
-				   .HasMaxLength(50);
-
-			builder.Property(a => a.Governorate)
-				   .HasConversion<int>()
-				   .IsRequired();
-
-			builder.Property(a => a.Latitude)
-				   .HasPrecision(18, 12);
-
-			builder.Property(a => a.Longitude)
-				   .HasPrecision(18, 12);
-
-			// Indexes for performance
+			// Indexes
 			builder.HasIndex(a => a.Governorate)
-				   .HasDatabaseName("IX_Address_Governorate");
+				.HasDatabaseName("IX_Address_Governorate");
 
 			builder.HasIndex(a => new { a.Latitude, a.Longitude })
-				   .HasDatabaseName("IX_Address_Coordinates");
+				.HasDatabaseName("IX_Address_Coordinates");
 		}
 	}
 }

@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Shuryan.Core.Entities.Medical.Appointments;
+using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.Medical.Consultations;
 using Shuryan.Core.Enums.Appointments;
 using Shuryan.Infrastructure.Data;
 

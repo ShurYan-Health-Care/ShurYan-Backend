@@ -53,7 +53,6 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
         IPharmacyWorkingHoursRepository PharmacyWorkingHours { get; }
         IPrescribedMedicationRepository PrescribedMedications { get; }
         IDispensingRecordRepository DispensingRecords { get; }
-        IPrescriptionShareRepository PrescriptionShares { get; }
         IPharmacyDocumentRepository PharmacyDocuments { get; }
 
         // ==================== Review Related Repositories ====================
@@ -66,6 +65,9 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
         IVerifierRepository Verifiers { get; }
         INotificationRepository Notifications { get; }
         IRefreshTokenRepository RefreshTokens { get; }
+
+        // ==================== Payment Related Repositories ====================
+        IPaymentRepository Payments { get; }
 
         // ==================== Chat/AI Bot Repositories ====================
         IConversationRepository Conversations { get; }

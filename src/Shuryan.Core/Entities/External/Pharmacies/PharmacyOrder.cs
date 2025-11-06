@@ -1,4 +1,4 @@
-﻿using Shuryan.Core.Entities.Base;
+using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.System.Review;
 using Shuryan.Core.Enums.Pharmacy;
@@ -11,37 +11,40 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Entities.External.Pharmacies
 {
-    /// <summary>
-    /// بيمثل طلب شراء أدوية من صيدلية معينة
-    /// </summary>
     public class PharmacyOrder : AuditableEntity
-	{
-        public string OrderNumber { get; set; }
-        public PharmacyOrderStatus Status { get; set; } = PharmacyOrderStatus.PendingPayment;
+    {
+        public string OrderNumber { get; set; } = string.Empty;
+        public PharmacyOrderStatus Status { get; set; } = PharmacyOrderStatus.PendingPharmacyResponse;
         public decimal TotalCost { get; set; }
         public decimal DeliveryFee { get; set; }
         public OrderDeliveryType DeliveryType { get; set; }
         public DateTime? EstimatedDeliveryTime { get; set; }
-        public string DeliveryPersonPhone { get; set; } // د الرقم اللي العميل هيتواصل بيه مع بتاع الدليفري
-        public string? DeliveryPersonName { get; set; } // اسم بتاع الدليفري
-        public string? DeliveryNotes { get; set; } // معلومات عن التوصيل زي مثلا حط الطلب قدام الباب وصوره خبط مرتين
+        public string DeliveryPersonPhone { get; set; } = string.Empty;
+        public string? DeliveryPersonName { get; set; }
+        public string? DeliveryNotes { get; set; }
         public DateTime? ActualDeliveryTime { get; set; }
 
+        // Patient Confirmation
+        public bool? PatientConfirmed { get; set; }
+        public DateTime? PatientConfirmedAt { get; set; }
+        public string? PatientNotes { get; set; }
+        public string? PatientDigitalSignature { get; set; }
 
         [ForeignKey("Patient")]
         public Guid PatientId { get; set; }
-        public virtual Patient Patient { get; set; } = null!;
 
         [ForeignKey("Pharmacy")]
         public Guid PharmacyId { get; set; }
-        public virtual Pharmacy Pharmacy { get; set; } = null!;
 
         [ForeignKey("Prescription")]
         public Guid? PrescriptionId { get; set; }
+
+        // Navigation Properties
+        public virtual Patient Patient { get; set; } = null!;
+        public virtual Pharmacy Pharmacy { get; set; } = null!;
         public virtual Prescription? Prescription { get; set; }
-
-		public virtual PharmacyReview? PharmacyReview { get; set; }
-
-	}
+        public virtual PharmacyReview? PharmacyReview { get; set; }
+        public virtual ICollection<PharmacyOrderItem> OrderItems { get; set; } = new HashSet<PharmacyOrderItem>();
+    }
 
 }
