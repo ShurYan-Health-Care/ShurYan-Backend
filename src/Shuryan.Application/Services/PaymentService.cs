@@ -10,6 +10,7 @@ using Shuryan.Application.DTOs.Responses.Payment;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.External.Payments;
 using Shuryan.Core.Enums.Payment;
+using Shuryan.Core.Enums.Pharmacy;
 using Shuryan.Core.Interfaces.UnitOfWork;
 
 namespace Shuryan.Application.Services
@@ -77,7 +78,7 @@ namespace Shuryan.Application.Services
                     CreatedAt = DateTime.UtcNow
                 };
 
-                await _unitOfWork.GetRepository<PaymentTransaction>().AddAsync(transaction);
+                await _unitOfWork.Repository<PaymentTransaction>().AddAsync(transaction);
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("Payment initiated: {PaymentId} for user {UserId}", payment.Id, userId);
@@ -158,7 +159,7 @@ namespace Shuryan.Application.Services
                     ProcessedAt = DateTime.UtcNow
                 };
 
-                await _unitOfWork.GetRepository<PaymentTransaction>().AddAsync(transaction);
+                await _unitOfWork.Repository<PaymentTransaction>().AddAsync(transaction);
                 _unitOfWork.Payments.Update(payment);
                 await _unitOfWork.SaveChangesAsync();
 
@@ -279,7 +280,7 @@ namespace Shuryan.Application.Services
                     Metadata = $"Refund reason: {request.Reason}"
                 };
 
-                await _unitOfWork.GetRepository<PaymentTransaction>().AddAsync(transaction);
+                await _unitOfWork.Repository<PaymentTransaction>().AddAsync(transaction);
                 _unitOfWork.Payments.Update(payment);
                 await _unitOfWork.SaveChangesAsync();
 

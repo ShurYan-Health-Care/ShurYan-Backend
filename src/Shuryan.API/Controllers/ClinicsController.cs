@@ -40,11 +40,6 @@ namespace Shuryan.API.Controllers
         #endregion
 
         #region Clinic Info
-
-        /// <summary>
-        /// جلب معلومات العيادة (الاسم، الهواتف، الخدمات)
-        /// GET /api/Doctors/me/clinic/info
-        /// </summary>
         [HttpGet("info")]
         [ProducesResponseType(typeof(ApiResponse<ClinicInfoResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -93,10 +88,7 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// تحديث معلومات العيادة
-        /// PUT /api/Doctors/me/clinic/info
-        /// </summary>
+
         [HttpPut("info")]
         [ProducesResponseType(typeof(ApiResponse<ClinicInfoResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -160,11 +152,6 @@ namespace Shuryan.API.Controllers
         #endregion
 
         #region Clinic Address
-
-        /// <summary>
-        /// جلب عنوان العيادة
-        /// GET /api/Doctors/me/clinic/address
-        /// </summary>
         [HttpGet("address")]
         [ProducesResponseType(typeof(ApiResponse<ClinicAddressResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -213,10 +200,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// تحديث عنوان العيادة
-        /// PUT /api/Doctors/me/clinic/address
-        /// </summary>
         [HttpPut("address")]
         [ProducesResponseType(typeof(ApiResponse<ClinicAddressResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -284,15 +267,9 @@ namespace Shuryan.API.Controllers
                 ));
             }
         }
-
         #endregion
 
         #region Clinic Images
-
-        /// <summary>
-        /// جلب صور العيادة (الحد الأقصى 6 صور)
-        /// GET /api/Doctors/me/clinic/images
-        /// </summary>
         [HttpGet("images")]
         [ProducesResponseType(typeof(ApiResponse<ClinicImagesListResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -333,10 +310,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// رفع صورة جديدة للعيادة
-        /// POST /api/Doctors/me/clinic/images
-        /// </summary>
         [HttpPost("images")]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(ApiResponse<ClinicImageResponse>), StatusCodes.Status201Created)]
@@ -411,10 +384,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// حذف صورة من العيادة
-        /// DELETE /api/Doctors/me/clinic/images/{imageId}
-        /// </summary>
         [HttpDelete("images/{imageId}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -481,71 +450,6 @@ namespace Shuryan.API.Controllers
                 ));
             }
         }
-
-        /// <summary>
-        /// إعادة ترتيب صور العيادة
-        /// PUT /api/Doctors/me/clinic/images/reorder
-        /// </summary>
-        [HttpPut("images/reorder")]
-        [ProducesResponseType(typeof(ApiResponse<ClinicImagesListResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<ClinicImagesListResponse>>> ReorderClinicImages([FromBody] ReorderClinicImagesRequest request)
-        {
-            var currentDoctorId = GetCurrentDoctorId();
-
-            if (currentDoctorId == Guid.Empty)
-            {
-                _logger.LogWarning("Unauthorized attempt to reorder clinic images - invalid token");
-                return Unauthorized(ApiResponse<object>.Failure(
-                    "Invalid or missing authentication token",
-                    statusCode: 401
-                ));
-            }
-
-            _logger.LogInformation("Reorder clinic images request for doctor: {DoctorId}", currentDoctorId);
-
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                _logger.LogWarning("Invalid model state for ReorderClinicImages for doctor: {DoctorId}. Errors: {Errors}",
-                    currentDoctorId, string.Join(", ", errors));
-                return BadRequest(ApiResponse<object>.Failure(
-                    "Invalid request data",
-                    errors,
-                    400
-                ));
-            }
-
-            try
-            {
-                var images = await _clinicService.ReorderClinicImagesAsync(currentDoctorId, request);
-                _logger.LogInformation("Clinic images reordered successfully for doctor: {DoctorId}", currentDoctorId);
-                return Ok(ApiResponse<ClinicImagesListResponse>.Success(
-                    images,
-                    "تم إعادة ترتيب الصور بنجاح"
-                ));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid argument for clinic images reorder: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
-                    statusCode: 404
-                ));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error reordering clinic images for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while reordering clinic images",
-                    new[] { ex.Message },
-                    500
-                ));
-            }
-        }
-
         #endregion
     }
 }

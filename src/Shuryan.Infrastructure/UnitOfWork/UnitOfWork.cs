@@ -82,7 +82,6 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private IPharmacyReviewRepository? _pharmacyReviews;
 
         // ==================== Shared Fields ====================
-        private IAddressRepository? _addresses;
         private IVerifierRepository? _verifiers;
         private INotificationRepository? _notifications;
         private IRefreshTokenRepository? _refreshTokens;
@@ -213,9 +212,6 @@ namespace Shuryan.Infrastructure.UnitOfWork
             _pharmacyReviews ??= new PharmacyReviewRepository(_context);
 
         // ==================== Shared Properties ====================
-        public IAddressRepository Addresses =>
-            _addresses ??= new AddressRepository(_context);
-
         public IVerifierRepository Verifiers =>
             _verifiers ??= new VerifierRepository(_context);
 

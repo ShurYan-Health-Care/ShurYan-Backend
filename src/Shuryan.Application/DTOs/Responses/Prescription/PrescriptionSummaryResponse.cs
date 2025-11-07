@@ -1,3 +1,4 @@
+using Shuryan.Core.Enums;
 using System;
 
 namespace Shuryan.Application.DTOs.Responses.Prescription
@@ -14,8 +15,8 @@ namespace Shuryan.Application.DTOs.Responses.Prescription
         public Guid PatientId { get; set; }
         public string PatientName { get; set; } = string.Empty;
         public int MedicationsCount { get; set; }
-        public bool IsDigitallyShared { get; set; }
-        public DateTime? SharedAt { get; set; }
+        public PrescriptionStatus Status { get; set; }
+        public DateTime? DispensedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool HasPharmacyOrder { get; set; }
     }

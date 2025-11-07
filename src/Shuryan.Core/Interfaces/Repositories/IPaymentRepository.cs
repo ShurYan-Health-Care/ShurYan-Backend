@@ -6,7 +6,7 @@ using Shuryan.Core.Enums.Payment;
 
 namespace Shuryan.Core.Interfaces.Repositories
 {
-    public interface IPaymentRepository : IRepository<Payment>
+    public interface IPaymentRepository : IGenericRepository<Payment>
     {
         Task<Payment?> GetPaymentWithTransactionsAsync(Guid paymentId);
         Task<IEnumerable<Payment>> GetPaymentsByUserIdAsync(Guid userId, int pageNumber = 1, int pageSize = 10);

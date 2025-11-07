@@ -47,11 +47,6 @@ namespace Shuryan.API.Controllers
         #endregion
 
         #region Services & Pricing
-
-        /// <summary>
-        /// جلب سعر ومدة الكشف العادي
-        /// GET /api/Doctors/me/services/regular-checkup
-        /// </summary>
         [HttpGet("services/regular-checkup")]
         [ProducesResponseType(typeof(ApiResponse<ServicePricingResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -100,10 +95,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// تحديث سعر ومدة الكشف العادي
-        /// PUT /api/Doctors/me/services/regular-checkup
-        /// </summary>
         [HttpPut("services/regular-checkup")]
         [ProducesResponseType(typeof(ApiResponse<ServicePricingResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -164,10 +155,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// جلب سعر ومدة إعادة الكشف
-        /// GET /api/Doctors/me/services/re-examination
-        /// </summary>
         [HttpGet("services/re-examination")]
         [ProducesResponseType(typeof(ApiResponse<ServicePricingResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -216,10 +203,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// تحديث سعر ومدة إعادة الكشف
-        /// PUT /api/Doctors/me/services/re-examination
-        /// </summary>
         [HttpPut("services/re-examination")]
         [ProducesResponseType(typeof(ApiResponse<ServicePricingResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -279,15 +262,9 @@ namespace Shuryan.API.Controllers
                 ));
             }
         }
-
         #endregion
 
         #region Appointment Settings - Weekly Schedule
-
-        /// <summary>
-        /// جلب الجدول الأسبوعي للدكتور
-        /// GET /api/Doctors/me/appointments/schedule
-        /// </summary>
         [HttpGet("appointments/schedule")]
         [ProducesResponseType(typeof(ApiResponse<WeeklyScheduleResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -327,10 +304,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// تحديث الجدول الأسبوعي للدكتور
-        /// PUT /api/Doctors/me/appointments/schedule
-        /// </summary>
         [HttpPut("appointments/schedule")]
         [ProducesResponseType(typeof(ApiResponse<WeeklyScheduleResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -394,11 +367,6 @@ namespace Shuryan.API.Controllers
         #endregion
 
         #region Appointment Settings - Exceptional Dates
-
-        /// <summary>
-        /// جلب المواعيد الاستثنائية
-        /// GET /api/Doctors/me/appointments/exceptions
-        /// </summary>
         [HttpGet("appointments/exceptions")]
         [ProducesResponseType(typeof(ApiResponse<ExceptionalDatesListResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -439,10 +407,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// إضافة موعد استثنائي
-        /// POST /api/Doctors/me/appointments/exceptions
-        /// </summary>
         [HttpPost("appointments/exceptions")]
         [ProducesResponseType(typeof(ApiResponse<ExceptionalDateResponse>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -516,10 +480,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// حذف موعد استثنائي
-        /// DELETE /api/Doctors/me/appointments/exceptions/{exceptionId}
-        /// </summary>
         [HttpDelete("appointments/exceptions/{exceptionId}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -587,7 +547,6 @@ namespace Shuryan.API.Controllers
                 ));
             }
         }
-
         #endregion
     }
 }

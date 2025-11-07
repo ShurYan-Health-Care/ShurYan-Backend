@@ -83,13 +83,13 @@ namespace Shuryan.API.Extensions
             services.AddScoped<IDoctorPartnerService, DoctorPartnerService>();
 
             // Laboratory Services
-            services.AddScoped<ILaboratoryService, LaboratoryService>();
+            //services.AddScoped<ILaboratoryService, LaboratoryService>();
             services.AddScoped<ILaboratoryDocumentService, LaboratoryDocumentService>();
             services.AddScoped<ILabPrescriptionService, LabPrescriptionService>();
             services.AddScoped<ILabOrderService, LabOrderService>();
 
             // Prescription Service
-            //services.AddScoped<IPrescriptionService, PrescriptionService>();
+            services.AddScoped<IPrescriptionService, PrescriptionService>();
 
             // Session Management Services
             services.AddScoped<ISessionService, SessionService>();
