@@ -1,0 +1,599 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Shuryan.Application.DTOs.Common.Address;
+using Shuryan.Application.DTOs.Common.Base;
+using Shuryan.Application.DTOs.Requests.Doctor;
+using Shuryan.Application.DTOs.Requests.Patient;
+using Shuryan.Application.DTOs.Responses.Patient;
+using Shuryan.Application.Interfaces;
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+
+namespace Shuryan.API.Controllers
+{
+    /// <summary>
+    /// Patient Profile Management Controller
+    /// Handles patient profile, address, medical record, and profile image operations
+    /// </summary>
+    [ApiController]
+    [Route("api/patients/me")]
+    [Authorize(Roles = "Patient")]
+    public class PatientProfileController : ControllerBase
+    {
+        private readonly IPatientService _patientService;
+        private readonly IFileUploadService _fileUploadService;
+        private readonly ILogger<PatientProfileController> _logger;
+
+        public PatientProfileController(
+            IPatientService patientService,
+            IFileUploadService fileUploadService,
+            ILogger<PatientProfileController> logger)
+        {
+            _patientService = patientService;
+            _fileUploadService = fileUploadService;
+            _logger = logger;
+        }
+
+        #region Profile Operations
+
+        [HttpGet("profile")]
+        [ProducesResponseType(typeof(ApiResponse<PatientResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<PatientResponse>>> GetMyProfile()
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to access patient profile");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "Invalid or missing authentication token",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get personal info request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var patient = await _patientService.GetPatientByIdAsync(currentPatientId);
+                if (patient == null)
+                {
+                    _logger.LogWarning("Patient profile not found for patient: {PatientId}", currentPatientId);
+                    return NotFound(ApiResponse<object>.Failure(
+                        "تعذر العثور على المعلومات الشخصية",
+                        statusCode: 404
+                    ));
+                }
+
+                _logger.LogInformation("Personal info retrieved successfully for patient: {PatientId}", currentPatientId);
+                return Ok(ApiResponse<PatientResponse>.Success(
+                    patient,
+                    "تم جلب المعلومات بنجاح"
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving personal info for patient: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب المعلومات",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// تحديث البيانات الشخصية للمريض (Partial Update)
+        /// بيحدث بس الحاجات اللي انت بعتها، مش كل الـ fields
+        /// </summary>
+        [HttpPut("profile")]
+        [ProducesResponseType(typeof(ApiResponse<PatientResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<PatientResponse>>> UpdateMyProfile([FromBody] UpdatePatientRequest request)
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to update personal info");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            if (request == null)
+            {
+                _logger.LogWarning("Null request received for patient: {PatientId}", currentPatientId);
+                return BadRequest(ApiResponse<object>.Failure(
+                    "البيانات المرسلة فارغة",
+                    statusCode: 400
+                ));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid update personal info request for patient: {PatientId}", currentPatientId);
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(ApiResponse<object>.Failure(
+                    "بيانات غير صحيحة",
+                    errors,
+                    400
+                ));
+            }
+
+            _logger.LogInformation("Update personal info request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var patient = await _patientService.UpdatePatientAsync(currentPatientId, request);
+                _logger.LogInformation("Personal info updated successfully: {PatientId}", currentPatientId);
+                
+                return Ok(ApiResponse<PatientResponse>.Success(
+                    patient,
+                    "تم تحديث المعلومات بنجاح"
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error for patient: {PatientId}", currentPatientId);
+                return BadRequest(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 400
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Operation error updating personal info: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث المعلومات",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error updating personal info: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ غير متوقع",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        #endregion
+
+        #region Address Operations
+
+        [HttpGet("address")]
+        [ProducesResponseType(typeof(ApiResponse<AddressResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<AddressResponse?>>> GetMyAddress()
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to access address");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get address request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var address = await _patientService.GetPatientAddressAsync(currentPatientId);
+                
+                if (address == null)
+                {
+                    _logger.LogInformation("No address found for patient: {PatientId}", currentPatientId);
+                    return Ok(ApiResponse<AddressResponse?>.Success(
+                        null,
+                        "لا يوجد عنوان مسجل"
+                    ));
+                }
+
+                _logger.LogInformation("Address retrieved successfully for patient: {PatientId}", currentPatientId);
+                return Ok(ApiResponse<AddressResponse?>.Success(
+                    address,
+                    "تم جلب العنوان بنجاح"
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Patient not found: {PatientId}", currentPatientId);
+                return NotFound(ApiResponse<object>.Failure(
+                    "المريض غير موجود",
+                    statusCode: 404
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving address for patient: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب العنوان",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// تحديث أو إنشاء عنوان المريض (Partial Update)
+        /// لو العنوان موجود هيتحدث، لو مش موجود هيتعمل create
+        /// </summary>
+        [HttpPut("address")]
+        [ProducesResponseType(typeof(ApiResponse<AddressResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<AddressResponse>>> UpdateMyAddress([FromBody] UpdateAddressRequest request)
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to update address");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            if (request == null)
+            {
+                _logger.LogWarning("Null address request for patient: {PatientId}", currentPatientId);
+                return BadRequest(ApiResponse<object>.Failure(
+                    "البيانات المرسلة فارغة",
+                    statusCode: 400
+                ));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid update address request for patient: {PatientId}", currentPatientId);
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(ApiResponse<object>.Failure(
+                    "بيانات غير صحيحة",
+                    errors,
+                    400
+                ));
+            }
+
+            _logger.LogInformation("Update/Create address request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var existingAddress = await _patientService.GetPatientAddressAsync(currentPatientId);
+                bool isCreating = existingAddress == null;
+
+                var address = await _patientService.UpdatePatientAddressAsync(currentPatientId, request);
+                
+                var message = isCreating ? "تم إنشاء العنوان بنجاح" : "تم تحديث العنوان بنجاح";
+                _logger.LogInformation("{Action} address for patient: {PatientId}", isCreating ? "Created" : "Updated", currentPatientId);
+                
+                return Ok(ApiResponse<AddressResponse>.Success(
+                    address,
+                    message
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Patient not found: {PatientId}", currentPatientId);
+                return NotFound(ApiResponse<object>.Failure(
+                    "المريض غير موجود",
+                    statusCode: 404
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating/creating address: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء حفظ العنوان",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        #endregion
+
+        #region Medical Record Operations
+
+        [HttpGet("medical-record")]
+        [ProducesResponseType(typeof(ApiResponse<MedicalRecordResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<MedicalRecordResponse?>>> GetMyMedicalRecord()
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to access medical record");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "Invalid or missing authentication token",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get medical record request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var medicalRecord = await _patientService.GetPatientMedicalRecordAsync(currentPatientId);
+                
+                _logger.LogInformation("Medical record retrieved for patient: {PatientId}", currentPatientId);
+                return Ok(ApiResponse<MedicalRecordResponse?>.Success(
+                    medicalRecord,
+                    medicalRecord != null ? "تم جلب الملف الطبي بنجاح" : "لا يوجد ملف طبي مسجل"
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving medical record for patient: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب الملف الطبي",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        [HttpPut("medical-record")]
+        [ProducesResponseType(typeof(ApiResponse<MedicalRecordResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<MedicalRecordResponse>>> UpdateMyMedicalRecord([FromBody] UpdateMedicalRecordRequest request)
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid update medical record request for patient: {PatientId}", currentPatientId);
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(ApiResponse<object>.Failure(
+                    "بيانات غير صحيحة",
+                    errors,
+                    400
+                ));
+            }
+
+            _logger.LogInformation("Update medical record request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var medicalRecord = await _patientService.UpdatePatientMedicalRecordAsync(currentPatientId, request);
+                _logger.LogInformation("Medical record updated successfully: {PatientId}", currentPatientId);
+                return Ok(ApiResponse<MedicalRecordResponse>.Success(
+                    medicalRecord,
+                    "تم تحديث الملف الطبي بنجاح"
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Patient not found: {PatientId}", currentPatientId);
+                return NotFound(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 404
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating medical record: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث الملف الطبي",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        #endregion
+
+        #region Profile Image Operations
+
+        /// <summary>
+        /// تحديث الصورة الشخصية للمريض
+        /// بيحذف الصورة القديمة من Cloudinary (لو موجودة) ويرفع الصورة الجديدة
+        /// </summary>
+        [HttpPut("profile-image")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<object>>> UpdateProfileImage([FromForm] UpdateProfileImageRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid update profile image request");
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(ApiResponse<object>.Failure(
+                    "بيانات غير صحيحة",
+                    errors,
+                    400
+                ));
+            }
+
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to update profile image");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Update profile image request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var patient = await _patientService.GetPatientByIdAsync(currentPatientId);
+                if (patient == null)
+                {
+                    _logger.LogWarning("Patient not found for profile image update: {PatientId}", currentPatientId);
+                    return NotFound(ApiResponse<object>.Failure(
+                        "المريض غير موجود",
+                        statusCode: 404
+                    ));
+                }
+
+                // Delete old image from Cloudinary if exists
+                if (!string.IsNullOrWhiteSpace(patient.ProfileImageUrl))
+                {
+                    try
+                    {
+                        await _fileUploadService.DeleteFileAsync(patient.ProfileImageUrl);
+                        _logger.LogInformation("Deleted old profile image from Cloudinary for patient: {PatientId}", currentPatientId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to delete old image from Cloudinary, continuing with upload");
+                    }
+                }
+
+                // Upload the new profile image
+                var uploadResult = await _fileUploadService.UploadProfileImageAsync(request.ProfileImage, currentPatientId.ToString());
+                _logger.LogInformation("Uploaded new profile image to Cloudinary for patient: {PatientId}", currentPatientId);
+                
+                // Update patient's profile image URL in database
+                var result = await _patientService.UpdateProfileImageAsync(currentPatientId, uploadResult.FileUrl);
+                
+                if (!result)
+                {
+                    _logger.LogWarning("Failed to update profile image URL in database: {PatientId}", currentPatientId);
+                    return StatusCode(500, ApiResponse<object>.Failure(
+                        "فشل تحديث الصورة في قاعدة البيانات",
+                        statusCode: 500
+                    ));
+                }
+                
+                _logger.LogInformation("Profile image updated successfully for patient: {PatientId}", currentPatientId);
+                return Ok(ApiResponse<object>.Success(
+                    new { 
+                        PatientId = currentPatientId, 
+                        ProfileImageUrl = uploadResult.FileUrl 
+                    },
+                    "تم تحديث الصورة الشخصية بنجاح"
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid argument for profile image update: {PatientId}", currentPatientId);
+                return BadRequest(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 400
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating profile image for patient: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث الصورة الشخصية",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// حذف الصورة الشخصية للمريض
+        /// بيحذف الصورة من Cloudinary وبيحذف الـ URL من قاعدة البيانات
+        /// </summary>
+        [HttpDelete("profile-image")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<object>>> RemoveProfileImage()
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to remove profile image");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Remove profile image request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var patient = await _patientService.GetPatientByIdAsync(currentPatientId);
+                if (patient == null)
+                {
+                    _logger.LogWarning("Patient not found for profile image removal: {PatientId}", currentPatientId);
+                    return NotFound(ApiResponse<object>.Failure(
+                        "المريض غير موجود",
+                        statusCode: 404
+                    ));
+                }
+
+                if (string.IsNullOrWhiteSpace(patient.ProfileImageUrl))
+                {
+                    _logger.LogInformation("Patient {PatientId} does not have a profile image to remove", currentPatientId);
+                    return Ok(ApiResponse<object>.Success(
+                        new { PatientId = currentPatientId },
+                        "لا توجد صورة شخصية لحذفها"
+                    ));
+                }
+
+                // Delete from Cloudinary
+                try
+                {
+                    await _fileUploadService.DeleteFileAsync(patient.ProfileImageUrl);
+                    _logger.LogInformation("Deleted profile image from Cloudinary for patient: {PatientId}", currentPatientId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to delete image from Cloudinary, continuing with database update");
+                }
+
+                // Remove from database
+                var result = await _patientService.RemoveProfileImageAsync(currentPatientId);
+                if (!result)
+                {
+                    _logger.LogWarning("Failed to remove profile image URL from database: {PatientId}", currentPatientId);
+                    return StatusCode(500, ApiResponse<object>.Failure(
+                        "فشل حذف الصورة من قاعدة البيانات",
+                        statusCode: 500
+                    ));
+                }
+
+                _logger.LogInformation("Profile image removed successfully for patient: {PatientId}", currentPatientId);
+                return Ok(ApiResponse<object>.Success(
+                    new { PatientId = currentPatientId },
+                    "تم حذف الصورة الشخصية بنجاح"
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing profile image for patient: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء حذف الصورة الشخصية",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private Guid GetCurrentPatientId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
+        }
+
+        #endregion
+    }
+}

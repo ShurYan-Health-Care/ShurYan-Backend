@@ -11,7 +11,6 @@ namespace Shuryan.Core.Interfaces.Repositories.MedicationRepositories
         Task<Medication?> GetByCodeAsync(string code);
 
         Task<IEnumerable<Medication>> SearchMedicationsAsync(string searchTerm);
-
       
         Task<IEnumerable<Medication>> GetByManufacturerAsync(string manufacturer);
 

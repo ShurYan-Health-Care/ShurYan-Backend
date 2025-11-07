@@ -439,234 +439,234 @@ namespace Shuryan.API.Controllers
         /// <summary>
         /// Verify prescription authenticity (for pharmacies).
         /// </summary>
-        [HttpGet("{id}/verify")]
-        [Authorize(Roles = "Pharmacy,Pharmacist")]
-        [ProducesResponseType(typeof(ApiResponse<PrescriptionVerificationResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<PrescriptionVerificationResponse>>> VerifyPrescription(
-            Guid id,
-            [FromQuery] string? verificationCode = null)
-        {
-            _logger.LogInformation("Attempting to verify prescription {PrescriptionId} by user {UserId}", id, GetCurrentUserId());
-            try
-            {
-                var result = await _prescriptionService.VerifyPrescriptionAsync(id, verificationCode);
-                _logger.LogInformation("Verification successful for prescription {PrescriptionId}", id);
-                return Ok(ApiResponse<PrescriptionVerificationResponse>.Success(result, "Verification successful"));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Prescription not found for verification: {PrescriptionId}", id);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error verifying prescription {PrescriptionId}", id);
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while verifying the prescription", new[] { ex.Message }, 500));
-            }
-        }
+        //[HttpGet("{id}/verify")]
+        //[Authorize(Roles = "Pharmacy,Pharmacist")]
+        //[ProducesResponseType(typeof(ApiResponse<PrescriptionVerificationResponse>), StatusCodes.Status200OK)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        //public async Task<ActionResult<ApiResponse<PrescriptionVerificationResponse>>> VerifyPrescription(
+        //    Guid id,
+        //    [FromQuery] string? verificationCode = null)
+        //{
+        //    _logger.LogInformation("Attempting to verify prescription {PrescriptionId} by user {UserId}", id, GetCurrentUserId());
+        //    try
+        //    {
+        //        var result = await _prescriptionService.VerifyPrescriptionAsync(id, verificationCode);
+        //        _logger.LogInformation("Verification successful for prescription {PrescriptionId}", id);
+        //        return Ok(ApiResponse<PrescriptionVerificationResponse>.Success(result, "Verification successful"));
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        _logger.LogWarning(ex, "Prescription not found for verification: {PrescriptionId}", id);
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error verifying prescription {PrescriptionId}", id);
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while verifying the prescription", new[] { ex.Message }, 500));
+        //    }
+        //}
 
         /// <summary>
         /// Mark prescription as dispensed by pharmacy.
         /// </summary>
-        [HttpPost("{id}/dispense")]
-        [Authorize(Roles = "Pharmacy,Pharmacist")]
-        [ProducesResponseType(typeof(ApiResponse<DispenseResult>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<DispenseResult>>> DispensePrescription(
-            Guid id,
-            [FromBody] DispensePrescriptionRequest request)
-        {
-            _logger.LogInformation("Attempting to dispense prescription {PrescriptionId} by pharmacy {PharmacyId}", id, request.PharmacyId);
+        //[HttpPost("{id}/dispense")]
+        //[Authorize(Roles = "Pharmacy,Pharmacist")]
+        //[ProducesResponseType(typeof(ApiResponse<DispenseResult>), StatusCodes.Status200OK)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        //public async Task<ActionResult<ApiResponse<DispenseResult>>> DispensePrescription(
+        //    Guid id,
+        //    [FromBody] DispensePrescriptionRequest request)
+        //{
+        //    _logger.LogInformation("Attempting to dispense prescription {PrescriptionId} by pharmacy {PharmacyId}", id, request.PharmacyId);
 
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                _logger.LogWarning("Invalid model state for DispensePrescription. Errors: {Errors}", string.Join(", ", errors));
-                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
-            }
+        //    if (!ModelState.IsValid)
+        //    {
+        //        var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+        //        _logger.LogWarning("Invalid model state for DispensePrescription. Errors: {Errors}", string.Join(", ", errors));
+        //        return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
+        //    }
 
-            // TODO: Security check: User must be part of the request.PharmacyId or Admin
+        //    // TODO: Security check: User must be part of the request.PharmacyId or Admin
 
-            try
-            {
-                var result = await _prescriptionService.DispensePrescriptionAsync(id, request);
-                _logger.LogInformation("Prescription {PrescriptionId} dispensed successfully", id);
-                return Ok(ApiResponse<DispenseResult>.Success(result, "Prescription dispensed successfully"));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Prescription not found for dispensing: {PrescriptionId}", id);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Invalid operation while dispensing prescription {PrescriptionId}", id);
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error dispensing prescription {PrescriptionId}", id);
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while dispensing the prescription", new[] { ex.Message }, 500));
-            }
-        }
+        //    try
+        //    {
+        //        var result = await _prescriptionService.DispensePrescriptionAsync(id, request);
+        //        _logger.LogInformation("Prescription {PrescriptionId} dispensed successfully", id);
+        //        return Ok(ApiResponse<DispenseResult>.Success(result, "Prescription dispensed successfully"));
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        _logger.LogWarning(ex, "Prescription not found for dispensing: {PrescriptionId}", id);
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+        //    }
+        //    catch (InvalidOperationException ex)
+        //    {
+        //        _logger.LogWarning(ex, "Invalid operation while dispensing prescription {PrescriptionId}", id);
+        //        return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error dispensing prescription {PrescriptionId}", id);
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while dispensing the prescription", new[] { ex.Message }, 500));
+        //    }
+        //}
 
         /// <summary>
         /// Mark prescription as digitally shared with pharmacy.
         /// </summary>
-        [HttpPost("{id}/share")]
-        [Authorize(Roles = "Doctor,Patient")]
-        [ProducesResponseType(typeof(ApiResponse<SharePrescriptionResult>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<SharePrescriptionResult>>> SharePrescription(
-            Guid id,
-            [FromBody] SharePrescriptionRequest request)
-        {
-            _logger.LogInformation("Attempting to share prescription {PrescriptionId} with pharmacy {PharmacyId}", id, request.PharmacyId);
+        //[HttpPost("{id}/share")]
+        //[Authorize(Roles = "Doctor,Patient")]
+        //[ProducesResponseType(typeof(ApiResponse<SharePrescriptionResult>), StatusCodes.Status200OK)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        //public async Task<ActionResult<ApiResponse<SharePrescriptionResult>>> SharePrescription(
+        //    Guid id,
+        //    [FromBody] SharePrescriptionRequest request)
+        //{
+        //    _logger.LogInformation("Attempting to share prescription {PrescriptionId} with pharmacy {PharmacyId}", id, request.PharmacyId);
 
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                _logger.LogWarning("Invalid model state for SharePrescription. Errors: {Errors}", string.Join(", ", errors));
-                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
-            }
+        //    if (!ModelState.IsValid)
+        //    {
+        //        var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+        //        _logger.LogWarning("Invalid model state for SharePrescription. Errors: {Errors}", string.Join(", ", errors));
+        //        return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
+        //    }
 
-            // TODO: Service layer must check that GetCurrentUserId() matches prescription's DoctorId or PatientId
+        //    // TODO: Service layer must check that GetCurrentUserId() matches prescription's DoctorId or PatientId
 
-            try
-            {
-                var result = await _prescriptionService.SharePrescriptionAsync(id, request);
-                _logger.LogInformation("Prescription {PrescriptionId} shared successfully with {PharmacyId}", id, request.PharmacyId);
-                return Ok(ApiResponse<SharePrescriptionResult>.Success(result, "Prescription shared successfully"));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Prescription or Pharmacy not found for sharing: {PrescriptionId}", id);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
-            }
-            catch (UnauthorizedAccessException)
-            {
-                _logger.LogWarning("Forbidden: User {UserId} attempted to share prescription {PrescriptionId}", GetCurrentUserId(), id);
-                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("You are not authorized to share this prescription", statusCode: 403));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error sharing prescription {PrescriptionId}", id);
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while sharing the prescription", new[] { ex.Message }, 500));
-            }
-        }
+        //    try
+        //    {
+        //        var result = await _prescriptionService.SharePrescriptionAsync(id, request);
+        //        _logger.LogInformation("Prescription {PrescriptionId} shared successfully with {PharmacyId}", id, request.PharmacyId);
+        //        return Ok(ApiResponse<SharePrescriptionResult>.Success(result, "Prescription shared successfully"));
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        _logger.LogWarning(ex, "Prescription or Pharmacy not found for sharing: {PrescriptionId}", id);
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+        //    }
+        //    catch (UnauthorizedAccessException)
+        //    {
+        //        _logger.LogWarning("Forbidden: User {UserId} attempted to share prescription {PrescriptionId}", GetCurrentUserId(), id);
+        //        return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("You are not authorized to share this prescription", statusCode: 403));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error sharing prescription {PrescriptionId}", id);
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while sharing the prescription", new[] { ex.Message }, 500));
+        //    }
+        //}
 
-        /// <summary>
-        /// Get prescription dispensing history.
-        /// </summary>
-        [HttpGet("{id}/dispensing-history")]
-        [Authorize(Roles = "Doctor,Pharmacy,Admin")]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<DispensingRecord>>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<IEnumerable<DispensingRecord>>>> GetDispensingHistory(Guid id)
-        {
-            _logger.LogInformation("Attempting to get dispensing history for prescription {PrescriptionId}", id);
+        ///// <summary>
+        ///// Get prescription dispensing history.
+        ///// </summary>
+        //[HttpGet("{id}/dispensing-history")]
+        //[Authorize(Roles = "Doctor,Pharmacy,Admin")]
+        //[ProducesResponseType(typeof(ApiResponse<IEnumerable<DispensingRecord>>), StatusCodes.Status200OK)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        //public async Task<ActionResult<ApiResponse<IEnumerable<DispensingRecord>>>> GetDispensingHistory(Guid id)
+        //{
+        //    _logger.LogInformation("Attempting to get dispensing history for prescription {PrescriptionId}", id);
 
-            // TODO: Service layer must check user authorization
+        //    // TODO: Service layer must check user authorization
 
-            try
-            {
-                var history = await _prescriptionService.GetDispensingHistoryAsync(id);
-                _logger.LogInformation("Retrieved {Count} history records for prescription {PrescriptionId}", history.Count(), id);
-                return Ok(ApiResponse<IEnumerable<DispensingRecord>>.Success(history, "Dispensing history retrieved successfully"));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Prescription not found for history: {PrescriptionId}", id);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting dispensing history for prescription {PrescriptionId}", id);
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving dispensing history", new[] { ex.Message }, 500));
-            }
-        }
+        //    try
+        //    {
+        //        var history = await _prescriptionService.GetDispensingHistoryAsync(id);
+        //        _logger.LogInformation("Retrieved {Count} history records for prescription {PrescriptionId}", history.Count(), id);
+        //        return Ok(ApiResponse<IEnumerable<DispensingRecord>>.Success(history, "Dispensing history retrieved successfully"));
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        _logger.LogWarning(ex, "Prescription not found for history: {PrescriptionId}", id);
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error getting dispensing history for prescription {PrescriptionId}", id);
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving dispensing history", new[] { ex.Message }, 500));
+        //    }
+        //}
 
         /// <summary>
         /// Accept prescription delivery to pharmacy.
         /// </summary>
-        [HttpPost("{id}/accept-delivery")]
-        [Authorize(Roles = "Pharmacy,Pharmacist")]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<object>>> AcceptPrescriptionDelivery(
-            Guid id,
-            [FromBody] AcceptDeliveryRequest request)
-        {
-            _logger.LogInformation("Attempting to accept delivery for prescription {PrescriptionId} by pharmacy {PharmacyId}", id, request.PharmacyId);
+        //[HttpPost("{id}/accept-delivery")]
+        //[Authorize(Roles = "Pharmacy,Pharmacist")]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        //public async Task<ActionResult<ApiResponse<object>>> AcceptPrescriptionDelivery(
+        //    Guid id,
+        //    [FromBody] AcceptDeliveryRequest request)
+        //{
+        //    _logger.LogInformation("Attempting to accept delivery for prescription {PrescriptionId} by pharmacy {PharmacyId}", id, request.PharmacyId);
 
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                _logger.LogWarning("Invalid model state for AcceptPrescriptionDelivery. Errors: {Errors}", string.Join(", ", errors));
-                return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
-            }
+        //    if (!ModelState.IsValid)
+        //    {
+        //        var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+        //        _logger.LogWarning("Invalid model state for AcceptPrescriptionDelivery. Errors: {Errors}", string.Join(", ", errors));
+        //        return BadRequest(ApiResponse<object>.Failure("Invalid request data", errors, 400));
+        //    }
 
-            // TODO: Security check: User must be part of the request.PharmacyId or Admin
+        //    // TODO: Security check: User must be part of the request.PharmacyId or Admin
 
-            try
-            {
-                await _prescriptionService.AcceptPrescriptionDeliveryAsync(id, request);
+        //    try
+        //    {
+        //        await _prescriptionService.AcceptPrescriptionDeliveryAsync(id, request);
 
-                _logger.LogInformation("Delivery accepted for prescription {PrescriptionId} by pharmacy {PharmacyId}", id, request.PharmacyId);
+        //        _logger.LogInformation("Delivery accepted for prescription {PrescriptionId} by pharmacy {PharmacyId}", id, request.PharmacyId);
 
-                // Get prescription details to return
-                var prescription = await _prescriptionService.GetPrescriptionByIdAsync(id);
+        //        // Get prescription details to return
+        //        var prescription = await _prescriptionService.GetPrescriptionByIdAsync(id);
 
-                var responseData = new
-                {
-                    Message = "Prescription accepted for delivery",
-                    Success = true,
-                    PrescriptionId = id,
-                    PharmacyId = request.PharmacyId,
-                    EstimatedDeliveryMinutes = request.EstimatedDeliveryMinutes,
-                    DeliveryAddress = request.DeliveryAddress,
-                    DeliveryFee = request.DeliveryFee,
-                    DeliveryNotes = request.DeliveryNotes,
-                    Prescription = prescription
-                };
+        //        var responseData = new
+        //        {
+        //            Message = "Prescription accepted for delivery",
+        //            Success = true,
+        //            PrescriptionId = id,
+        //            PharmacyId = request.PharmacyId,
+        //            EstimatedDeliveryMinutes = request.EstimatedDeliveryMinutes,
+        //            DeliveryAddress = request.DeliveryAddress,
+        //            DeliveryFee = request.DeliveryFee,
+        //            DeliveryNotes = request.DeliveryNotes,
+        //            Prescription = prescription
+        //        };
 
-                return Ok(ApiResponse<object>.Success(responseData, "Prescription accepted for delivery"));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Prescription or Pharmacy not found for delivery acceptance: {PrescriptionId}", id);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Invalid operation while accepting delivery for prescription {PrescriptionId}", id);
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error accepting delivery for prescription {PrescriptionId}", id);
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while accepting delivery", new[] { ex.Message }, 500));
-            }
-        }
+        //        return Ok(ApiResponse<object>.Success(responseData, "Prescription accepted for delivery"));
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        _logger.LogWarning(ex, "Prescription or Pharmacy not found for delivery acceptance: {PrescriptionId}", id);
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+        //    }
+        //    catch (InvalidOperationException ex)
+        //    {
+        //        _logger.LogWarning(ex, "Invalid operation while accepting delivery for prescription {PrescriptionId}", id);
+        //        return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error accepting delivery for prescription {PrescriptionId}", id);
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while accepting delivery", new[] { ex.Message }, 500));
+        //    }
+        //}
 
         #endregion
 
@@ -726,36 +726,36 @@ namespace Shuryan.API.Controllers
         /// <summary>
         /// Get prescription status history (audit trail).
         /// </summary>
-        [HttpGet("{id}/status-history")]
-        [Authorize(Roles = "Doctor,Admin")]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<PrescriptionStatusHistory>>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<IEnumerable<PrescriptionStatusHistory>>>> GetStatusHistory(Guid id)
-        {
-            _logger.LogInformation("Attempting to get status history for prescription {PrescriptionId}", id);
+        //[HttpGet("{id}/status-history")]
+        //[Authorize(Roles = "Doctor,Admin")]
+        //[ProducesResponseType(typeof(ApiResponse<IEnumerable<PrescriptionStatusHistory>>), StatusCodes.Status200OK)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        //[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        //public async Task<ActionResult<ApiResponse<IEnumerable<PrescriptionStatusHistory>>>> GetStatusHistory(Guid id)
+        //{
+        //    _logger.LogInformation("Attempting to get status history for prescription {PrescriptionId}", id);
 
-            // TODO: Service layer must check that GetCurrentUserId() matches prescription's DoctorId OR user is Admin
+        //    // TODO: Service layer must check that GetCurrentUserId() matches prescription's DoctorId OR user is Admin
 
-            try
-            {
-                var history = await _prescriptionService.GetStatusHistoryAsync(id);
-                _logger.LogInformation("Retrieved {Count} status history records for prescription {PrescriptionId}", history.Count(), id);
-                return Ok(ApiResponse<IEnumerable<PrescriptionStatusHistory>>.Success(history, "Status history retrieved successfully"));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Prescription not found for GetStatusHistory: {PrescriptionId}", id);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting status history for prescription {PrescriptionId}", id);
-                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving status history", new[] { ex.Message }, 500));
-            }
-        }
+        //    try
+        //    {
+        //        var history = await _prescriptionService.GetStatusHistoryAsync(id);
+        //        _logger.LogInformation("Retrieved {Count} status history records for prescription {PrescriptionId}", history.Count(), id);
+        //        return Ok(ApiResponse<IEnumerable<PrescriptionStatusHistory>>.Success(history, "Status history retrieved successfully"));
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        _logger.LogWarning(ex, "Prescription not found for GetStatusHistory: {PrescriptionId}", id);
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error getting status history for prescription {PrescriptionId}", id);
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving status history", new[] { ex.Message }, 500));
+        //    }
+        //}
 
         #endregion
     }

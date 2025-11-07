@@ -47,23 +47,13 @@ namespace Shuryan.Application.Services.AI
             {
                 _logger.LogInformation("💬 User {UserId} sending message", userId);
 
-                // 1. جيب أو اعمل محادثة
-                Conversation conversation;
-                if (request.ConversationId.HasValue)
-                {
-                    // محادثة موجودة
-                    conversation = await _unitOfWork.Conversations
-                        .GetConversationWithMessagesAsync(request.ConversationId.Value);
+                // 1. جيب أو اعمل محادثة واحدة للمستخدم
+                var conversation = await _unitOfWork.Conversations
+                    .GetUserActiveConversationAsync(userId);
 
-                    if (conversation == null || conversation.UserId != userId)
-                    {
-                        _logger.LogWarning("⚠️ Conversation not found or unauthorized");
-                        return null;
-                    }
-                }
-                else
+                if (conversation == null)
                 {
-                    // محادثة جديدة
+                    // اعمل محادثة جديدة
                     conversation = new Conversation
                     {
                         Id = Guid.NewGuid(),
@@ -74,9 +64,13 @@ namespace Shuryan.Application.Services.AI
                     };
 
                     await _unitOfWork.Conversations.AddAsync(conversation);
-                    
-                    // احفظ الـ Conversation الأول قبل ما تضيف Messages
                     await _unitOfWork.SaveChangesAsync();
+                }
+                else
+                {
+                    // لو المحادثة موجودة، جيب آخر 10 رسائل للـ context
+                    conversation = await _unitOfWork.Conversations
+                        .GetConversationWithMessagesAsync(conversation.Id);
                 }
 
                 // 2. احفظ رسالة المستخدم
@@ -189,148 +183,113 @@ namespace Shuryan.Application.Services.AI
             }
         }
 
-        public async Task<ConversationResponse?> GetConversationAsync(Guid conversationId, Guid userId)
+        public async Task<ChatHistoryResponse?> GetChatHistoryAsync(
+            Guid userId,
+            int pageNumber = 1,
+            int pageSize = 50)
         {
             try
             {
+                // جيب محادثة المستخدم
                 var conversation = await _unitOfWork.Conversations
-                    .GetConversationWithMessagesAsync(conversationId);
+                    .GetUserActiveConversationAsync(userId);
 
-                if (conversation == null || conversation.UserId != userId)
+                if (conversation == null)
                     return null;
 
-                return new ConversationResponse
+                // جيب عدد الرسائل الكلي
+                var totalMessages = await _unitOfWork.ConversationMessages
+                    .GetConversationMessageCountAsync(conversation.Id);
+
+                if (totalMessages == 0)
                 {
-                    Id = conversation.Id,
-                    Title = conversation.Title,
-                    LastMessage = conversation.LastMessage,
-                    LastMessageAt = conversation.LastMessageAt,
-                    IsActive = conversation.IsActive,
-                    CreatedAt = conversation.CreatedAt,
-                    Messages = conversation.Messages?
-                        .OrderBy(m => m.CreatedAt)
-                        .Select(m => new ConversationMessageDto
+                    return new ChatHistoryResponse
+                    {
+                        ConversationId = conversation.Id,
+                        Messages = new List<ChatMessageDto>(),
+                        Pagination = new PaginationInfo
                         {
-                            Id = m.Id,
-                            Role = m.Role.ToString().ToLower(),
-                            Content = m.Content,
-                            Suggestions = m.GetSuggestions()?.ToList(),
-                            Actions = !string.IsNullOrEmpty(m.ActionsJson)
-                                ? JsonSerializer.Deserialize<List<ChatActionDto>>(m.ActionsJson)
-                                : null,
-                            CreatedAt = m.CreatedAt
-                        })
-                        .ToList()
+                            CurrentPage = 1,
+                            PageSize = pageSize,
+                            TotalMessages = 0,
+                            TotalPages = 0
+                        },
+                        HasMore = false
+                    };
+                }
+
+                // احسب الـ Pagination
+                var totalPages = (int)Math.Ceiling(totalMessages / (double)pageSize);
+                var skip = (pageNumber - 1) * pageSize;
+
+                // جيب الرسائل مع Pagination (من الأحدث للأقدم)
+                var messages = await _unitOfWork.ConversationMessages
+                    .GetConversationMessagesPagedAsync(conversation.Id, skip, pageSize);
+
+                var messageDtos = messages
+                    .Select(m => new ChatMessageDto
+                    {
+                        MessageId = m.Id,
+                        Role = m.Role.ToString().ToLower(),
+                        Content = m.Content,
+                        Suggestions = m.GetSuggestions()?.ToList(),
+                        Actions = !string.IsNullOrEmpty(m.ActionsJson)
+                            ? JsonSerializer.Deserialize<List<ChatActionDto>>(m.ActionsJson)
+                            : null,
+                        Timestamp = m.CreatedAt
+                    })
+                    .ToList();
+
+                return new ChatHistoryResponse
+                {
+                    ConversationId = conversation.Id,
+                    Messages = messageDtos,
+                    Pagination = new PaginationInfo
+                    {
+                        CurrentPage = pageNumber,
+                        PageSize = pageSize,
+                        TotalMessages = totalMessages,
+                        TotalPages = totalPages
+                    },
+                    HasMore = pageNumber < totalPages
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in GetConversationAsync");
+                _logger.LogError(ex, "❌ Error in GetChatHistoryAsync");
                 return null;
             }
         }
 
-        public async Task<IEnumerable<ConversationListItemResponse>> GetUserConversationsAsync(
-            Guid userId, 
-            bool activeOnly = true)
+        public async Task<bool> ClearUserChatAsync(Guid userId)
         {
             try
             {
-                var conversations = await _unitOfWork.Conversations
-                    .GetUserConversationsAsync(userId, activeOnly);
+                var conversation = await _unitOfWork.Conversations
+                    .GetUserActiveConversationAsync(userId);
 
-                return conversations.Select(c => new ConversationListItemResponse
-                {
-                    Id = c.Id,
-                    Title = c.Title,
-                    LastMessage = c.LastMessage,
-                    LastMessageAt = c.LastMessageAt,
-                    IsActive = c.IsActive,
-                    CreatedAt = c.CreatedAt,
-                    MessageCount = c.Messages?.Count ?? 0
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error in GetUserConversationsAsync");
-                return Enumerable.Empty<ConversationListItemResponse>();
-            }
-        }
-
-        public async Task<bool> DeleteConversationAsync(Guid conversationId, Guid userId)
-        {
-            try
-            {
-                var conversation = await _unitOfWork.Conversations.GetByIdAsync(conversationId);
-                
-                if (conversation == null || conversation.UserId != userId)
+                if (conversation == null)
                     return false;
 
-                // امسح كل الرسائل الأول
-                await _unitOfWork.ConversationMessages.DeleteConversationMessagesAsync(conversationId);
-
-                // امسح المحادثة
-                _unitOfWork.Conversations.Delete(conversation);
-
-                await _unitOfWork.SaveChangesAsync();
-
-                _logger.LogInformation("🗑️ Conversation {ConversationId} deleted", conversationId);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error in DeleteConversationAsync");
-                return false;
-            }
-        }
-
-        public async Task<bool> ArchiveConversationAsync(Guid conversationId, Guid userId)
-        {
-            try
-            {
-                var conversation = await _unitOfWork.Conversations.GetByIdAsync(conversationId);
-                
-                if (conversation == null || conversation.UserId != userId)
-                    return false;
-
-                await _unitOfWork.Conversations.ArchiveConversationAsync(conversationId);
-                await _unitOfWork.SaveChangesAsync();
-
-                _logger.LogInformation("📦 Conversation {ConversationId} archived", conversationId);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error in ArchiveConversationAsync");
-                return false;
-            }
-        }
-
-        public async Task<bool> ClearConversationMessagesAsync(Guid conversationId, Guid userId)
-        {
-            try
-            {
-                var conversation = await _unitOfWork.Conversations.GetByIdAsync(conversationId);
-                
-                if (conversation == null || conversation.UserId != userId)
-                    return false;
-
-                await _unitOfWork.ConversationMessages.DeleteConversationMessagesAsync(conversationId);
+                // امسح كل الرسائل
+                await _unitOfWork.ConversationMessages
+                    .DeleteConversationMessagesAsync(conversation.Id);
 
                 // حدّث المحادثة
                 conversation.LastMessage = null;
                 conversation.LastMessageAt = null;
+                conversation.Title = null;
                 conversation.UpdatedAt = DateTime.UtcNow;
                 _unitOfWork.Conversations.Update(conversation);
 
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("🧹 Conversation {ConversationId} messages cleared", conversationId);
+                _logger.LogInformation("🧹 User {UserId} chat cleared", userId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in ClearConversationMessagesAsync");
+                _logger.LogError(ex, "❌ Error in ClearUserChatAsync");
                 return false;
             }
         }

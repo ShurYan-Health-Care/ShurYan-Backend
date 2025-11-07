@@ -66,13 +66,13 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     DeletedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    OAuthProvider = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    OAuthProviderId = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    ProfilePictureUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    IsOAuthAccount = table.Column<bool>(type: "bit", nullable: false),
                     EmailVerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastLoginAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastLoginIp = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    OAuthProvider = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    OAuthProviderId = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    ProfilePictureUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsOAuthAccount = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -110,11 +110,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserRole = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LastMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    LastMessage = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     LastMessageAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -151,7 +151,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     BrandName = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
                     GenericName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Strength = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    DosageForm = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    DosageForm = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -275,20 +275,19 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    OtpCode = table.Column<string>(type: "nchar(6)", fixedLength: true, maxLength: 6, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    OtpCode = table.Column<string>(type: "nvarchar(6)", maxLength: 6, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsUsed = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AttemptCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     RequestedFromIp = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    VerificationType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "EmailVerification")
+                    VerificationType = table.Column<int>(type: "int", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EmailVerifications", x => x.Id);
                     table.CheckConstraint("CK_EmailVerification_AttemptCount", "[AttemptCount] >= 0 AND [AttemptCount] <= 10");
-                    table.CheckConstraint("CK_EmailVerification_ExpiresAt", "[ExpiresAt] > [CreatedAt]");
                     table.ForeignKey(
                         name: "FK_EmailVerifications_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -332,7 +331,43 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProfileUser",
+                name: "Payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrderType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false, defaultValue: "EGP"),
+                    PaymentMethod = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Provider = table.Column<int>(type: "int", nullable: true),
+                    ProviderTransactionId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ProviderResponse = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    RefundedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    IpAddress = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FailedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FailureReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Payments_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProfileUsers",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -342,9 +377,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ProfileUser", x => x.Id);
+                    table.PrimaryKey("PK_ProfileUsers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ProfileUser_AspNetUsers_Id",
+                        name: "FK_ProfileUsers_AspNetUsers_Id",
                         column: x => x.Id,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -356,7 +391,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Token = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Token = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -403,13 +438,13 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ConversationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Role = table.Column<int>(type: "int", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     SuggestionsJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ActionsJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ContextJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TokenCount = table.Column<int>(type: "int", nullable: true),
                     ResponseTimeMs = table.Column<int>(type: "int", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -421,6 +456,34 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         name: "FK_ConversationMessages_Conversations_ConversationId",
                         column: x => x.ConversationId,
                         principalTable: "Conversations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PaymentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TransactionType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    ProviderTransactionId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ProviderResponse = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    ErrorMessage = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ErrorCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    ProcessedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Metadata = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentTransactions_Payments_PaymentId",
+                        column: x => x.PaymentId,
+                        principalTable: "Payments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -442,9 +505,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
-                        name: "FK_Patients_ProfileUser_Id",
+                        name: "FK_Patients_ProfileUsers_Id",
                         column: x => x.Id,
-                        principalTable: "ProfileUser",
+                        principalTable: "ProfileUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -466,9 +529,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     table.PrimaryKey("PK_Doctors", x => x.Id);
                     table.CheckConstraint("CK_Doctor_YearsOfExperience", "[YearsOfExperience] >= 0 AND [YearsOfExperience] <= 60");
                     table.ForeignKey(
-                        name: "FK_Doctors_ProfileUser_Id",
+                        name: "FK_Doctors_ProfileUsers_Id",
                         column: x => x.Id,
-                        principalTable: "ProfileUser",
+                        principalTable: "ProfileUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -486,15 +549,14 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     WhatsAppNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    Website = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Website = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     LaboratoryStatus = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
                     OffersHomeSampleCollection = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     HomeSampleCollectionFee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: true),
                     VerificationStatus = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     VerifierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    AddressId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    VerifierId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    AddressId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -505,7 +567,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         column: x => x.AddressId,
                         principalTable: "Addresses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Laboratories_AspNetUsers_Id",
                         column: x => x.Id,
@@ -518,11 +580,6 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         principalTable: "Verifiers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Laboratories_Verifiers_VerifierId1",
-                        column: x => x.VerifierId1,
-                        principalTable: "Verifiers",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -531,12 +588,12 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    WhatsAppNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Website = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    WhatsAppNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    Website = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     PharmacyStatus = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
-                    OffersDelivery = table.Column<bool>(type: "bit", nullable: false),
-                    VerificationStatus = table.Column<int>(type: "int", nullable: false),
+                    OffersDelivery = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    VerificationStatus = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     VerifierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     AddressId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -549,7 +606,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         column: x => x.AddressId,
                         principalTable: "Addresses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Pharmacies_AspNetUsers_Id",
                         column: x => x.Id,
@@ -569,9 +626,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Text = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -644,7 +701,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     ClinicStatus = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
-                    FacilityVideoUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    FacilityVideoUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AddressId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
@@ -670,7 +727,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "DoctorAvailability",
+                name: "DoctorAvailabilities",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -688,10 +745,10 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DoctorAvailability", x => x.Id);
+                    table.PrimaryKey("PK_DoctorAvailabilities", x => x.Id);
                     table.CheckConstraint("CK_DoctorAvailability_TimeValidation", "[StartTime] < [EndTime]");
                     table.ForeignKey(
-                        name: "FK_DoctorAvailability_Doctors_DoctorId",
+                        name: "FK_DoctorAvailabilities_Doctors_DoctorId",
                         column: x => x.DoctorId,
                         principalTable: "Doctors",
                         principalColumn: "Id",
@@ -704,9 +761,8 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 {
                     DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ConsultationTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ConsultationFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ConsultationFee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     SessionDurationMinutes = table.Column<int>(type: "int", nullable: false),
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -715,6 +771,8 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DoctorConsultations", x => new { x.DoctorId, x.ConsultationTypeId });
+                    table.CheckConstraint("CK_DoctorConsultation_Duration", "[SessionDurationMinutes] >= 15 AND [SessionDurationMinutes] <= 120");
+                    table.CheckConstraint("CK_DoctorConsultation_Fee", "[ConsultationFee] >= 0");
                     table.ForeignKey(
                         name: "FK_DoctorConsultations_ConsultationTypes_ConsultationTypeId",
                         column: x => x.ConsultationTypeId,
@@ -730,7 +788,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "DoctorDocument",
+                name: "DoctorDocuments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -746,9 +804,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DoctorDocument", x => x.Id);
+                    table.PrimaryKey("PK_DoctorDocuments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_DoctorDocument_Doctors_DoctorId",
+                        name: "FK_DoctorDocuments_Doctors_DoctorId",
                         column: x => x.DoctorId,
                         principalTable: "Doctors",
                         principalColumn: "Id",
@@ -756,7 +814,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "DoctorOverride",
+                name: "DoctorOverrides",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -771,10 +829,10 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DoctorOverride", x => x.Id);
+                    table.PrimaryKey("PK_DoctorOverrides", x => x.Id);
                     table.CheckConstraint("CK_DoctorOverride_TimeValidation", "[StartTime] < [EndTime]");
                     table.ForeignKey(
-                        name: "FK_DoctorOverride_Doctors_DoctorId",
+                        name: "FK_DoctorOverrides_Doctors_DoctorId",
                         column: x => x.DoctorId,
                         principalTable: "Doctors",
                         principalColumn: "Id",
@@ -791,7 +849,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     PharmacySuggestedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     SuggestedLaboratoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     LaboratorySuggestedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -898,11 +956,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DocumentUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Type = table.Column<int>(type: "int", maxLength: 60, nullable: false),
-                    Status = table.Column<int>(type: "int", maxLength: 50, nullable: false, defaultValue: 1),
-                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PharmacyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DocumentUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
+                    RejectionReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -924,7 +982,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DayOfWeek = table.Column<int>(type: "int", maxLength: 20, nullable: false),
+                    DayOfWeek = table.Column<int>(type: "int", nullable: false),
                     StartTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     EndTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     PharmacyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -939,6 +997,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PharmacyWorkingHours", x => x.Id);
+                    table.CheckConstraint("CK_PharmacyWorkingHours_Time", "[StartTime] < [EndTime]");
                     table.ForeignKey(
                         name: "FK_PharmacyWorkingHours_Pharmacies_PharmacyId",
                         column: x => x.PharmacyId,
@@ -1070,11 +1129,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     PrescriptionNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     DigitalSignature = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     GeneralInstructions = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    FollowUpInstructions = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    IsDigitallyShared = table.Column<bool>(type: "bit", nullable: false),
-                    SharedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    CancellationReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DispensedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CancellationReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -1147,6 +1204,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ClinicPhotos", x => x.Id);
+                    table.CheckConstraint("CK_ClinicPhoto_DisplayOrder", "[DisplayOrder] >= 0 AND [DisplayOrder] <= 5");
                     table.ForeignKey(
                         name: "FK_ClinicPhotos_Clinics_ClinicId",
                         column: x => x.ClinicId,
@@ -1207,7 +1265,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         column: x => x.LabPrescriptionId,
                         principalTable: "LabPrescriptions",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_LabOrders_Laboratories_LaboratoryId",
                         column: x => x.LaboratoryId,
@@ -1259,14 +1317,13 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PrescriptionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PharmacyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PharmacistId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DispensedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReceiptNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TotalCost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PharmacistNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PatientSignatureConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReceiptNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    TotalCost = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    PaymentMethod = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -1274,12 +1331,25 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DispensingRecords", x => x.Id);
+                    table.CheckConstraint("CK_DispensingRecord_TotalCost", "[TotalCost] >= 0");
+                    table.ForeignKey(
+                        name: "FK_DispensingRecords_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DispensingRecords_Pharmacies_PharmacyId",
+                        column: x => x.PharmacyId,
+                        principalTable: "Pharmacies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_DispensingRecords_Prescriptions_PrescriptionId",
                         column: x => x.PrescriptionId,
                         principalTable: "Prescriptions",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1288,15 +1358,19 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OrderNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    TotalCost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    DeliveryFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    DeliveryType = table.Column<int>(type: "int", maxLength: 50, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    TotalCost = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    DeliveryFee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    DeliveryType = table.Column<int>(type: "int", nullable: false),
                     EstimatedDeliveryTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeliveryPersonPhone = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DeliveryPersonName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DeliveryNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DeliveryPersonPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    DeliveryPersonName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    DeliveryNotes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ActualDeliveryTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PatientConfirmed = table.Column<bool>(type: "bit", nullable: true),
+                    PatientConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PatientNotes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    PatientDigitalSignature = table.Column<string>(type: "nvarchar(max)", maxLength: 5000, nullable: true),
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PharmacyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PrescriptionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -1308,6 +1382,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PharmacyOrders", x => x.Id);
+                    table.CheckConstraint("CK_PharmacyOrder_Costs", "[TotalCost] >= 0 AND [DeliveryFee] >= 0");
                     table.ForeignKey(
                         name: "FK_PharmacyOrders_Patients_PatientId",
                         column: x => x.PatientId,
@@ -1337,11 +1412,12 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Dosage = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Frequency = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     DurationDays = table.Column<int>(type: "int", nullable: false),
-                    SpecialInstructions = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    SpecialInstructions = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PrescribedMedications", x => new { x.MedicationPrescriptionId, x.MedicationId });
+                    table.CheckConstraint("CK_PrescribedMedication_Duration", "[DurationDays] > 0");
                     table.ForeignKey(
                         name: "FK_PrescribedMedications_Medications_MedicationId",
                         column: x => x.MedicationId,
@@ -1351,74 +1427,6 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     table.ForeignKey(
                         name: "FK_PrescribedMedications_Prescriptions_MedicationPrescriptionId",
                         column: x => x.MedicationPrescriptionId,
-                        principalTable: "Prescriptions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PrescriptionShares",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PrescriptionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ShareCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ShareUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SharedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PharmacyId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    AccessCount = table.Column<int>(type: "int", nullable: false),
-                    LastAccessedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    AllowMultipleViews = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    IsRevoked = table.Column<bool>(type: "bit", nullable: false),
-                    RevocationReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    MessageToPharmacy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PrescriptionShares", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PrescriptionShares_Prescriptions_PrescriptionId",
-                        column: x => x.PrescriptionId,
-                        principalTable: "Prescriptions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PrescriptionStatusHistories",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PrescriptionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PreviousStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    NewStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ChangedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ChangedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ChangedByName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ChangedByRole = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IpAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AdditionalMetadata = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PrescriptionStatusHistories", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PrescriptionStatusHistories_Prescriptions_PrescriptionId",
-                        column: x => x.PrescriptionId,
                         principalTable: "Prescriptions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1483,7 +1491,6 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     Unit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     AttachmentUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    LabTestId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1504,11 +1511,6 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         principalTable: "LabTests",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_LabResults_LabTests_LabTestId1",
-                        column: x => x.LabTestId1,
-                        principalTable: "LabTests",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -1519,11 +1521,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     DispensingRecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MedicationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     QuantityDispensed = table.Column<int>(type: "int", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    TotalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    BatchNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    TotalPrice = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -1531,6 +1531,8 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DispensedMedicationItems", x => x.Id);
+                    table.CheckConstraint("CK_DispensedMedicationItem_Prices", "[UnitPrice] >= 0 AND [TotalPrice] >= 0");
+                    table.CheckConstraint("CK_DispensedMedicationItem_Quantity", "[QuantityDispensed] > 0");
                     table.ForeignKey(
                         name: "FK_DispensedMedicationItems_DispensingRecords_DispensingRecordId",
                         column: x => x.DispensingRecordId,
@@ -1541,6 +1543,50 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         name: "FK_DispensedMedicationItems_Medications_MedicationId",
                         column: x => x.MedicationId,
                         principalTable: "Medications",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PharmacyOrderItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PharmacyOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RequestedMedicationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    AvailableQuantity = table.Column<int>(type: "int", nullable: true),
+                    UnitPrice = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: true),
+                    TotalPrice = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: true),
+                    AlternativeMedicationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AlternativeUnitPrice = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: true),
+                    AlternativeNotes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PharmacyOrderItems", x => x.Id);
+                    table.CheckConstraint("CK_PharmacyOrderItem_AlternativePrices", "[AlternativeUnitPrice] IS NULL OR [AlternativeUnitPrice] >= 0");
+                    table.CheckConstraint("CK_PharmacyOrderItem_Prices", "[UnitPrice] IS NULL OR [UnitPrice] >= 0");
+                    table.ForeignKey(
+                        name: "FK_PharmacyOrderItems_Medications_AlternativeMedicationId",
+                        column: x => x.AlternativeMedicationId,
+                        principalTable: "Medications",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PharmacyOrderItems_Medications_RequestedMedicationId",
+                        column: x => x.RequestedMedicationId,
+                        principalTable: "Medications",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PharmacyOrderItems_PharmacyOrders_PharmacyOrderId",
+                        column: x => x.PharmacyOrderId,
+                        principalTable: "PharmacyOrders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1603,14 +1649,39 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "Governorate");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Appointments_DoctorId",
+                name: "IX_Address_IsDeleted",
+                table: "Addresses",
+                column: "IsDeleted");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointment_Doctor_StartTime",
+                table: "Appointments",
+                columns: new[] { "DoctorId", "ScheduledStartTime" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointment_DoctorId",
                 table: "Appointments",
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Appointments_PatientId",
+                name: "IX_Appointment_Patient_Status",
+                table: "Appointments",
+                columns: new[] { "PatientId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointment_PatientId",
                 table: "Appointments",
                 column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointment_ScheduledStartTime",
+                table: "Appointments",
+                column: "ScheduledStartTime");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointment_Status",
+                table: "Appointments",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Appointments_PreviousAppointmentId",
@@ -1661,6 +1732,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 columns: new[] { "FirstName", "LastName" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_User_IsDeleted",
+                table: "AspNetUsers",
+                column: "IsDeleted");
+
+            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
@@ -1668,62 +1744,173 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ClinicPhoneNumbers_ClinicId",
+                name: "IX_ClinicPhoneNumber_Clinic_Number",
+                table: "ClinicPhoneNumbers",
+                columns: new[] { "ClinicId", "Number" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClinicPhoneNumber_Clinic_Type",
+                table: "ClinicPhoneNumbers",
+                columns: new[] { "ClinicId", "Type" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClinicPhoneNumber_ClinicId",
                 table: "ClinicPhoneNumbers",
                 column: "ClinicId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ClinicPhotos_ClinicId",
+                name: "IX_ClinicPhoto_Clinic_Order",
+                table: "ClinicPhotos",
+                columns: new[] { "ClinicId", "DisplayOrder" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClinicPhoto_ClinicId",
                 table: "ClinicPhotos",
                 column: "ClinicId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Clinics_AddressId",
+                name: "IX_Clinic_AddressId",
                 table: "Clinics",
                 column: "AddressId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Clinics_DoctorId",
+                name: "IX_Clinic_DoctorId",
                 table: "Clinics",
                 column: "DoctorId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ClinicServices_ClinicId",
+                name: "IX_Clinic_Status",
+                table: "Clinics",
+                column: "ClinicStatus");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClinicService_Clinic_Service",
+                table: "ClinicServices",
+                columns: new[] { "ClinicId", "ServiceType" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClinicService_ClinicId",
                 table: "ClinicServices",
                 column: "ClinicId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ConsultationRecords_AppointmentId",
+                name: "IX_ClinicService_ServiceType",
+                table: "ClinicServices",
+                column: "ServiceType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ConsultationRecord_AppointmentId",
                 table: "ConsultationRecords",
                 column: "AppointmentId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ConversationMessages_ConversationId",
+                name: "IX_ConversationMessage_Conversation_CreatedAt",
+                table: "ConversationMessages",
+                columns: new[] { "ConversationId", "CreatedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ConversationMessage_ConversationId",
                 table: "ConversationMessages",
                 column: "ConversationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DispensedMedicationItems_DispensingRecordId",
+                name: "IX_ConversationMessage_Role",
+                table: "ConversationMessages",
+                column: "Role");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conversation_IsActive",
+                table: "Conversations",
+                column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conversation_LastMessageAt",
+                table: "Conversations",
+                column: "LastMessageAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conversation_User_IsActive",
+                table: "Conversations",
+                columns: new[] { "UserId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conversation_UserId",
+                table: "Conversations",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DispensedMedicationItem_DispensingRecordId",
                 table: "DispensedMedicationItems",
                 column: "DispensingRecordId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DispensedMedicationItems_MedicationId",
+                name: "IX_DispensedMedicationItem_MedicationId",
                 table: "DispensedMedicationItems",
                 column: "MedicationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DispensingRecords_PrescriptionId",
+                name: "IX_DispensedMedicationItem_Record_Medication",
+                table: "DispensedMedicationItems",
+                columns: new[] { "DispensingRecordId", "MedicationId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DispensingRecord_Patient_Date",
+                table: "DispensingRecords",
+                columns: new[] { "PatientId", "DispensedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DispensingRecord_PatientId",
+                table: "DispensingRecords",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DispensingRecord_Pharmacy_Date",
+                table: "DispensingRecords",
+                columns: new[] { "PharmacyId", "DispensedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DispensingRecord_PharmacyId",
+                table: "DispensingRecords",
+                column: "PharmacyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DispensingRecord_PrescriptionId",
                 table: "DispensingRecords",
                 column: "PrescriptionId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_DispensingRecord_ReceiptNumber",
+                table: "DispensingRecords",
+                column: "ReceiptNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorAvailability_Doctor_Day",
+                table: "DoctorAvailabilities",
+                columns: new[] { "DoctorId", "DayOfWeek" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DoctorAvailability_DoctorId",
-                table: "DoctorAvailability",
+                table: "DoctorAvailabilities",
                 column: "DoctorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorAvailability_IsDeleted",
+                table: "DoctorAvailabilities",
+                column: "IsDeleted");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorAvailability_Unique",
+                table: "DoctorAvailabilities",
+                columns: new[] { "DoctorId", "DayOfWeek", "StartTime", "EndTime" },
+                unique: true,
+                filter: "[IsDeleted] = 0");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DoctorConsultations_ConsultationTypeId",
@@ -1731,44 +1918,69 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "ConsultationTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_DoctorDocument_Doctor_Type",
+                table: "DoctorDocuments",
+                columns: new[] { "DoctorId", "Type" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DoctorDocument_DoctorId",
-                table: "DoctorDocument",
+                table: "DoctorDocuments",
                 column: "DoctorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorDocument_Status",
+                table: "DoctorDocuments",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorOverride_Doctor_Type",
+                table: "DoctorOverrides",
+                columns: new[] { "DoctorId", "Type" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_DoctorOverride_DoctorId",
-                table: "DoctorOverride",
+                table: "DoctorOverrides",
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DoctorPartnerSuggestions_DoctorId",
+                name: "IX_DoctorOverride_StartTime",
+                table: "DoctorOverrides",
+                column: "StartTime");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorPartnerSuggestion_DoctorId",
                 table: "DoctorPartnerSuggestions",
                 column: "DoctorId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_DoctorPartnerSuggestions_LaboratoryId",
+                name: "IX_DoctorPartnerSuggestion_LaboratoryId",
                 table: "DoctorPartnerSuggestions",
                 column: "SuggestedLaboratoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DoctorPartnerSuggestions_PharmacyId",
+                name: "IX_DoctorPartnerSuggestion_PharmacyId",
                 table: "DoctorPartnerSuggestions",
                 column: "SuggestedPharmacyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DoctorReviews_AppointmentId",
+                name: "IX_DoctorReview_AppointmentId",
                 table: "DoctorReviews",
                 column: "AppointmentId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_DoctorReviews_DoctorId",
+                name: "IX_DoctorReview_DoctorId",
                 table: "DoctorReviews",
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DoctorReviews_PatientId",
+                name: "IX_DoctorReview_IsAnonymous",
+                table: "DoctorReviews",
+                column: "IsAnonymous");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DoctorReview_PatientId",
                 table: "DoctorReviews",
                 column: "PatientId");
 
@@ -1778,14 +1990,14 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "MedicalSpecialty");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Doctor_Verification_Specialty",
+                table: "Doctors",
+                columns: new[] { "VerificationStatus", "MedicalSpecialty" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Doctor_VerificationStatus",
                 table: "Doctors",
                 column: "VerificationStatus");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Doctor_YearsOfExperience",
-                table: "Doctors",
-                column: "YearsOfExperience");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Doctors_VerifierId",
@@ -1793,16 +2005,29 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "VerifierId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmailVerifications_UserId",
+                name: "IX_EmailVerification_Email",
                 table: "EmailVerifications",
-                column: "UserId");
+                column: "Email");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Laboratories_AddressId",
-                table: "Laboratories",
-                column: "AddressId",
-                unique: true,
-                filter: "[AddressId] IS NOT NULL");
+                name: "IX_EmailVerification_Email_OtpCode",
+                table: "EmailVerifications",
+                columns: new[] { "Email", "OtpCode" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmailVerification_ExpiresAt",
+                table: "EmailVerifications",
+                column: "ExpiresAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmailVerification_IsUsed_ExpiresAt",
+                table: "EmailVerifications",
+                columns: new[] { "IsUsed", "ExpiresAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmailVerification_UserId",
+                table: "EmailVerifications",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Laboratories_VerifierId",
@@ -1810,9 +2035,11 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "VerifierId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Laboratories_VerifierId1",
+                name: "IX_Laboratory_AddressId",
                 table: "Laboratories",
-                column: "VerifierId1");
+                column: "AddressId",
+                unique: true,
+                filter: "[AddressId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Laboratory_Name",
@@ -1820,91 +2047,166 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "Name");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LaboratoryDocuments_LaboratoryId",
+                name: "IX_Laboratory_Status_HomeCollection",
+                table: "Laboratories",
+                columns: new[] { "LaboratoryStatus", "OffersHomeSampleCollection" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Laboratory_VerificationStatus",
+                table: "Laboratories",
+                column: "VerificationStatus");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LaboratoryDocument_Laboratory_Type",
+                table: "LaboratoryDocuments",
+                columns: new[] { "LaboratoryId", "Type" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LaboratoryDocument_LaboratoryId",
                 table: "LaboratoryDocuments",
                 column: "LaboratoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LaboratoryReviews_LaboratoryId",
+                name: "IX_LaboratoryDocument_Status",
+                table: "LaboratoryDocuments",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LaboratoryReview_LaboratoryId",
                 table: "LaboratoryReviews",
                 column: "LaboratoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LaboratoryReviews_LabOrderId",
+                name: "IX_LaboratoryReview_LabOrderId",
                 table: "LaboratoryReviews",
                 column: "LabOrderId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_LaboratoryReviews_PatientId",
+                name: "IX_LaboratoryReview_PatientId",
                 table: "LaboratoryReviews",
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabOrders_LaboratoryId",
+                name: "IX_LabOrder_Laboratory_Status",
+                table: "LabOrders",
+                columns: new[] { "LaboratoryId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabOrder_LaboratoryId",
                 table: "LabOrders",
                 column: "LaboratoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabOrders_LabPrescriptionId",
+                name: "IX_LabOrder_LabPrescriptionId",
                 table: "LabOrders",
                 column: "LabPrescriptionId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabOrders_PatientId",
+                name: "IX_LabOrder_Patient_Status",
+                table: "LabOrders",
+                columns: new[] { "PatientId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabOrder_PatientId",
                 table: "LabOrders",
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabPrescriptionItems_LabPrescriptionId",
+                name: "IX_LabOrder_Status",
+                table: "LabOrders",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabPrescriptionItem_LabPrescriptionId",
                 table: "LabPrescriptionItems",
                 column: "LabPrescriptionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabPrescriptionItems_LabTestId",
+                name: "IX_LabPrescriptionItem_LabTestId",
                 table: "LabPrescriptionItems",
                 column: "LabTestId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabPrescriptions_AppointmentId",
-                table: "LabPrescriptions",
-                column: "AppointmentId");
+                name: "IX_LabPrescriptionItem_Prescription_Test",
+                table: "LabPrescriptionItems",
+                columns: new[] { "LabPrescriptionId", "LabTestId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabPrescriptions_DoctorId",
+                name: "IX_LabPrescription_AppointmentId",
+                table: "LabPrescriptions",
+                column: "AppointmentId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabPrescription_DoctorId",
                 table: "LabPrescriptions",
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabPrescriptions_PatientId",
+                name: "IX_LabPrescription_PatientId",
                 table: "LabPrescriptions",
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabResults_LabOrderId",
+                name: "IX_LabResult_LabOrderId",
                 table: "LabResults",
                 column: "LabOrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabResults_LabTestId",
+                name: "IX_LabResult_LabTestId",
                 table: "LabResults",
                 column: "LabTestId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabResults_LabTestId1",
+                name: "IX_LabResult_Order_Test",
                 table: "LabResults",
-                column: "LabTestId1");
+                columns: new[] { "LabOrderId", "LabTestId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabServices_LaboratoryId",
+                name: "IX_LabService_Laboratory_Available",
+                table: "LabServices",
+                columns: new[] { "LaboratoryId", "IsAvailable" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabService_Laboratory_Test",
+                table: "LabServices",
+                columns: new[] { "LaboratoryId", "LabTestId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabService_LaboratoryId",
                 table: "LabServices",
                 column: "LaboratoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LabServices_LabTestId",
+                name: "IX_LabService_LabTestId",
                 table: "LabServices",
                 column: "LabTestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabTest_Category",
+                table: "LabTests",
+                column: "Category");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabTest_Code",
+                table: "LabTests",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabTest_Name",
+                table: "LabTests",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LabWorkingHours_Laboratory_Day",
+                table: "LabWorkingHours",
+                columns: new[] { "LaboratoryId", "Day" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_LabWorkingHours_LaboratoryId",
@@ -1912,28 +2214,112 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "LaboratoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MedicalHistoryItems_PatientId",
+                name: "IX_LabWorkingHours_Unique",
+                table: "LabWorkingHours",
+                columns: new[] { "LaboratoryId", "Day", "StartTime", "EndTime" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MedicalHistoryItem_Patient_Type",
+                table: "MedicalHistoryItems",
+                columns: new[] { "PatientId", "Type" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MedicalHistoryItem_PatientId",
                 table: "MedicalHistoryItems",
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Notifications_UserId",
+                name: "IX_MedicalHistoryItem_Type",
+                table: "MedicalHistoryItems",
+                column: "Type");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Medication_BrandName",
+                table: "Medications",
+                column: "BrandName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Medication_DosageForm",
+                table: "Medications",
+                column: "DosageForm");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Medication_GenericName",
+                table: "Medications",
+                column: "GenericName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_IsRead",
+                table: "Notifications",
+                column: "IsRead");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_RelatedEntity",
+                table: "Notifications",
+                columns: new[] { "RelatedEntityType", "RelatedEntityId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_Type",
+                table: "Notifications",
+                column: "Type");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_User_IsRead",
+                table: "Notifications",
+                columns: new[] { "UserId", "IsRead" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId",
                 table: "Notifications",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Patients_AddressId",
+                name: "IX_Patient_AddressId",
                 table: "Patients",
                 column: "AddressId",
                 unique: true,
                 filter: "[AddressId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Pharmacies_AddressId",
-                table: "Pharmacies",
-                column: "AddressId",
-                unique: true,
-                filter: "[AddressId] IS NOT NULL");
+                name: "IX_Payments_CreatedAt",
+                table: "Payments",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_OrderType_OrderId",
+                table: "Payments",
+                columns: new[] { "OrderType", "OrderId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_ProviderTransactionId",
+                table: "Payments",
+                column: "ProviderTransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_Status",
+                table: "Payments",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_UserId",
+                table: "Payments",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentTransactions_CreatedAt",
+                table: "PaymentTransactions",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentTransactions_PaymentId",
+                table: "PaymentTransactions",
+                column: "PaymentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentTransactions_ProviderTransactionId",
+                table: "PaymentTransactions",
+                column: "ProviderTransactionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Pharmacies_VerifierId",
@@ -1941,19 +2327,98 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "VerifierId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PharmacyDocuments_PharmacyId",
+                name: "IX_Pharmacy_AddressId",
+                table: "Pharmacies",
+                column: "AddressId",
+                unique: true,
+                filter: "[AddressId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pharmacy_Name",
+                table: "Pharmacies",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pharmacy_Status_Delivery",
+                table: "Pharmacies",
+                columns: new[] { "PharmacyStatus", "OffersDelivery" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pharmacy_VerificationStatus",
+                table: "Pharmacies",
+                column: "VerificationStatus");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyDocument_Pharmacy_Type",
+                table: "PharmacyDocuments",
+                columns: new[] { "PharmacyId", "Type" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyDocument_PharmacyId",
                 table: "PharmacyDocuments",
                 column: "PharmacyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PharmacyOrders_PatientId",
+                name: "IX_PharmacyDocument_Status",
+                table: "PharmacyDocuments",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrderItem_Order_Medication",
+                table: "PharmacyOrderItems",
+                columns: new[] { "PharmacyOrderId", "RequestedMedicationId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrderItem_OrderId",
+                table: "PharmacyOrderItems",
+                column: "PharmacyOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrderItem_RequestedMedicationId",
+                table: "PharmacyOrderItems",
+                column: "RequestedMedicationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrderItem_Status",
+                table: "PharmacyOrderItems",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrderItems_AlternativeMedicationId",
+                table: "PharmacyOrderItems",
+                column: "AlternativeMedicationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrder_OrderNumber",
+                table: "PharmacyOrders",
+                column: "OrderNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrder_Patient_Status",
+                table: "PharmacyOrders",
+                columns: new[] { "PatientId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrder_PatientId",
                 table: "PharmacyOrders",
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PharmacyOrders_PharmacyId",
+                name: "IX_PharmacyOrder_Pharmacy_Status",
+                table: "PharmacyOrders",
+                columns: new[] { "PharmacyId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrder_PharmacyId",
                 table: "PharmacyOrders",
                 column: "PharmacyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyOrder_Status",
+                table: "PharmacyOrders",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PharmacyOrders_PrescriptionId",
@@ -1963,20 +2428,25 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 filter: "[PrescriptionId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PharmacyReviews_PatientId",
+                name: "IX_PharmacyReview_PatientId",
                 table: "PharmacyReviews",
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PharmacyReviews_PharmacyId",
+                name: "IX_PharmacyReview_PharmacyId",
                 table: "PharmacyReviews",
                 column: "PharmacyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PharmacyReviews_PharmacyOrderId",
+                name: "IX_PharmacyReview_PharmacyOrderId",
                 table: "PharmacyReviews",
                 column: "PharmacyOrderId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PharmacyWorkingHours_Pharmacy_Day",
+                table: "PharmacyWorkingHours",
+                columns: new[] { "PharmacyId", "DayOfWeek" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_PharmacyWorkingHours_PharmacyId",
@@ -1984,9 +2454,46 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 column: "PharmacyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PrescribedMedications_MedicationId",
+                name: "IX_PharmacyWorkingHours_Unique",
+                table: "PharmacyWorkingHours",
+                columns: new[] { "PharmacyId", "DayOfWeek", "StartTime", "EndTime" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PrescribedMedication_MedicationId",
                 table: "PrescribedMedications",
                 column: "MedicationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PrescribedMedication_PrescriptionId",
+                table: "PrescribedMedications",
+                column: "MedicationPrescriptionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prescription_DoctorId",
+                table: "Prescriptions",
+                column: "DoctorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prescription_Number",
+                table: "Prescriptions",
+                column: "PrescriptionNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prescription_Patient_Status",
+                table: "Prescriptions",
+                columns: new[] { "PatientId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prescription_PatientId",
+                table: "Prescriptions",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Prescription_Status",
+                table: "Prescriptions",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Prescriptions_AppointmentId",
@@ -1996,29 +2503,19 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 filter: "[AppointmentId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Prescriptions_DoctorId",
-                table: "Prescriptions",
-                column: "DoctorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Prescriptions_PatientId",
-                table: "Prescriptions",
-                column: "PatientId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PrescriptionShares_PrescriptionId",
-                table: "PrescriptionShares",
-                column: "PrescriptionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PrescriptionStatusHistories_PrescriptionId",
-                table: "PrescriptionStatusHistories",
-                column: "PrescriptionId");
+                name: "IX_ProfileUser_Gender",
+                table: "ProfileUsers",
+                column: "Gender");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Verifier_CreatedByAdminId",
+                table: "Verifiers",
+                column: "CreatedByAdminId");
         }
 
         /// <inheritdoc />
@@ -2058,16 +2555,16 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 name: "DispensedMedicationItems");
 
             migrationBuilder.DropTable(
-                name: "DoctorAvailability");
+                name: "DoctorAvailabilities");
 
             migrationBuilder.DropTable(
                 name: "DoctorConsultations");
 
             migrationBuilder.DropTable(
-                name: "DoctorDocument");
+                name: "DoctorDocuments");
 
             migrationBuilder.DropTable(
-                name: "DoctorOverride");
+                name: "DoctorOverrides");
 
             migrationBuilder.DropTable(
                 name: "DoctorPartnerSuggestions");
@@ -2103,7 +2600,13 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 name: "Notifications");
 
             migrationBuilder.DropTable(
+                name: "PaymentTransactions");
+
+            migrationBuilder.DropTable(
                 name: "PharmacyDocuments");
+
+            migrationBuilder.DropTable(
+                name: "PharmacyOrderItems");
 
             migrationBuilder.DropTable(
                 name: "PharmacyReviews");
@@ -2113,12 +2616,6 @@ namespace Shuryan.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "PrescribedMedications");
-
-            migrationBuilder.DropTable(
-                name: "PrescriptionShares");
-
-            migrationBuilder.DropTable(
-                name: "PrescriptionStatusHistories");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");
@@ -2143,6 +2640,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "LabTests");
+
+            migrationBuilder.DropTable(
+                name: "Payments");
 
             migrationBuilder.DropTable(
                 name: "PharmacyOrders");
@@ -2178,7 +2678,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                 name: "Addresses");
 
             migrationBuilder.DropTable(
-                name: "ProfileUser");
+                name: "ProfileUsers");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
