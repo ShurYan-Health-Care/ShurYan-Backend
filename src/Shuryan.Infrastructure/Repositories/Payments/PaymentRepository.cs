@@ -10,7 +10,7 @@ using Shuryan.Infrastructure.Data;
 
 namespace Shuryan.Infrastructure.Repositories.Payments
 {
-    public class PaymentRepository : Repository<Payment>, IPaymentRepository
+    public class PaymentRepository : GenericRepository<Payment>, IPaymentRepository
     {
         public PaymentRepository(ShuryanDbContext context) : base(context)
         {

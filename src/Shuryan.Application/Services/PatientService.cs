@@ -1123,8 +1123,8 @@ namespace Shuryan.Application.Services
                         CreatedAt = DateTime.UtcNow
                     };
 
-                    // Add address using repository
-                    await _unitOfWork.Addresses.AddAsync(newAddress);
+                    // Add address using generic repository
+                    await _unitOfWork.Repository<Address>().AddAsync(newAddress);
                     
                     // Link to patient
                     patient.AddressId = newAddress.Id;
@@ -1141,8 +1141,8 @@ namespace Shuryan.Application.Services
                     // Update existing address (Partial Update)
                     _logger.LogInformation("Updating existing address for patient {PatientId}", patientId);
                     
-                    // Load the address using repository
-                    var address = await _unitOfWork.Addresses.GetByIdAsync(patient.AddressId.Value);
+                    // Load the address using generic repository
+                    var address = await _unitOfWork.Repository<Address>().GetByIdAsync(patient.AddressId.Value);
                     if (address == null)
                     {
                         throw new InvalidOperationException($"Address with ID {patient.AddressId.Value} not found");
@@ -1181,7 +1181,7 @@ namespace Shuryan.Application.Services
                     address.UpdatedAt = DateTime.UtcNow;
                     patient.UpdatedAt = DateTime.UtcNow;
 
-                    _unitOfWork.Addresses.Update(address);
+                    _unitOfWork.Repository<Address>().Update(address);
                     _patientRepository.Update(patient);
                     await _unitOfWork.SaveChangesAsync();
 

@@ -5,33 +5,23 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Interfaces.Repositories.ChatRepositories
 {
-    /// <summary>
-    /// Repository للتعامل مع رسائل المحادثات
-    /// </summary>
     public interface IConversationMessageRepository : IGenericRepository<ConversationMessage>
     {
         /// <summary>
-        /// جيب كل الرسائل الخاصة بمحادثة معينة
+        /// جيب رسائل محادثة مع Pagination (من الأحدث للأقدم)
         /// </summary>
-        Task<IEnumerable<ConversationMessage>> GetConversationMessagesAsync(Guid conversationId);
+        Task<IEnumerable<ConversationMessage>> GetConversationMessagesPagedAsync(
+            Guid conversationId, 
+            int skip, 
+            int take);
 
         /// <summary>
-        /// جيب آخر N رسالة من محادثة (للـ Context)
+        /// جيب عدد رسائل محادثة
         /// </summary>
-        Task<IEnumerable<ConversationMessage>> GetRecentMessagesAsync(Guid conversationId, int count = 10);
+        Task<int> GetConversationMessageCountAsync(Guid conversationId);
 
         /// <summary>
-        /// احسب إجمالي الـ Tokens المستخدمة في محادثة
-        /// </summary>
-        Task<int> GetTotalTokensUsedAsync(Guid conversationId);
-
-        /// <summary>
-        /// احسب متوسط وقت الاستجابة في محادثة
-        /// </summary>
-        Task<double> GetAverageResponseTimeAsync(Guid conversationId);
-
-        /// <summary>
-        /// امسح كل رسائل محادثة معينة
+        /// امسح كل رسائل محادثة
         /// </summary>
         Task DeleteConversationMessagesAsync(Guid conversationId);
     }

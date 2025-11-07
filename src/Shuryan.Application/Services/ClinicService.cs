@@ -324,7 +324,7 @@ namespace Shuryan.Application.Services
                 }
 
                 // Get address separately
-                var address = await _unitOfWork.Addresses.GetByIdAsync(clinic.AddressId);
+                var address = await _unitOfWork.Repository<Address>().GetByIdAsync(clinic.AddressId);
                 if (address == null)
                 {
                     _logger.LogInformation("No address found for clinic {ClinicId}, returning empty response", clinic.Id);
@@ -368,7 +368,7 @@ namespace Shuryan.Application.Services
                     throw new InvalidOperationException($"No clinic found for doctor {doctorId}. Please create clinic info first.");
 
                 // Get address separately
-                var address = await _unitOfWork.Addresses.GetByIdAsync(clinic.AddressId);
+                var address = await _unitOfWork.Repository<Address>().GetByIdAsync(clinic.AddressId);
                 if (address == null)
                 {
                     // Create new address

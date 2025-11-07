@@ -22,9 +22,7 @@ namespace Shuryan.API.Controllers
         private readonly IDoctorPartnerService _partnerService;
         private readonly ILogger<DoctorPartnersController> _logger;
 
-        public DoctorPartnersController(
-            IDoctorPartnerService partnerService,
-            ILogger<DoctorPartnersController> logger)
+        public DoctorPartnersController(IDoctorPartnerService partnerService, ILogger<DoctorPartnersController> logger)
         {
             _partnerService = partnerService;
             _logger = logger;
@@ -43,11 +41,6 @@ namespace Shuryan.API.Controllers
         #endregion
 
         #region Current Suggested Partner
-
-        /// <summary>
-        /// جلب الشركاء المقترحين حالياً (صيدلية و/أو معمل)
-        /// GET /api/Doctors/me/partner/suggested
-        /// </summary>
         [HttpGet("suggested")]
         [ProducesResponseType(typeof(ApiResponse<SuggestedPartnerResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -95,11 +88,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// اقتراح شريك جديد (صيدلية و/أو معمل)
-        /// يمكن إضافة صيدلية واحدة ومعمل واحد في نفس الوقت
-        /// POST /api/Doctors/me/partner/suggest
-        /// </summary>
         [HttpPost("suggest")]
         [ProducesResponseType(typeof(ApiResponse<SuggestedPartnerResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -179,10 +167,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// إزالة الشريك المقترح
-        /// DELETE /api/Doctors/me/partner/suggested
-        /// </summary>
         [HttpDelete("suggested")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -239,15 +223,9 @@ namespace Shuryan.API.Controllers
                 ));
             }
         }
-
         #endregion
 
         #region Available Partners
-
-        /// <summary>
-        /// جلب قائمة الصيدليات المتاحة مع Pagination
-        /// GET /api/Doctors/me/partner/pharmacies?pageNumber=1&pageSize=5
-        /// </summary>
         [HttpGet("pharmacies")]
         [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<PartnerResponse>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -298,10 +276,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// جلب قائمة المعامل المتاحة مع Pagination
-        /// GET /api/Doctors/me/partner/laboratories?pageNumber=1&pageSize=5
-        /// </summary>
         [HttpGet("laboratories")]
         [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<PartnerResponse>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]

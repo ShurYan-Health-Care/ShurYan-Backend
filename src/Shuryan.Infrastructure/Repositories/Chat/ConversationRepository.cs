@@ -18,56 +18,22 @@ namespace Shuryan.Infrastructure.Repositories.Chat
         {
         }
 
-        public async Task<IEnumerable<Conversation>> GetUserConversationsAsync(Guid userId, bool activeOnly = true)
-        {
-            var query = _dbSet
-                .Where(c => c.UserId == userId);
-
-            if (activeOnly)
-            {
-                query = query.Where(c => c.IsActive);
-            }
-
-            return await query
-                .OrderByDescending(c => c.LastMessageAt ?? c.CreatedAt)
-                .ToListAsync();
-        }
-
-        public async Task<Conversation?> GetLatestActiveConversationAsync(Guid userId)
+        public async Task<Conversation?> GetUserActiveConversationAsync(Guid userId)
         {
             return await _dbSet
                 .Where(c => c.UserId == userId && c.IsActive)
-                .OrderByDescending(c => c.LastMessageAt ?? c.CreatedAt)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<Conversation?> GetConversationWithMessagesAsync(Guid conversationId)
+        public async Task<Conversation?> GetConversationWithMessagesAsync(
+            Guid conversationId, 
+            int lastMessagesCount = 10)
         {
             return await _dbSet
-                .Include(c => c.Messages.OrderBy(m => m.CreatedAt))
+                .Include(c => c.Messages
+                    .OrderByDescending(m => m.CreatedAt)
+                    .Take(lastMessagesCount))
                 .FirstOrDefaultAsync(c => c.Id == conversationId);
-        }
-
-        public async Task ArchiveConversationAsync(Guid conversationId)
-        {
-            var conversation = await _dbSet.FindAsync(conversationId);
-            if (conversation != null)
-            {
-                conversation.IsActive = false;
-                conversation.UpdatedAt = DateTime.UtcNow;
-                _dbSet.Update(conversation);
-            }
-        }
-
-        public async Task DeleteOldConversationsAsync(int daysOld)
-        {
-            var cutoffDate = DateTime.UtcNow.AddDays(-daysOld);
-            
-            var oldConversations = await _dbSet
-                .Where(c => c.CreatedAt < cutoffDate && !c.IsActive)
-                .ToListAsync();
-
-            _dbSet.RemoveRange(oldConversations);
         }
     }
 }

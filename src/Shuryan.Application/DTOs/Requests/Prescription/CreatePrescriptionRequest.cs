@@ -29,9 +29,6 @@ namespace Shuryan.Application.DTOs.Requests.Prescription
         [StringLength(1000, ErrorMessage = "General instructions cannot exceed 1000 characters")]
         public string? GeneralInstructions { get; set; }
 
-        [StringLength(1000, ErrorMessage = "Follow-up instructions cannot exceed 1000 characters")]
-        public string? FollowUpInstructions { get; set; }
-
         [Required(ErrorMessage = "At least one prescribed medication is required")]
         [MinLength(1, ErrorMessage = "At least one prescribed medication is required")]
         public IEnumerable<CreatePrescribedMedicationRequest> PrescribedMedications { get; set; } = new List<CreatePrescribedMedicationRequest>();

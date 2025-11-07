@@ -10,7 +10,6 @@ namespace Shuryan.Core.Interfaces.Repositories.LaboratoryRepositories
     {
      
         Task<LabTest?> GetByCodeAsync(string code);
-
         
         Task<IEnumerable<LabTest>> GetTestsByCategoryAsync(LabTestCategory category);
 

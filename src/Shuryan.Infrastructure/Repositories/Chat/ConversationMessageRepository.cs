@@ -18,41 +18,24 @@ namespace Shuryan.Infrastructure.Repositories.Chat
         {
         }
 
-        public async Task<IEnumerable<ConversationMessage>> GetConversationMessagesAsync(Guid conversationId)
-        {
-            return await _dbSet
-                .Where(m => m.ConversationId == conversationId)
-                .OrderBy(m => m.CreatedAt)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<ConversationMessage>> GetRecentMessagesAsync(Guid conversationId, int count = 10)
+        public async Task<IEnumerable<ConversationMessage>> GetConversationMessagesPagedAsync(
+            Guid conversationId,
+            int skip,
+            int take)
         {
             return await _dbSet
                 .Where(m => m.ConversationId == conversationId)
                 .OrderByDescending(m => m.CreatedAt)
-                .Take(count)
-                .OrderBy(m => m.CreatedAt) // عكس الترتيب تاني عشان يكونوا من الأقدم للأحدث
+                .Skip(skip)
+                .Take(take)
                 .ToListAsync();
         }
 
-        public async Task<int> GetTotalTokensUsedAsync(Guid conversationId)
+        public async Task<int> GetConversationMessageCountAsync(Guid conversationId)
         {
             return await _dbSet
-                .Where(m => m.ConversationId == conversationId && m.TokenCount.HasValue)
-                .SumAsync(m => m.TokenCount ?? 0);
-        }
-
-        public async Task<double> GetAverageResponseTimeAsync(Guid conversationId)
-        {
-            var messages = await _dbSet
-                .Where(m => m.ConversationId == conversationId && m.ResponseTimeMs.HasValue)
-                .ToListAsync();
-
-            if (!messages.Any())
-                return 0;
-
-            return messages.Average(m => m.ResponseTimeMs ?? 0);
+                .Where(m => m.ConversationId == conversationId)
+                .CountAsync();
         }
 
         public async Task DeleteConversationMessagesAsync(Guid conversationId)

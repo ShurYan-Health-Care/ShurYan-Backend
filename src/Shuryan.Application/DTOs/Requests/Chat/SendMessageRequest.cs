@@ -17,11 +17,6 @@ namespace Shuryan.Application.DTOs.Requests.Chat
         public string Message { get; set; } = string.Empty;
 
         /// <summary>
-        /// معرف المحادثة (اختياري - إذا كان null هيتم إنشاء محادثة جديدة)
-        /// </summary>
-        public Guid? ConversationId { get; set; }
-
-        /// <summary>
         /// Context إضافي عن حالة المستخدم الحالية
         /// </summary>
         public MessageContextDto? Context { get; set; }

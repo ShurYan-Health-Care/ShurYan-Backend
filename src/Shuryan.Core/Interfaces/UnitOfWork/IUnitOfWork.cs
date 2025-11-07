@@ -61,7 +61,6 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
         IPharmacyReviewRepository PharmacyReviews { get; }
 
         // ==================== Shared Repositories ====================
-        IAddressRepository Addresses { get; }
         IVerifierRepository Verifiers { get; }
         INotificationRepository Notifications { get; }
         IRefreshTokenRepository RefreshTokens { get; }
