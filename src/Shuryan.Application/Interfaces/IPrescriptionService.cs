@@ -131,34 +131,34 @@ namespace Shuryan.Application.Interfaces
         Task<IEnumerable<PrescriptionResponse>> GetPrescriptionsContainingMedicationAsync(Guid medicationId);
 
         /// <summary>
-        /// Mark prescription as digitally shared (legacy - use SharePrescriptionAsync instead)
+        /// Mark prescription as dispensed
         /// </summary>
-        Task<bool> MarkPrescriptionAsSharedAsync(Guid prescriptionId);
+        Task<bool> MarkPrescriptionAsDispensedAsync(Guid prescriptionId);
 
         /// <summary>
         /// Verify prescription authenticity
         /// </summary>
-        Task<PrescriptionVerificationResponse> VerifyPrescriptionAsync(Guid id, string? verificationCode);
+        //Task<PrescriptionVerificationResponse> VerifyPrescriptionAsync(Guid id, string? verificationCode);
 
         /// <summary>
         /// Dispense prescription at pharmacy
         /// </summary>
-        Task<DispenseResult> DispensePrescriptionAsync(Guid id, DispensePrescriptionRequest request);
+        //Task<DispenseResult> DispensePrescriptionAsync(Guid id, DispensePrescriptionRequest request);
 
         /// <summary>
         /// Share prescription with pharmacy
         /// </summary>
-        Task<SharePrescriptionResult> SharePrescriptionAsync(Guid id, SharePrescriptionRequest request);
+        //Task<SharePrescriptionResult> SharePrescriptionAsync(Guid id, SharePrescriptionRequest request);
 
         /// <summary>
         /// Get dispensing history for a prescription
         /// </summary>
-        Task<IEnumerable<DispensingRecord>> GetDispensingHistoryAsync(Guid id);
+        //Task<IEnumerable<DispensingRecord>> GetDispensingHistoryAsync(Guid id);
 
         /// <summary>
         /// Accept prescription for delivery
         /// </summary>
-        Task AcceptPrescriptionDeliveryAsync(Guid id, AcceptDeliveryRequest request);
+        //Task AcceptPrescriptionDeliveryAsync(Guid id, AcceptDeliveryRequest request);
 
         #endregion
 
@@ -167,7 +167,7 @@ namespace Shuryan.Application.Interfaces
         /// <summary>
         /// Get prescription status history (audit trail)
         /// </summary>
-        Task<IEnumerable<PrescriptionStatusHistory>> GetStatusHistoryAsync(Guid id);
+        //Task<IEnumerable<PrescriptionStatusHistory>> GetStatusHistoryAsync(Guid id);
 
         #endregion
 

@@ -8,12 +8,9 @@ using System.Security.Claims;
 
 namespace Shuryan.API.Controllers
 {
-    /// <summary>
-    /// Controller للتعامل مع الـ AI Chat Bot
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // لازم يكون User مسجل دخول
+    [Authorize]
     public class ChatController : ControllerBase
     {
         private readonly IChatService _chatService;
@@ -25,17 +22,12 @@ namespace Shuryan.API.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// إرسال رسالة للـ AI Bot
-        /// POST /api/chat/send-message
-        /// </summary>
         [HttpPost("send-message")]
         [ProducesResponseType(typeof(ApiResponse<ChatMessageResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<ChatMessageResponse>>> SendMessage(
-            [FromBody] SendMessageRequest request)
+        public async Task<ActionResult<ApiResponse<ChatMessageResponse>>> SendMessage([FromBody] SendMessageRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -50,7 +42,6 @@ namespace Shuryan.API.Controllers
 
             try
             {
-                // جيب معلومات المستخدم من الـ Token
                 var userId = GetUserId();
                 var userRole = GetUserRole();
 
@@ -96,38 +87,53 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// جيب محادثة معينة مع كل رسائلها
-        /// GET /api/chat/conversations/{conversationId}
-        /// </summary>
-        [HttpGet("conversations/{conversationId:guid}")]
-        [ProducesResponseType(typeof(ApiResponse<ConversationResponse>), StatusCodes.Status200OK)]
+        [HttpGet("history")]
+        [ProducesResponseType(typeof(ApiResponse<ChatHistoryResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<ConversationResponse>>> GetConversation(Guid conversationId)
+        public async Task<ActionResult<ApiResponse<ChatHistoryResponse>>> GetChatHistory(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 50)
         {
             try
             {
+                if (pageNumber < 1)
+                {
+                    return BadRequest(ApiResponse<object>.Failure(
+                        "رقم الصفحة يجب أن يكون أكبر من أو يساوي 1",
+                        null,
+                        400
+                    ));
+                }
+
+                if (pageSize < 1 || pageSize > 100)
+                {
+                    return BadRequest(ApiResponse<object>.Failure(
+                        "حجم الصفحة يجب أن يكون بين 1 و 100",
+                        null,
+                        400
+                    ));
+                }
+
                 var userId = GetUserId();
+                var history = await _chatService.GetChatHistoryAsync(userId, pageNumber, pageSize);
 
-                var conversation = await _chatService.GetConversationAsync(conversationId, userId);
-
-                if (conversation == null)
+                if (history == null)
                 {
                     return NotFound(ApiResponse<object>.Failure(
-                        "المحادثة غير موجودة",
+                        "لا توجد محادثة",
                         null,
                         404
                     ));
                 }
 
-                return Ok(ApiResponse<ConversationResponse>.Success(
-                    conversation,
-                    "تم جلب المحادثة بنجاح"
+                return Ok(ApiResponse<ChatHistoryResponse>.Success(
+                    history,
+                    "تم جلب تاريخ المحادثة بنجاح"
                 ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in GetConversation");
+                _logger.LogError(ex, "❌ Error in GetChatHistory");
                 return StatusCode(500, ApiResponse<object>.Failure(
                     "حدث خطأ غير متوقع",
                     null,
@@ -136,56 +142,20 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// جيب كل محادثات المستخدم
-        /// GET /api/chat/conversations
-        /// </summary>
-        [HttpGet("conversations")]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<ConversationListItemResponse>>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ApiResponse<IEnumerable<ConversationListItemResponse>>>> GetUserConversations(
-            [FromQuery] bool activeOnly = true)
-        {
-            try
-            {
-                var userId = GetUserId();
-
-                var conversations = await _chatService.GetUserConversationsAsync(userId, activeOnly);
-
-                return Ok(ApiResponse<IEnumerable<ConversationListItemResponse>>.Success(
-                    conversations,
-                    "تم جلب المحادثات بنجاح"
-                ));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error in GetUserConversations");
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ غير متوقع",
-                    null,
-                    500
-                ));
-            }
-        }
-
-        /// <summary>
-        /// امسح محادثة
-        /// DELETE /api/chat/conversations/{conversationId}
-        /// </summary>
-        [HttpDelete("conversations/{conversationId:guid}")]
+        [HttpDelete("clear")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<object>>> DeleteConversation(Guid conversationId)
+        public async Task<ActionResult<ApiResponse<object>>> ClearChat()
         {
             try
             {
                 var userId = GetUserId();
-
-                var success = await _chatService.DeleteConversationAsync(conversationId, userId);
+                var success = await _chatService.ClearUserChatAsync(userId);
 
                 if (!success)
                 {
                     return NotFound(ApiResponse<object>.Failure(
-                        "المحادثة غير موجودة",
+                        "لا توجد محادثة لمسحها",
                         null,
                         404
                     ));
@@ -193,52 +163,12 @@ namespace Shuryan.API.Controllers
 
                 return Ok(ApiResponse<object>.Success(
                     null,
-                    "تم حذف المحادثة بنجاح"
+                    "تم مسح المحادثة بنجاح"
                 ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in DeleteConversation");
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ غير متوقع",
-                    null,
-                    500
-                ));
-            }
-        }
-
-        /// <summary>
-        /// امسح كل رسائل محادثة
-        /// DELETE /api/chat/conversations/{conversationId}/messages
-        /// </summary>
-        [HttpDelete("conversations/{conversationId:guid}/messages")]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<object>>> ClearConversationMessages(Guid conversationId)
-        {
-            try
-            {
-                var userId = GetUserId();
-
-                var success = await _chatService.ClearConversationMessagesAsync(conversationId, userId);
-
-                if (!success)
-                {
-                    return NotFound(ApiResponse<object>.Failure(
-                        "المحادثة غير موجودة",
-                        null,
-                        404
-                    ));
-                }
-
-                return Ok(ApiResponse<object>.Success(
-                    null,
-                    "تم مسح الرسائل بنجاح"
-                ));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error in ClearConversationMessages");
+                _logger.LogError(ex, "❌ Error in ClearChat");
                 return StatusCode(500, ApiResponse<object>.Failure(
                     "حدث خطأ غير متوقع",
                     null,
@@ -248,24 +178,16 @@ namespace Shuryan.API.Controllers
         }
 
         #region Helper Methods
-
-        /// <summary>
-        /// جيب User ID من الـ Claims
-        /// </summary>
         private Guid GetUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
         }
 
-        /// <summary>
-        /// جيب User Role من الـ Claims
-        /// </summary>
         private string GetUserRole()
         {
             return User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
         }
-
         #endregion
     }
 }

@@ -1,13 +1,14 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Enums.Payment;
 
 namespace Shuryan.Core.Entities.External.Payments
 {
-    public class PaymentTransaction : BaseEntity
+    public class PaymentTransaction
     {
+        [Key]
+        public Guid Id { get; set; }
         [Required]
         public Guid PaymentId { get; set; }
 

@@ -1,3 +1,4 @@
+using Shuryan.Core.Enums;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -23,9 +24,7 @@ namespace Shuryan.Application.DTOs.Requests.Prescription
         public Guid? AppointmentId { get; set; }
 
         // Status filtering
-        public string? Status { get; set; } // Active, Dispensed, Cancelled, Expired
-        public bool? IsDigitallyShared { get; set; }
-        public bool? IsDispensed { get; set; }
+        public PrescriptionStatus? Status { get; set; }
 
         // Date range
         public DateTime? StartDate { get; set; }

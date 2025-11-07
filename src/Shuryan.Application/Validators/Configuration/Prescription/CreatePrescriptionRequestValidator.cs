@@ -40,11 +40,6 @@ namespace Shuryan.Application.Validators.Configuration.Prescription
                 .When(x => !string.IsNullOrEmpty(x.GeneralInstructions))
                 .WithMessage("General instructions cannot exceed 1000 characters");
 
-            RuleFor(x => x.FollowUpInstructions)
-                .Length(0, 1000)
-                .When(x => !string.IsNullOrEmpty(x.FollowUpInstructions))
-                .WithMessage("Follow-up instructions cannot exceed 1000 characters");
-
             RuleFor(x => x.PrescribedMedications)
                 .NotEmpty()
                 .WithMessage("At least one prescribed medication is required");

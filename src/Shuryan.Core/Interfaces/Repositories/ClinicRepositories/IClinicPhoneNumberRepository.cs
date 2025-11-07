@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Interfaces.Repositories.ClinicRepositories
 {
-    // Repository interface for managing ClinicPhoneNumber entities
     public interface IClinicPhoneNumberRepository : IGenericRepository<ClinicPhoneNumber>
     {
         Task<IEnumerable<ClinicPhoneNumber>> GetClinicPhoneNumbersAsync(Guid clinicId);
