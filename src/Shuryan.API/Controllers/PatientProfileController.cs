@@ -15,10 +15,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.API.Controllers
 {
-    /// <summary>
-    /// Patient Profile Management Controller
-    /// Handles patient profile, address, medical record, and profile image operations
-    /// </summary>
     [ApiController]
     [Route("api/patients/me")]
     [Authorize(Roles = "Patient")]

@@ -6,9 +6,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Application.DTOs.Responses.Auth
 {
-    /// <summary>
-    /// User information included in auth response
-    /// </summary>
     public class UserInfoDto
     {
         public Guid Id { get; set; }

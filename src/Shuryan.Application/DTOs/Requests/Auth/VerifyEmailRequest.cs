@@ -7,9 +7,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Application.DTOs.Requests.Auth
 {
-    /// <summary>
-    /// Request to verify email with OTP
-    /// </summary>
     public class VerifyEmailRequest
     {
         [Required(ErrorMessage = "Email is required")]
@@ -22,9 +19,6 @@ namespace Shuryan.Application.DTOs.Requests.Auth
         public string OtpCode { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Request to resend verification OTP
-    /// </summary>
     public class ResendOtpRequest
     {
         [Required(ErrorMessage = "Email is required")]
@@ -32,9 +26,6 @@ namespace Shuryan.Application.DTOs.Requests.Auth
         public string Email { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Request to verify OTP for password reset
-    /// </summary>
     public class VerifyResetOtpRequest
     {
         [Required(ErrorMessage = "Email is required")]

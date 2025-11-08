@@ -335,6 +335,85 @@ namespace Shuryan.Application.Services.Auth
             }
         }
 
+        public async Task<ApiResponse<AuthResponseDto>> RegisterVerifierAsync(RegisterVerifierRequest dto, string? ipAddress = null)
+        {
+            try
+            {
+                var existingUser = await _userManager.FindByEmailAsync(dto.Email);
+                if (existingUser != null)
+                {
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Email already registered",
+                        new[] { "A user with this email already exists" },
+                        400);
+                }
+
+                // TODO: Add admin validation when Admin module is ready
+                // var admin = await _userManager.FindByIdAsync(dto.CreatedByAdminId.ToString());
+                // if (admin == null || !await _userManager.IsInRoleAsync(admin, UserRole.Admin.ToString()))
+                // {
+                //     return ApiResponse<AuthResponseDto>.Failure("Unauthorized", new[] { "Only admins can create verifier accounts" }, 403);
+                // }
+
+                var verifier = new Verifier
+                {
+                    Id = Guid.NewGuid(),
+                    FirstName = dto.FirstName,
+                    LastName = dto.LastName,
+                    Email = dto.Email,
+                    UserName = dto.Email,
+                    EmailConfirmed = false,
+                    CreatedAt = DateTime.UtcNow
+                    // TODO: Add CreatedByAdminId when Admin module is ready
+                    // CreatedByAdminId = dto.CreatedByAdminId
+                };
+
+                var result = await _userManager.CreateAsync(verifier, dto.Password);
+
+                if (!result.Succeeded)
+                {
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Registration failed",
+                        result.Errors.Select(e => e.Description),
+                        400);
+                }
+
+                await EnsureRoleExistsAsync(UserRole.Verifier);
+                await _userManager.AddToRoleAsync(verifier, UserRole.Verifier.ToString());
+
+                // Send verification OTP
+                var otpCode = await _otpService.GenerateAndStoreOtpAsync(
+                    verifier.Id,
+                    verifier.Email,
+                    Core.Entities.System.VerificationTypes.EmailVerification,
+                    ipAddress);
+
+                await _emailService.SendVerificationOtpAsync(
+                    verifier.Email,
+                    verifier.FirstName,
+                    otpCode);
+
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Verifier registered successfully: {Email}", verifier.Email);
+
+                var authResponse = await GenerateAuthResponseAsync(verifier, ipAddress);
+
+                return ApiResponse<AuthResponseDto>.Success(
+                    authResponse,
+                    "Verifier registration successful! Please verify your email.",
+                    201);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during verifier registration");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during registration",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
         #endregion
 
         #region Email Verification
