@@ -15,10 +15,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.API.Controllers
 {
-    /// <summary>
-    /// Patient Appointments Management Controller
-    /// Handles all appointment-related operations for patients
-    /// </summary>
     [ApiController]
     [Route("api/patients/me/appointments")]
     [Authorize(Roles = "Patient")]

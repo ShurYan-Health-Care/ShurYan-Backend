@@ -31,10 +31,10 @@ namespace Shuryan.API.Controllers
         {
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("⚠️ Invalid send message request");
+                _logger.LogWarning("Invalid send message request");
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
                 return BadRequest(ApiResponse<object>.Failure(
-                    "بيانات غير صحيحة",
+                    "Invalid data",
                     errors,
                     400
                 ));
@@ -47,40 +47,40 @@ namespace Shuryan.API.Controllers
 
                 if (userId == Guid.Empty || string.IsNullOrEmpty(userRole))
                 {
-                    _logger.LogWarning("⚠️ Unauthorized access attempt");
+                    _logger.LogWarning("Unauthorized access attempt");
                     return Unauthorized(ApiResponse<object>.Failure(
-                        "غير مصرح لك بالوصول",
+                        "Unauthorized access",
                         null,
                         401
                     ));
                 }
 
-                _logger.LogInformation("💬 User {UserId} ({Role}) sending message", userId, userRole);
+                _logger.LogInformation("User {UserId} ({Role}) sending message", userId, userRole);
 
                 var response = await _chatService.SendMessageAsync(userId, userRole, request);
 
                 if (response == null)
                 {
-                    _logger.LogError("❌ Failed to process message");
+                    _logger.LogError("Failed to process message");
                     return StatusCode(500, ApiResponse<object>.Failure(
-                        "حدث خطأ أثناء معالجة الرسالة",
+                        "An error occurred while processing the message",
                         null,
                         500
                     ));
                 }
 
-                _logger.LogInformation("✅ Message processed successfully");
+                _logger.LogInformation("Message processed successfully");
 
                 return Ok(ApiResponse<ChatMessageResponse>.Success(
                     response,
-                    "تم إرسال الرسالة بنجاح"
+                    "Message sent successfully"
                 ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Unexpected error in SendMessage");
+                _logger.LogError(ex, "Unexpected error in SendMessage");
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ غير متوقع",
+                    "An unexpected error occurred",
                     null,
                     500
                 ));
@@ -99,7 +99,7 @@ namespace Shuryan.API.Controllers
                 if (pageNumber < 1)
                 {
                     return BadRequest(ApiResponse<object>.Failure(
-                        "رقم الصفحة يجب أن يكون أكبر من أو يساوي 1",
+                        "Page number must be greater than or equal to 1",
                         null,
                         400
                     ));
@@ -108,7 +108,7 @@ namespace Shuryan.API.Controllers
                 if (pageSize < 1 || pageSize > 100)
                 {
                     return BadRequest(ApiResponse<object>.Failure(
-                        "حجم الصفحة يجب أن يكون بين 1 و 100",
+                        "Page size must be between 1 and 100",
                         null,
                         400
                     ));
@@ -120,7 +120,7 @@ namespace Shuryan.API.Controllers
                 if (history == null)
                 {
                     return NotFound(ApiResponse<object>.Failure(
-                        "لا توجد محادثة",
+                        "No conversation found",
                         null,
                         404
                     ));
@@ -128,14 +128,14 @@ namespace Shuryan.API.Controllers
 
                 return Ok(ApiResponse<ChatHistoryResponse>.Success(
                     history,
-                    "تم جلب تاريخ المحادثة بنجاح"
+                    "Chat history retrieved successfully"
                 ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in GetChatHistory");
+                _logger.LogError(ex, "Error in GetChatHistory");
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ غير متوقع",
+                    "An unexpected error occurred",
                     null,
                     500
                 ));
@@ -155,7 +155,7 @@ namespace Shuryan.API.Controllers
                 if (!success)
                 {
                     return NotFound(ApiResponse<object>.Failure(
-                        "لا توجد محادثة لمسحها",
+                        "No conversation to clear",
                         null,
                         404
                     ));
@@ -163,14 +163,14 @@ namespace Shuryan.API.Controllers
 
                 return Ok(ApiResponse<object>.Success(
                     null,
-                    "تم مسح المحادثة بنجاح"
+                    "Chat cleared successfully"
                 ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in ClearChat");
+                _logger.LogError(ex, "Error in ClearChat");
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ غير متوقع",
+                    "An unexpected error occurred",
                     null,
                     500
                 ));

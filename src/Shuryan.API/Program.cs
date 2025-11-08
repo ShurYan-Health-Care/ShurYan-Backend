@@ -1,5 +1,6 @@
 using Shuryan.API.Extensions;
 using Shuryan.Shared.Extensions;
+using SwaggerThemes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,9 +37,9 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
-	app.UseSwaggerUI();
+    app.UseSwaggerUI(Theme.UniversalDark);
 
-	await app.SeedDatabaseAsync();
+    await app.SeedDatabaseAsync();
 
 	//await app.ClearDatabaseAsync();
 }
