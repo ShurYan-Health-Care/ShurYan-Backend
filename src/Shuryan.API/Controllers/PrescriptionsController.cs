@@ -16,7 +16,7 @@ namespace Shuryan.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // All endpoints require authentication by default
+    [Authorize]
     public class PrescriptionsController : ControllerBase
     {
         private readonly IPrescriptionService _prescriptionService;

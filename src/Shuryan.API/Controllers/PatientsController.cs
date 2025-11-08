@@ -13,10 +13,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.API.Controllers
 {
-    /// <summary>
-    /// Patients Administration Controller
-    /// Handles admin-level patient management operations (CRUD, Search, Query)
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]

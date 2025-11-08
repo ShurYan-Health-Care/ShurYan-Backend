@@ -15,10 +15,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.API.Controllers
 {
-    /// <summary>
-    /// Doctor Profile and Public Directory Controller
-    /// Handles doctor profile management and public doctor search/view operations
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]

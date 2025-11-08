@@ -10,7 +10,8 @@ namespace Shuryan.Core.Entities.Identity
 {
     public class Verifier : User
     {
-        public Guid CreatedByAdminId { get; set; }
+        // TODO: Make this required after Admin module is ready
+        public Guid? CreatedByAdminId { get; set; }
 
         // Navigation Properties
         public virtual ICollection<Doctor> VerifiedDoctors { get; set; } = new HashSet<Doctor>();
