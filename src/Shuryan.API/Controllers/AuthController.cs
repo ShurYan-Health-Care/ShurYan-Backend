@@ -196,6 +196,51 @@ namespace Shuryan.API.Controllers
                 ));
             }
         }
+
+        [HttpPost("register/verifier")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<object>>> RegisterVerifier([FromBody] RegisterVerifierRequest dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid registration request for email: {Email}", dto.Email);
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(ApiResponse<object>.Failure(
+                    "Validation failed",
+                    errors,
+                    400
+                ));
+            }
+
+            _logger.LogInformation("Verifier registration attempt for email: {Email}", dto.Email);
+
+            try
+            {
+                var ipAddress = GetIpAddress();
+                var result = await _authService.RegisterVerifierAsync(dto, ipAddress);
+
+                if (!result.IsSuccess)
+                {
+                    _logger.LogWarning("Registration failed for {Email}: {Message}", dto.Email, result.Message);
+                    return StatusCode(result.StatusCode ?? 400, result);
+                }
+
+                _logger.LogInformation("Verifier registered successfully: {Email}", dto.Email);
+                return StatusCode(201, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during verifier registration for {Email}", dto.Email);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred during registration",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
         #endregion
 
         #region Email Verification

@@ -12,10 +12,6 @@ namespace Shuryan.Application.DTOs.Requests.Auth
         [Required(ErrorMessage = "Google ID token is required")]
         public string IdToken { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Optional user role for registration (Patient, Doctor, etc.)
-        /// Defaults to Patient if not specified
-        /// </summary>
         public string? UserRole { get; set; }
     }
 }

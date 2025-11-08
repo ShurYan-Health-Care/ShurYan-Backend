@@ -15,10 +15,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.API.Controllers
 {
-    /// <summary>
-    /// Patient Medical Data Controller
-    /// Handles medical history, prescriptions, and lab orders for patients
-    /// </summary>
     [ApiController]
     [Route("api/patients/me")]
     [Authorize(Roles = "Patient")]
