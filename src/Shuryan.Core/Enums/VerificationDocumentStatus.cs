@@ -12,8 +12,8 @@ namespace Shuryan.Core.Enums
         [Description("مسودة")]
         Draft = 0,
 
-        [Description("في الانتظار")]
-        Pending = 1,
+        [Description("تحت المراجعة")]
+        UnderReview = 1,
 
         [Description("مقبول")]
         Approved = 2,

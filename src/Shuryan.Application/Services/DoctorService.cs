@@ -139,7 +139,7 @@ namespace Shuryan.Application.Services
 
                 // Calculate document statistics
                 var approvedCount = doctorDocuments.Count(d => d.Status == VerificationDocumentStatus.Approved);
-                var pendingCount = doctorDocuments.Count(d => d.Status == VerificationDocumentStatus.Pending);
+                var pendingCount = doctorDocuments.Count(d => d.Status == VerificationDocumentStatus.UnderReview);
                 var rejectedCount = doctorDocuments.Count(d => d.Status == VerificationDocumentStatus.Rejected);
 
                 var response = new DoctorProfessionalInfoResponse
@@ -1567,16 +1567,16 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                // التحقق من أن الدكتور له جلسات مع المريض
+                // التحقق من أن الدكتور له جلسات مع المريض (أي حجز حتى لو مش مكتمل)
                 var allAppointments = await _unitOfWork.Appointments.GetAllAsync();
                 var hasAppointments = allAppointments.Any(a => 
                     a.DoctorId == doctorId && 
-                    a.PatientId == patientId && 
-                    a.Status == Core.Enums.Appointments.AppointmentStatus.Completed);
+                    a.PatientId == patientId &&
+                    a.Status != Core.Enums.Appointments.AppointmentStatus.Cancelled);
 
                 if (!hasAppointments)
                 {
-                    _logger.LogWarning("Doctor {DoctorId} has no completed appointments with patient {PatientId}", 
+                    _logger.LogWarning("Doctor {DoctorId} has no appointments with patient {PatientId}", 
                         doctorId, patientId);
                     return null;
                 }
@@ -1808,6 +1808,62 @@ namespace Shuryan.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting prescriptions for patient {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Verification Operations
+
+        /// <summary>
+        /// تقديم طلب المراجعة - تغيير حالة التحقق إلى "مُرسل"
+        /// </summary>
+        public async Task<bool> SubmitForReviewAsync(Guid doctorId)
+        {
+            try
+            {
+                _logger.LogInformation("Doctor {DoctorId} submitting profile for review", doctorId);
+
+                // جلب الدكتور
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
+                if (doctor == null)
+                {
+                    _logger.LogWarning("Doctor {DoctorId} not found", doctorId);
+                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+                }
+
+                // التحقق من أن الحالة الحالية تسمح بالتقديم
+                if (doctor.VerificationStatus == VerificationStatus.Sent)
+                {
+                    _logger.LogWarning("Doctor {DoctorId} has already submitted for review", doctorId);
+                    throw new InvalidOperationException("Your profile has already been submitted for review");
+                }
+
+                if (doctor.VerificationStatus == VerificationStatus.UnderReview)
+                {
+                    _logger.LogWarning("Doctor {DoctorId} profile is already under review", doctorId);
+                    throw new InvalidOperationException("Your profile is already under review");
+                }
+
+                if (doctor.VerificationStatus == VerificationStatus.Verified)
+                {
+                    _logger.LogWarning("Doctor {DoctorId} is already verified", doctorId);
+                    throw new InvalidOperationException("Your profile is already verified");
+                }
+
+                // تغيير الحالة إلى Sent
+                doctor.VerificationStatus = VerificationStatus.Sent;
+                doctor.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Doctor {DoctorId} successfully submitted profile for review. Status changed to Sent", doctorId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error submitting profile for review for doctor {DoctorId}", doctorId);
                 throw;
             }
         }

@@ -87,66 +87,6 @@ namespace Shuryan.API.Controllers
         #endregion
 
         #region Booking System - Frontend Integration
-
-        /// <summary>
-        /// 5️⃣ POST Book New Appointment - حجز موعد جديد
-        /// </summary>
-        /// <remarks>
-        /// **متطلبات الـ Request:**
-        /// 
-        ///     POST /api/Appointments/book
-        ///     Authorization: Bearer {token}
-        ///     Content-Type: application/json
-        ///     
-        ///     {
-        ///       "doctorId": "123e4567-e89b-12d3-a456-426614174000",
-        ///       "appointmentDate": "2025-01-15",
-        ///       "appointmentTime": "09:00",
-        ///       "consultationType": 0
-        ///     }
-        /// 
-        /// **Validation Rules:**
-        /// - ✅ doctorId: يجب أن يكون موجود
-        /// - ✅ appointmentDate: صيغة YYYY-MM-DD وليس في الماضي
-        /// - ✅ appointmentTime: صيغة 24-hour (HH:mm)
-        /// - ✅ consultationType: 0 (كشف عادي) أو 1 (إعادة كشف)
-        /// - ✅ الفترة الزمنية يجب أن تكون متاحة (غير محجوزة)
-        /// - ✅ الفترة الزمنية يجب أن تكون ضمن ساعات عمل الدكتور
-        /// 
-        /// **Success Response (201):**
-        /// 
-        ///     {
-        ///       "success": true,
-        ///       "message": "تم حجز الموعد بنجاح",
-        ///       "data": {
-        ///         "id": "uuid",
-        ///         "doctorId": "uuid",
-        ///         "patientId": "uuid",
-        ///         "appointmentDate": "2025-01-15",
-        ///         "appointmentTime": "09:00",
-        ///         "consultationType": 0,
-        ///         "status": "Confirmed",
-        ///         "totalAmount": 300,
-        ///         "createdAt": "2025-01-10T10:30:00Z"
-        ///       }
-        ///     }
-        /// 
-        /// **Error Response - Slot Already Booked (409):**
-        /// 
-        ///     {
-        ///       "success": false,
-        ///       "message": "هذا الموعد محجوز بالفعل",
-        ///       "errors": ["الفترة الزمنية 09:00 محجوزة"]
-        ///     }
-        /// 
-        /// **Error Response - Past Date (400):**
-        /// 
-        ///     {
-        ///       "success": false,
-        ///       "message": "لا يمكن حجز موعد في الماضي",
-        ///       "errors": []
-        ///     }
-        /// </remarks>
         [HttpPost("book")]
         [Authorize(Roles = "Patient")]
         [ProducesResponseType(typeof(ApiResponse<BookedAppointmentResponse>), StatusCodes.Status201Created)]
@@ -232,11 +172,6 @@ namespace Shuryan.API.Controllers
         #endregion
 
         #region Get Appointment Details
-
-        /// <summary>
-        /// الحصول على تفاصيل الموعد
-        /// GET /api/Appointments/{appointmentId}
-        /// </summary>
         [HttpGet("{appointmentId}")]
         [Authorize(Roles = "Doctor,Patient")]
         [ProducesResponseType(typeof(ApiResponse<AppointmentResponse>), StatusCodes.Status200OK)]
@@ -426,16 +361,12 @@ namespace Shuryan.API.Controllers
         #endregion
 
         #region Documentation
-
-        /// <summary>
-        /// حفظ أو تحديث توثيق الكشف
-        /// POST/PUT /api/Appointments/{appointmentId}/documentation
-        /// </summary>
         [HttpPost("{appointmentId}/documentation")]
         [HttpPut("{appointmentId}/documentation")]
         [Authorize(Roles = "Doctor")]
         [ProducesResponseType(typeof(ApiResponse<DocumentationResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<ApiResponse<DocumentationResponse>>> SaveDocumentation(
             Guid appointmentId,
             [FromBody] SaveDocumentationRequest request)
@@ -466,25 +397,25 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// الحصول على توثيق الكشف
-        /// GET /api/Appointments/{appointmentId}/documentation
-        /// </summary>
+        
         [HttpGet("{appointmentId}/documentation")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Roles = "Doctor,Patient")]
         [ProducesResponseType(typeof(ApiResponse<DocumentationResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<ApiResponse<DocumentationResponse>>> GetDocumentation(Guid appointmentId)
         {
-            var doctorId = GetCurrentDoctorId();
-            if (doctorId == Guid.Empty)
+            var userId = GetCurrentDoctorId(); // نفس الـ method بتجيب الـ userId
+            if (userId == Guid.Empty)
             {
                 return Unauthorized(ApiResponse<object>.Failure("Invalid authentication token", statusCode: 401));
             }
 
+            var isDoctor = IsDoctor();
+
             try
             {
-                var documentation = await _documentationService.GetDocumentationAsync(appointmentId, doctorId);
+                var documentation = await _documentationService.GetDocumentationAsync(appointmentId, userId, isDoctor);
                 if (documentation == null)
                 {
                     return NotFound(ApiResponse<object>.Failure("لا يوجد توثيق لهذا الموعد", statusCode: 404));
@@ -506,11 +437,6 @@ namespace Shuryan.API.Controllers
         #endregion
 
         #region Prescription
-
-        /// <summary>
-        /// إنشاء روشتة جديدة
-        /// POST /api/Appointments/{appointmentId}/prescription
-        /// </summary>
         [HttpPost("{appointmentId}/prescription")]
         [Authorize(Roles = "Doctor")]
         [ProducesResponseType(typeof(ApiResponse<PrescriptionResponse>), StatusCodes.Status201Created)]

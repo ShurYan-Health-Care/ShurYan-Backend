@@ -249,7 +249,7 @@ namespace Shuryan.Application.Services
             // Upload document file to Cloudinary
             var uploadResult = await _fileUploadService.UploadDocumentAsync(request.DocumentFile, pharmacyId.ToString());
 
-            var doc = new PharmacyDocument { Id = Guid.NewGuid(), PharmacyId = pharmacyId, DocumentUrl = uploadResult.FileUrl, Type = request.Type, Status = VerificationDocumentStatus.Pending, CreatedAt = DateTime.UtcNow };
+            var doc = new PharmacyDocument { Id = Guid.NewGuid(), PharmacyId = pharmacyId, DocumentUrl = uploadResult.FileUrl, Type = request.Type, Status = VerificationDocumentStatus.UnderReview, CreatedAt = DateTime.UtcNow };
             await _unitOfWork.PharmacyDocuments.AddAsync(doc);
             await _unitOfWork.SaveChangesAsync();
             return _mapper.Map<PharmacyDocumentResponse>(doc);

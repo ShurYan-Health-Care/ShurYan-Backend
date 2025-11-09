@@ -14,7 +14,7 @@ namespace Shuryan.Core.Entities.Shared
 
         public string DocumentUrl { get; set; } = string.Empty;
         public PharmacyDocumentType Type { get; set; }
-        public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.Pending;
+        public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.UnderReview;
 		public string? RejectionReason { get; set; }
 
         // Navigation Properties
