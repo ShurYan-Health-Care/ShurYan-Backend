@@ -82,5 +82,12 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<PatientPrescriptionsListResponse?> GetPatientPrescriptionsAsync(Guid patientId, Guid doctorId);
         #endregion
+
+        #region Verification Operations
+        /// <summary>
+        /// تقديم طلب المراجعة - تغيير حالة التحقق إلى "مُرسل"
+        /// </summary>
+        Task<bool> SubmitForReviewAsync(Guid doctorId);
+        #endregion
     }
 }

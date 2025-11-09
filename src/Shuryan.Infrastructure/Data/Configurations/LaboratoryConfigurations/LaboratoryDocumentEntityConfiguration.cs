@@ -24,7 +24,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
             builder.Property(ld => ld.LaboratoryId).IsRequired();
             builder.Property(ld => ld.DocumentUrl).IsRequired().HasMaxLength(500);
             builder.Property(ld => ld.Type).IsRequired().HasConversion<int>();
-            builder.Property(ld => ld.Status).IsRequired().HasConversion<int>().HasDefaultValue(VerificationDocumentStatus.Pending);
+            builder.Property(ld => ld.Status).IsRequired().HasConversion<int>().HasDefaultValue(VerificationDocumentStatus.UnderReview);
             builder.Property(ld => ld.RejectionReason).IsRequired(false).HasMaxLength(500);
 
             // Indexes

@@ -12,7 +12,7 @@ namespace Shuryan.Core.Enums.Identity
         [Description("غير معتمد")]
         Unverified = 0,
 
-        [Description("تحت المراجعة - سيتم التحقق خلال 3-5 أيام")]
+        [Description("تحت المراجعة")]
         UnderReview = 1,
 
         [Description("معتمد")]
@@ -22,6 +22,9 @@ namespace Shuryan.Core.Enums.Identity
         Rejected = 3,
 
         [Description("معلق")]
-        Suspended = 4
+        Suspended = 4,
+
+        [Description("مُرسل")]
+        Sent = 5
     }
 }

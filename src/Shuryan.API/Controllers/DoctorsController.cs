@@ -567,6 +567,62 @@ namespace Shuryan.API.Controllers
 
         #endregion
 
+        #region Verification Operations
+
+        [HttpPost("me/submit-for-review")]
+        [Authorize(Roles = "Doctor")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<object>>> SubmitForReview()
+        {
+            var currentDoctorId = GetCurrentDoctorId();
+
+            if (currentDoctorId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to submit for review - invalid token");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "Invalid or missing authentication token",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Doctor {DoctorId} submitting profile for review", currentDoctorId);
+
+            try
+            {
+                var result = await _doctorService.SubmitForReviewAsync(currentDoctorId);
+
+                _logger.LogInformation("Doctor {DoctorId} successfully submitted profile for review", currentDoctorId);
+                return Ok(ApiResponse<object>.Success(
+                    new { submitted = result },
+                    "Your profile has been submitted for review successfully"
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Doctor not found for submit for review: {DoctorId}", currentDoctorId);
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid operation for submit for review: {DoctorId}", currentDoctorId);
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error submitting profile for review for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while submitting your profile for review",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        #endregion
+
         #region Utilities
 
         [HttpGet("specialty/all")]
@@ -606,8 +662,22 @@ namespace Shuryan.API.Controllers
 
         private Guid GetCurrentDoctorId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
+            // Try multiple claim types that might contain the user ID
+            var userIdClaim = User.Claims.FirstOrDefault(c => 
+                c.Type == "sub" || 
+                c.Type == "uid" || 
+                c.Type == ClaimTypes.NameIdentifier ||
+                c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
+            {
+                return userId;
+            }
+
+            _logger.LogWarning("Could not find doctor ID in JWT claims. Available claims: {Claims}", 
+                string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}")));
+            
+            return Guid.Empty;
         }
 
         private bool IsAccessingOwnData(Guid doctorId)

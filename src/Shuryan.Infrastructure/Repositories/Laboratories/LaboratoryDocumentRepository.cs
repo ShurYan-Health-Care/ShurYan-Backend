@@ -27,7 +27,7 @@ namespace Shuryan.Infrastructure.Repositories.Laboratories
         {
             return await _dbSet
                 .Include(d => d.Laboratory)
-                .Where(d => d.Status == VerificationDocumentStatus.Pending)
+                .Where(d => d.Status == VerificationDocumentStatus.UnderReview)
                 .OrderBy(d => d.CreatedAt)
                 .ToListAsync();
         }
