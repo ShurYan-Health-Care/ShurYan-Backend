@@ -145,15 +145,16 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// الحصول على توثيق الكشف
+        /// الحصول على توثيق الكشف (Doctor and Patient)
         /// </summary>
-        public async Task<DocumentationResponse?> GetDocumentationAsync(Guid appointmentId, Guid doctorId)
+        public async Task<DocumentationResponse?> GetDocumentationAsync(Guid appointmentId, Guid userId, bool isDoctor)
         {
             try
             {
-                _logger.LogInformation("Getting documentation for Appointment {AppointmentId}", appointmentId);
+                _logger.LogInformation("Getting documentation for Appointment {AppointmentId} by User {UserId} (IsDoctor: {IsDoctor})", 
+                    appointmentId, userId, isDoctor);
 
-                // التحقق من وجود الموعد وأنه يخص الدكتور
+                // التحقق من وجود الموعد
                 var appointment = await _appointmentRepository.GetByIdAsync(appointmentId);
                 if (appointment == null)
                 {
@@ -161,11 +162,24 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                if (appointment.DoctorId != doctorId)
+                // التحقق من الصلاحيات - الدكتور أو المريض فقط
+                if (isDoctor)
                 {
-                    _logger.LogWarning("Doctor {DoctorId} tried to access documentation for appointment {AppointmentId} that belongs to another doctor", 
-                        doctorId, appointmentId);
-                    throw new UnauthorizedAccessException("هذا الموعد لا يخصك");
+                    if (appointment.DoctorId != userId)
+                    {
+                        _logger.LogWarning("Doctor {UserId} tried to access documentation for appointment {AppointmentId} that belongs to another doctor", 
+                            userId, appointmentId);
+                        throw new UnauthorizedAccessException("هذا الموعد لا يخصك");
+                    }
+                }
+                else // Patient
+                {
+                    if (appointment.PatientId != userId)
+                    {
+                        _logger.LogWarning("Patient {UserId} tried to access documentation for appointment {AppointmentId} that belongs to another patient", 
+                            userId, appointmentId);
+                        throw new UnauthorizedAccessException("هذا الموعد لا يخصك");
+                    }
                 }
 
                 // الحصول على التوثيق

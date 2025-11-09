@@ -11,13 +11,13 @@ namespace Shuryan.Application.Interfaces
     public interface IDocumentationService
     {
         /// <summary>
-        /// حفظ أو تحديث توثيق الكشف
+        /// حفظ أو تحديث توثيق الكشف (Doctor only)
         /// </summary>
         Task<DocumentationResponse> SaveDocumentationAsync(Guid appointmentId, Guid doctorId, SaveDocumentationRequest request);
 
         /// <summary>
-        /// الحصول على توثيق الكشف
+        /// الحصول على توثيق الكشف (Doctor and Patient)
         /// </summary>
-        Task<DocumentationResponse?> GetDocumentationAsync(Guid appointmentId, Guid doctorId);
+        Task<DocumentationResponse?> GetDocumentationAsync(Guid appointmentId, Guid userId, bool isDoctor);
     }
 }
