@@ -17,7 +17,7 @@ namespace Shuryan.Core.Entities.Common
 	{
 		public string DocumentUrl { get; set; } = string.Empty;
         public DoctorDocumentType Type { get; set; }
-        public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.Pending;
+        public VerificationDocumentStatus Status { get; set; } = VerificationDocumentStatus.UnderReview;
         public string? RejectionReason { get; set; }
 
         [ForeignKey("Doctor")]

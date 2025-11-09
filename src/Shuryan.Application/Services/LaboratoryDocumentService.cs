@@ -116,7 +116,7 @@ namespace Shuryan.Application.Services
                 var document = _mapper.Map<LaboratoryDocument>(request);
                 document.Id = Guid.NewGuid();
                 document.LaboratoryId = laboratoryId;
-                document.Status = VerificationDocumentStatus.Pending;
+                document.Status = VerificationDocumentStatus.UnderReview;
                 document.CreatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.LaboratoryDocuments.AddAsync(document);
@@ -250,7 +250,7 @@ namespace Shuryan.Application.Services
             try
             {
                 // Optimize: Filter directly in the repository if possible
-                var documents = await _unitOfWork.LaboratoryDocuments.FindAsync(d => d.Status == VerificationDocumentStatus.Pending);
+                var documents = await _unitOfWork.LaboratoryDocuments.FindAsync(d => d.Status == VerificationDocumentStatus.UnderReview);
                 // var documents = (await _unitOfWork.LaboratoryDocuments.GetAllAsync())
                 //                   .Where(d => d.Status == VerificationDocumentStatus.Pending);
 

@@ -211,5 +211,34 @@ namespace Shuryan.Application.Interfaces
         Task<bool> AppointmentHasPrescriptionAsync(Guid appointmentId);
 
         #endregion
+
+        #region Patient-Doctor Prescription Operations
+
+        /// <summary>
+        /// Get a specific prescription between patient and doctor with full medication details
+        /// </summary>
+        Task<PrescriptionDetailedResponse?> GetPrescriptionBetweenPatientAndDoctorAsync(
+            Guid prescriptionId,
+            Guid patientId,
+            Guid doctorId);
+
+        /// <summary>
+        /// Get all prescriptions between patient and doctor (summary list)
+        /// </summary>
+        Task<IEnumerable<PrescriptionListItemResponse>> GetPrescriptionListBetweenPatientAndDoctorAsync(
+            Guid patientId,
+            Guid doctorId);
+
+        #endregion
+
+        #region Medication Operations
+
+        /// <summary>
+        /// Get all medication names available in the system with optional search
+        /// </summary>
+        /// <param name="searchTerm">Optional search term to filter medications by name</param>
+        Task<IEnumerable<MedicationNameResponse>> GetAllMedicationNamesAsync(string? searchTerm = null);
+
+        #endregion
     }
 }

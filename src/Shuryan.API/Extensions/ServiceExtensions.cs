@@ -75,6 +75,7 @@ namespace Shuryan.API.Extensions
             services.AddScoped<IPharmacyService, PharmacyService>();
             services.AddScoped<IAppointmentService, AppointmentService>();
             services.AddScoped<IDoctorService, DoctorService>();
+            services.AddScoped<IVerifierService, VerifierService>();
 
             // Doctor Profile Services
             services.AddScoped<IClinicService, ClinicService>();

@@ -24,7 +24,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
             builder.Property(dd => dd.DoctorId).IsRequired();
             builder.Property(dd => dd.DocumentUrl).IsRequired().HasMaxLength(500);
             builder.Property(dd => dd.Type).IsRequired().HasConversion<int>();
-            builder.Property(dd => dd.Status).IsRequired().HasConversion<int>().HasDefaultValue(VerificationDocumentStatus.Pending);
+            builder.Property(dd => dd.Status).IsRequired().HasConversion<int>().HasDefaultValue(VerificationDocumentStatus.UnderReview);
             builder.Property(dd => dd.RejectionReason).IsRequired(false).HasMaxLength(500);
 
             // Indexes

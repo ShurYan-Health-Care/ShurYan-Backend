@@ -721,6 +721,150 @@ namespace Shuryan.API.Controllers
 
         #endregion
 
+        #region PATIENT-DOCTOR PRESCRIPTIONS
+
+        /// <summary>
+        /// Get a specific prescription between patient and doctor with full medication details.
+        /// </summary>
+        [HttpGet("patient/{patientId}/doctor/{doctorId}/prescription/{prescriptionId}")]
+        [ProducesResponseType(typeof(ApiResponse<PrescriptionDetailedResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<PrescriptionDetailedResponse>>> GetPrescriptionBetweenPatientAndDoctor(
+            Guid patientId,
+            Guid doctorId,
+            Guid prescriptionId)
+        {
+            _logger.LogInformation(
+                "Attempting to get prescription {PrescriptionId} between patient {PatientId} and doctor {DoctorId}",
+                prescriptionId, patientId, doctorId);
+
+            try
+            {
+                var prescription = await _prescriptionService.GetPrescriptionBetweenPatientAndDoctorAsync(
+                    prescriptionId, patientId, doctorId);
+
+                if (prescription == null)
+                {
+                    _logger.LogWarning(
+                        "Prescription {PrescriptionId} not found between patient {PatientId} and doctor {DoctorId}",
+                        prescriptionId, patientId, doctorId);
+                    return NotFound(ApiResponse<object>.Failure(
+                        "Prescription not found or does not belong to the specified patient and doctor",
+                        statusCode: 404));
+                }
+
+                return Ok(ApiResponse<PrescriptionDetailedResponse>.Success(
+                    prescription,
+                    "Prescription retrieved successfully"));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _logger.LogWarning(
+                    "Forbidden: User {UserId} attempted to access prescription {PrescriptionId}",
+                    GetCurrentUserId(), prescriptionId);
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    ApiResponse<object>.Failure("You are not authorized to view this prescription", statusCode: 403));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error getting prescription {PrescriptionId} between patient {PatientId} and doctor {DoctorId}",
+                    prescriptionId, patientId, doctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving the prescription",
+                    new[] { ex.Message }, 500));
+            }
+        }
+
+        /// <summary>
+        /// Get all prescriptions between patient and doctor (summary list).
+        /// </summary>
+        [HttpGet("patient/{patientId}/doctor/{doctorId}/list")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<PrescriptionListItemResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<PrescriptionListItemResponse>>>> GetPrescriptionListBetweenPatientAndDoctor(
+            Guid patientId,
+            Guid doctorId)
+        {
+            _logger.LogInformation(
+                "Attempting to get prescription list between patient {PatientId} and doctor {DoctorId}",
+                patientId, doctorId);
+
+            try
+            {
+                var prescriptions = await _prescriptionService.GetPrescriptionListBetweenPatientAndDoctorAsync(
+                    patientId, doctorId);
+
+                _logger.LogInformation(
+                    "Retrieved {Count} prescriptions between patient {PatientId} and doctor {DoctorId}",
+                    prescriptions.Count(), patientId, doctorId);
+
+                return Ok(ApiResponse<IEnumerable<PrescriptionListItemResponse>>.Success(
+                    prescriptions,
+                    "Prescription list retrieved successfully"));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _logger.LogWarning(
+                    "Forbidden: User {UserId} attempted to access prescriptions between patient {PatientId} and doctor {DoctorId}",
+                    GetCurrentUserId(), patientId, doctorId);
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    ApiResponse<object>.Failure("You are not authorized to view these prescriptions", statusCode: 403));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error getting prescription list between patient {PatientId} and doctor {DoctorId}",
+                    patientId, doctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving the prescription list",
+                    new[] { ex.Message }, 500));
+            }
+        }
+
+        #endregion
+
+        #region MEDICATIONS
+
+        /// <summary>
+        /// Get all medication names available in the system with optional search.
+        /// </summary>
+        /// <param name="search">Optional search term to filter medications by brand name or generic name</param>
+        [HttpGet("medications")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<MedicationNameResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<MedicationNameResponse>>>> GetAllMedicationNames(
+            [FromQuery] string? search = null)
+        {
+            _logger.LogInformation("Attempting to get medication names with search: {SearchTerm}", search ?? "none");
+
+            try
+            {
+                var medications = await _prescriptionService.GetAllMedicationNamesAsync(search);
+                
+                _logger.LogInformation("Retrieved {Count} medication names", medications.Count());
+                
+                return Ok(ApiResponse<IEnumerable<MedicationNameResponse>>.Success(
+                    medications,
+                    "Medication names retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting medication names with search: {SearchTerm}", search);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving medication names",
+                    new[] { ex.Message }, 500));
+            }
+        }
+
+        #endregion
+
         #region ANALYTICS & STATISTICS
 
         /// <summary>

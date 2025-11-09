@@ -974,6 +974,148 @@ namespace Shuryan.Application.Services
         }
         #endregion
 
+        #region Patient-Doctor Prescription Operations
+
+        public async Task<PrescriptionDetailedResponse?> GetPrescriptionBetweenPatientAndDoctorAsync(
+            Guid prescriptionId,
+            Guid patientId,
+            Guid doctorId)
+        {
+            try
+            {
+                // جلب الروشتة بالتفاصيل
+                var prescription = await _unitOfWork.Prescriptions.GetPrescriptionWithDetailsAsync(prescriptionId);
+
+                if (prescription == null)
+                {
+                    _logger.LogWarning("Prescription {PrescriptionId} not found", prescriptionId);
+                    return null;
+                }
+
+                // التحقق من أن الروشتة خاصة بالمريض والدكتور المحددين
+                if (prescription.PatientId != patientId || prescription.DoctorId != doctorId)
+                {
+                    _logger.LogWarning(
+                        "Prescription {PrescriptionId} does not belong to patient {PatientId} and doctor {DoctorId}",
+                        prescriptionId, patientId, doctorId);
+                    return null;
+                }
+
+                // تحويل البيانات للـ Response
+                var response = new PrescriptionDetailedResponse
+                {
+                    Id = prescription.Id,
+                    PrescriptionNumber = prescription.PrescriptionNumber,
+                    CreatedAt = prescription.CreatedAt,
+                    Medications = prescription.PrescribedMedications?.Select(pm => new MedicationDetailResponse
+                    {
+                        MedicationName = pm.Medication?.BrandName ?? "Unknown",
+                        Dosage = pm.Dosage,
+                        Frequency = pm.Frequency,
+                        DurationDays = pm.DurationDays,
+                        SpecialInstructions = pm.SpecialInstructions
+                    }).ToList() ?? new List<MedicationDetailResponse>()
+                };
+
+                _logger.LogInformation(
+                    "Retrieved prescription {PrescriptionId} between patient {PatientId} and doctor {DoctorId}",
+                    prescriptionId, patientId, doctorId);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error getting prescription {PrescriptionId} between patient {PatientId} and doctor {DoctorId}",
+                    prescriptionId, patientId, doctorId);
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<PrescriptionListItemResponse>> GetPrescriptionListBetweenPatientAndDoctorAsync(
+            Guid patientId,
+            Guid doctorId)
+        {
+            try
+            {
+                // جلب كل الروشتات بين المريض والدكتور
+                var allPrescriptions = await _unitOfWork.Prescriptions.GetAllAsync();
+                var prescriptions = allPrescriptions
+                    .Where(p => p.PatientId == patientId && p.DoctorId == doctorId)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Select(p => new PrescriptionListItemResponse
+                    {
+                        Id = p.Id,
+                        PrescriptionNumber = p.PrescriptionNumber,
+                        CreatedAt = p.CreatedAt
+                    })
+                    .ToList();
+
+                _logger.LogInformation(
+                    "Retrieved {Count} prescriptions between patient {PatientId} and doctor {DoctorId}",
+                    prescriptions.Count, patientId, doctorId);
+
+                return prescriptions;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error getting prescription list between patient {PatientId} and doctor {DoctorId}",
+                    patientId, doctorId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Medication Operations
+
+        public async Task<IEnumerable<MedicationNameResponse>> GetAllMedicationNamesAsync(string? searchTerm = null)
+        {
+            try
+            {
+                // جلب كل الأدوية من الـ Repository
+                var medications = await _unitOfWork.Medications.GetAllAsync();
+
+                // تطبيق الـ search لو موجود
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var searchLower = searchTerm.ToLower().Trim();
+                    medications = medications.Where(m =>
+                        m.BrandName.ToLower().Contains(searchLower) ||
+                        (m.GenericName != null && m.GenericName.ToLower().Contains(searchLower))
+                    ).ToList();
+                }
+
+                // تحويلها لـ Response
+                var medicationNames = medications
+                    .OrderBy(m => m.BrandName)
+                    .Select(m => new MedicationNameResponse
+                    {
+                        Id = m.Id,
+                        BrandName = m.BrandName,
+                        GenericName = m.GenericName,
+                        Strength = m.Strength,
+                        DosageForm = m.DosageForm
+                    })
+                    .ToList();
+
+                _logger.LogInformation(
+                    "Retrieved {Count} medication names{SearchInfo}",
+                    medicationNames.Count,
+                    string.IsNullOrWhiteSpace(searchTerm) ? "" : $" matching '{searchTerm}'");
+
+                return medicationNames;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting medication names with search term: {SearchTerm}", searchTerm);
+                throw;
+            }
+        }
+
+        #endregion
+
         // Helper method
         private string GenerateUniquePrescriptionNumber()
         {

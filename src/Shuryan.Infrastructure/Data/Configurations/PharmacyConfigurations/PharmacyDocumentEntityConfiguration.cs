@@ -19,7 +19,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.PharmacyConfigurations
             builder.Property(pd => pd.PharmacyId).IsRequired();
             builder.Property(pd => pd.DocumentUrl).IsRequired().HasMaxLength(500);
             builder.Property(pd => pd.Type).IsRequired().HasConversion<int>();
-            builder.Property(pd => pd.Status).IsRequired().HasConversion<int>().HasDefaultValue(VerificationDocumentStatus.Pending);
+            builder.Property(pd => pd.Status).IsRequired().HasConversion<int>().HasDefaultValue(VerificationDocumentStatus.UnderReview);
             builder.Property(pd => pd.RejectionReason).IsRequired(false).HasMaxLength(500);
 
             // Indexes
