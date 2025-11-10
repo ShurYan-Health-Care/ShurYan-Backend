@@ -110,10 +110,12 @@ namespace Shuryan.Infrastructure.Repositories.Medical
             if (isDoctor)
                 query = query.Include(a => a.Patient)
                              .Include(a => a.DoctorReview)
+                             .Include(a => a.Prescription)
                              .Where(a => a.DoctorId == userId);
             else
                 query = query.Include(a => a.Doctor)
                              .Include(a => a.DoctorReview)
+                             .Include(a => a.Prescription)
                              .Where(a => a.PatientId == userId);
 
             return await query
