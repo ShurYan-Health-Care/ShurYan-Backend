@@ -33,6 +33,9 @@ namespace Shuryan.Application.DTOs.Responses.Appointment
         public int? PatientAge { get; set; }
         public string? PatientProfileImageUrl { get; set; }
         
+        // 🆕 Prescription ID
+        public Guid? PrescriptionId { get; set; }
+        
         // Navigation Properties
         public PatientBasicResponse? Patient { get; set; }
         public DoctorBasicResponse? Doctor { get; set; }

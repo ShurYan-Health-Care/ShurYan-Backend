@@ -19,7 +19,9 @@ namespace Shuryan.Application.Mappers
                         ? CalculateAge(src.Patient.BirthDate.Value) 
                         : (int?)null))
                 .ForMember(dest => dest.PatientProfileImageUrl, opt => opt.MapFrom(src => 
-                    src.Patient != null ? src.Patient.ProfileImageUrl : null));
+                    src.Patient != null ? src.Patient.ProfileImageUrl : null))
+                .ForMember(dest => dest.PrescriptionId, opt => opt.MapFrom(src => 
+                    src.Prescription != null ? src.Prescription.Id : (Guid?)null));
             
             CreateMap<CreateAppointmentRequest, Appointment>();
             CreateMap<UpdateAppointmentRequest, Appointment>()
