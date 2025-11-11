@@ -913,8 +913,8 @@ namespace Shuryan.Application.Services.Auth
         {
             try
             {
-                // Validate access token (even if expired)
-                var userId = _tokenService.GetUserIdFromToken(dto.AccessToken);
+                // Extract user ID from access token (even if expired)
+                var userId = _tokenService.GetUserIdFromExpiredToken(dto.AccessToken);
 
                 if (userId == null)
                 {

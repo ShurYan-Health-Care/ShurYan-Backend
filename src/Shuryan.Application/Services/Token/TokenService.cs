@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -183,6 +183,48 @@ namespace Shuryan.Application.Services.Token
             catch
             {
                 return true; // If we can't read it, consider it expired
+            }
+        }
+
+        /// <inheritdoc/>
+        public Guid? GetUserIdFromExpiredToken(string token)
+        {
+            try
+            {
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = _jwtSettings.ValidateIssuer,
+                    ValidateAudience = _jwtSettings.ValidateAudience,
+                    ValidateLifetime = false, // ← Don't validate expiration for refresh token scenarios
+                    ValidateIssuerSigningKey = _jwtSettings.ValidateIssuerSigningKey,
+                    ValidIssuer = _jwtSettings.Issuer,
+                    ValidAudience = _jwtSettings.Audience,
+                    IssuerSigningKey = key,
+                    ClockSkew = TimeSpan.Zero // No clock skew needed when not validating lifetime
+                };
+
+                var principal = _tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+
+                // Verify it's a JWT token with the correct algorithm
+                if (validatedToken is JwtSecurityToken jwtToken &&
+                    jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)
+                                      ?? principal.FindFirst(JwtRegisteredClaimNames.Sub);
+
+                    if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
+                    {
+                        return userId;
+                    }
+                }
+
+                return null;
+            }
+            catch
+            {
+                return null;
             }
         }
     }

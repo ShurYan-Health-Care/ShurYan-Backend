@@ -58,6 +58,9 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			builder.HasIndex(a => new { a.PatientId, a.Status })
 				.HasDatabaseName("IX_Appointment_Patient_Status");
 
+			// Composite index for GetDoctorPatientsAsync query performance
+			builder.HasIndex(a => new { a.DoctorId, a.Status, a.ScheduledStartTime })
+				.HasDatabaseName("IX_Appointment_Doctor_Status_StartTime");
 
 			// Relationships
 			builder.HasOne(a => a.Patient)
