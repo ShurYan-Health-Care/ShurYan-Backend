@@ -240,5 +240,14 @@ namespace Shuryan.Application.Interfaces
         Task<IEnumerable<MedicationNameResponse>> GetAllMedicationNamesAsync(string? searchTerm = null);
 
         #endregion
+
+        #region Patient Prescriptions
+
+        /// <summary>
+        /// Get all prescriptions for a patient from all doctors (for profile page)
+        /// </summary>
+        Task<IEnumerable<PatientPrescriptionListResponse>> GetPatientPrescriptionsListAsync(Guid patientId);
+
+        #endregion
     }
 }

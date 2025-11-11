@@ -39,6 +39,16 @@ namespace Shuryan.Infrastructure.Repositories.Pharmacies
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Prescription>> GetAllPrescriptionsForPatientWithDetailsAsync(Guid patientId)
+        {
+            return await _dbSet
+                .Include(p => p.Doctor)
+                .Include(p => p.Appointment)
+                .Where(p => p.PatientId == patientId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Prescription>> GetActivePrescriptionsForPatientAsync(Guid patientId)
         {
             return await _dbSet

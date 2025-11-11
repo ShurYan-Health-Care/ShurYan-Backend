@@ -1116,10 +1116,80 @@ namespace Shuryan.Application.Services
 
         #endregion
 
-        // Helper method
+        #region Patient Prescriptions
+
+        public async Task<IEnumerable<PatientPrescriptionListResponse>> GetPatientPrescriptionsListAsync(Guid patientId)
+        {
+            try
+            {
+                _logger.LogInformation("Retrieving all prescriptions for patient {PatientId}", patientId);
+
+                // التحقق من وجود المريض
+                var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
+                if (patient == null)
+                {
+                    _logger.LogWarning("Patient not found: {PatientId}", patientId);
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+                }
+
+                // جلب كل الروشتات مع الـ Doctor و Appointment
+                var prescriptions = await _unitOfWork.Prescriptions.GetAllPrescriptionsForPatientWithDetailsAsync(patientId);
+                
+                var patientPrescriptions = prescriptions
+                    .Select(p => new PatientPrescriptionListResponse
+                    {
+                        Id = p.Id,
+                        PrescriptionNumber = p.PrescriptionNumber,
+                        CreatedAt = p.CreatedAt,
+                        DoctorId = p.DoctorId,
+                        DoctorName = p.Doctor != null ? $"{p.Doctor.FirstName} {p.Doctor.LastName}" : "Unknown",
+                        DoctorSpecialty = p.Doctor != null ? GetMedicalSpecialtyDescription(p.Doctor.MedicalSpecialty) : "غير محدد",
+                        DoctorProfileImageUrl = p.Doctor?.ProfileImageUrl,
+                        AppointmentType = p.Appointment?.PreviousAppointmentId.HasValue == true ? "followup" : "regular",
+                        AppointmentId = p.AppointmentId
+                    })
+                    .ToList();
+
+                _logger.LogInformation(
+                    "Retrieved {Count} prescriptions for patient {PatientId}",
+                    patientPrescriptions.Count, patientId);
+
+                return patientPrescriptions;
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving prescriptions for patient {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        // Helper methods
         private string GenerateUniquePrescriptionNumber()
         {
             return $"RX-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+        }
+
+        private string GetMedicalSpecialtyDescription(Shuryan.Core.Enums.Doctor.MedicalSpecialty specialty)
+        {
+            var type = specialty.GetType();
+            var memberInfo = type.GetMember(specialty.ToString());
+            
+            if (memberInfo.Length > 0)
+            {
+                var attributes = memberInfo[0].GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false);
+                if (attributes.Length > 0)
+                {
+                    return ((System.ComponentModel.DescriptionAttribute)attributes[0]).Description;
+                }
+            }
+            
+            return specialty.ToString();
         }
     }
 }
