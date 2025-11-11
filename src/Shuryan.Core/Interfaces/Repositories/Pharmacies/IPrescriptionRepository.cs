@@ -1,4 +1,4 @@
-﻿using Shuryan.Core.Entities.External.Pharmacies;
+using Shuryan.Core.Entities.External.Pharmacies;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +29,12 @@ namespace Shuryan.Core.Interfaces.Repositories
         /// <returns>قائمة بروشتات المريض.</returns>
         Task<IEnumerable<Prescription>> GetPagedPrescriptionsForPatientAsync(Guid patientId, int pageNumber, int pageSize);
 
+        /// <summary>
+        /// يجلب كل الروشتات الخاصة بمريض معين مع معلومات الدكتور والحجز
+        /// </summary>
+        /// <param name="patientId">الرقم التعريفي للمريض</param>
+        /// <returns>قائمة بروشتات المريض مع التفاصيل.</returns>
+        Task<IEnumerable<Prescription>> GetAllPrescriptionsForPatientWithDetailsAsync(Guid patientId);
 
         /// <summary>
         /// يجلب الروشتات "النشطة" فقط لمريض معين (التي لم يتم طلبها بعد).

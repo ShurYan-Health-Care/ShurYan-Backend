@@ -960,6 +960,7 @@ namespace Shuryan.Application.Services
                     Duration = a.SessionDurationMinutes,
                     AppointmentType = a.PreviousAppointmentId.HasValue ? "followup" : "regular",
                     Status = a.Status,
+                    CreatedAt = a.CreatedAt,
                     Notes = a.CancellationReason,
                     Price = a.ConsultationFee
                 }).ToList();
