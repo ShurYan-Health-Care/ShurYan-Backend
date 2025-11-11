@@ -266,19 +266,15 @@ namespace Shuryan.Infrastructure.Repositories.Medical
             // Get total count before pagination
             var totalCount = await query.CountAsync();
 
-            // Apply sorting
-            query = sortBy.ToLower() switch
-            {
-                "patientname" => sortOrder.ToLower() == "asc"
-                    ? query.OrderBy(a => a.Patient.FirstName).ThenBy(a => a.Patient.LastName)
-                    : query.OrderByDescending(a => a.Patient.FirstName).ThenByDescending(a => a.Patient.LastName),
-                "status" => sortOrder.ToLower() == "asc"
-                    ? query.OrderBy(a => a.Status).ThenByDescending(a => a.ScheduledStartTime)
-                    : query.OrderByDescending(a => a.Status).ThenByDescending(a => a.ScheduledStartTime),
-                _ => sortOrder.ToLower() == "asc" // Default: appointmentDate
-                    ? query.OrderBy(a => a.ScheduledStartTime)
-                    : query.OrderByDescending(a => a.ScheduledStartTime)
-            };
+            // Apply custom priority sorting:
+            // 1. InProgress (3) first
+            // 2. CheckedIn (2) second
+            // 3. Rest sorted by ScheduledStartTime
+            query = query
+                .OrderByDescending(a => a.Status == AppointmentStatus.InProgress ? 3 : 0)
+                .ThenByDescending(a => a.Status == AppointmentStatus.CheckedIn ? 2 : 0)
+                .ThenByDescending(a => a.Status == AppointmentStatus.Confirmed ? 1 : 0)
+                .ThenBy(a => a.ScheduledStartTime);
 
             // Apply pagination
             var appointments = await query

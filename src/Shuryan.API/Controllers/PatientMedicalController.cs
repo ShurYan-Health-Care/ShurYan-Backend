@@ -21,13 +21,16 @@ namespace Shuryan.API.Controllers
     public class PatientMedicalController : ControllerBase
     {
         private readonly IPatientService _patientService;
+        private readonly IPrescriptionService _prescriptionService;
         private readonly ILogger<PatientMedicalController> _logger;
 
         public PatientMedicalController(
             IPatientService patientService,
+            IPrescriptionService prescriptionService,
             ILogger<PatientMedicalController> logger)
         {
             _patientService = patientService;
+            _prescriptionService = prescriptionService;
             _logger = logger;
         }
 
@@ -250,6 +253,41 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogError(ex, "Error retrieving prescription {PrescriptionId} for patient: {PatientId}", prescriptionId, currentPatientId);
                 return StatusCode(500, new { Message = "An unexpected error occurred while retrieving prescription" });
+            }
+        }
+
+        /// <summary>
+        /// Get all prescriptions for patient profile page with doctor info
+        /// </summary>
+        [HttpGet("prescriptions/list")]
+        [ProducesResponseType(typeof(IEnumerable<PatientPrescriptionListResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<PatientPrescriptionListResponse>>> GetMyPrescriptionsList()
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            _logger.LogInformation("Get prescriptions list for patient profile: {PatientId}", currentPatientId);
+
+            try
+            {
+                var prescriptions = await _prescriptionService.GetPatientPrescriptionsListAsync(currentPatientId);
+                
+                _logger.LogInformation(
+                    "Retrieved {Count} prescriptions for patient profile: {PatientId}", 
+                    prescriptions.Count(), currentPatientId);
+                
+                return Ok(prescriptions);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Patient not found for prescriptions list: {PatientId}", currentPatientId);
+                return NotFound(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving prescriptions list for patient: {PatientId}", currentPatientId);
+                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving prescriptions list" });
             }
         }
 

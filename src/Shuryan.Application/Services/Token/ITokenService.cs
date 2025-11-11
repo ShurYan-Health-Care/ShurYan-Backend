@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -66,5 +66,12 @@ namespace Shuryan.Application.Services.Token
         /// <param name="token">JWT token</param>
         /// <returns>True if expired, false otherwise</returns>
         bool IsTokenExpired(string token);
+
+        /// <summary>
+        /// Extracts user ID from a JWT token without validating lifetime (for refresh token scenarios)
+        /// </summary>
+        /// <param name="token">JWT token (can be expired)</param>
+        /// <returns>User ID if found, null otherwise</returns>
+        Guid? GetUserIdFromExpiredToken(string token);
     }
 }
