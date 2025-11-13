@@ -5,6 +5,7 @@ namespace Shuryan.Core.Enums
         Active = 1,
         Cancelled = 2,
         Dispensed = 3,
-        Expired = 4
+        Expired = 4,
+        Reported = 5
     }
 }

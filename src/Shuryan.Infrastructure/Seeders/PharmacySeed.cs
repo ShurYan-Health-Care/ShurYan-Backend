@@ -20,11 +20,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.Pharmacies.AnyAsync())
             {
-                Console.WriteLine("⏭️  Pharmacies already seeded. Skipping...");
+                Console.WriteLine("Pharmacies already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Pharmacies...");
+            Console.WriteLine("Seeding Pharmacies...");
 
             var verifier = await context.Verifiers.FirstOrDefaultAsync();
             if (verifier == null)
@@ -377,7 +377,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.PharmacyWorkingHours.AddRangeAsync(workingHours);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {pharmacies.Count} Pharmacies and {workingHours.Count} Working Hours seeded successfully!");
+            Console.WriteLine($"{pharmacies.Count} Pharmacies and {workingHours.Count} Working Hours seeded successfully!");
         }
     }
 }

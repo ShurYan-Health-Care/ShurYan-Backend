@@ -15,12 +15,12 @@ namespace Shuryan.Core.Entities.External.Pharmacies
 
         public PharmacyItemStatus Status { get; set; }
 
-        // Available - لو الدواء موجود
+        // Available
         public int? AvailableQuantity { get; set; }
         public decimal? UnitPrice { get; set; }
         public decimal? TotalPrice { get; set; }
 
-        // Alternative - لو فيه بديل
+        // Alternative
         [ForeignKey("AlternativeMedication")]
         public Guid? AlternativeMedicationId { get; set; }
         public decimal? AlternativeUnitPrice { get; set; }

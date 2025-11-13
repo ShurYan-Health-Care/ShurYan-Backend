@@ -16,11 +16,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.LabTests.AnyAsync())
             {
-                Console.WriteLine("⏭️  Lab Tests already seeded. Skipping...");
+                Console.WriteLine("Lab Tests already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Lab Tests...");
+            Console.WriteLine("Seeding Lab Tests...");
 
             var labTests = new List<LabTest>
             {
@@ -470,7 +470,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.LabTests.AddRangeAsync(labTests);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {labTests.Count} Lab Tests seeded successfully!");
+            Console.WriteLine($"{labTests.Count} Lab Tests seeded successfully!");
         }
     }
 }

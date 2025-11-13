@@ -97,6 +97,20 @@ namespace Shuryan.Infrastructure.Repositories.Pharmacies
 
             return filteredPharmacies;
         }
+
+        public async Task<IEnumerable<Pharmacy>> GetAllActivePharmaciesWithDetailsAsync()
+        {
+            return await _dbSet
+                .Include(p => p.Address)
+                .Include(p => p.WorkingHours)
+                .Include(p => p.PharmacyReviews)
+                .Where(p => !p.IsDeleted 
+                    && p.VerificationStatus == Shuryan.Core.Enums.Identity.VerificationStatus.Verified
+                    && p.Address != null
+                    && p.Address.Latitude.HasValue
+                    && p.Address.Longitude.HasValue)
+                .ToListAsync();
+        }
     }
 }
 

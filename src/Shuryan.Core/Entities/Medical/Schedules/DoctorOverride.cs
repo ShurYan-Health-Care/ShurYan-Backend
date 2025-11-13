@@ -10,7 +10,6 @@ using Shuryan.Core.Enums.Appointments;
 
 namespace Shuryan.Core.Entities.Medical.Schedules
 {
-    // الكلاس د ال هتبقى مسؤولة عن اضافة او حذف مواعيد استثنائية ف ايام معينة
     public class DoctorOverride : AuditableEntity
 	{
 
@@ -19,8 +18,7 @@ namespace Shuryan.Core.Entities.Medical.Schedules
 
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
-        public OverrideType Type { get; set; } // Available or Unavailable
-
+        public OverrideType Type { get; set; }
 
         // Navigation Properties
         public virtual Doctor Doctor { get; set; } = null!;

@@ -34,11 +34,6 @@ namespace Shuryan.Infrastructure.Data
 		/// <summary>
 		/// External Entities
 		/// </summary>
-
-
-		/// <summary>
-		/// External Entities
-		/// </summary>
 		// Clinics
 		public DbSet<Clinic> Clinics { get; set; }
 		public DbSet<ClinicPhoneNumber> ClinicPhoneNumbers { get; set; }
@@ -55,6 +50,7 @@ namespace Shuryan.Infrastructure.Data
 		// Pharmacies
 		public DbSet<Medication> Medications { get; set; }
 		public DbSet<PharmacyOrder> PharmacyOrders { get; set; }
+		public DbSet<PharmacyOrderItem> PharmacyOrderItems { get; set; }
 		public DbSet<PharmacyWorkingHours> PharmacyWorkingHours { get; set; }
 		public DbSet<PrescribedMedication> PrescribedMedications { get; set; }
 		public DbSet<Prescription> Prescriptions { get; set; }

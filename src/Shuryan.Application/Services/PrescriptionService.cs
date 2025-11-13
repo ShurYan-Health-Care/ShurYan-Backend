@@ -1141,6 +1141,8 @@ namespace Shuryan.Application.Services
                         Id = p.Id,
                         PrescriptionNumber = p.PrescriptionNumber,
                         CreatedAt = p.CreatedAt,
+                        Status = (int)p.Status,
+                        StatusName = p.Status.ToString(),
                         DoctorId = p.DoctorId,
                         DoctorName = p.Doctor != null ? $"{p.Doctor.FirstName} {p.Doctor.LastName}" : "Unknown",
                         DoctorSpecialty = p.Doctor != null ? GetMedicalSpecialtyDescription(p.Doctor.MedicalSpecialty) : "غير محدد",

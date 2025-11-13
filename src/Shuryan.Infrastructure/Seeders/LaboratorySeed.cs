@@ -20,11 +20,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.Laboratories.AnyAsync())
             {
-                Console.WriteLine("⏭️  Laboratories already seeded. Skipping...");
+                Console.WriteLine("Laboratories already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Laboratories...");
+            Console.WriteLine("Seeding Laboratories...");
 
             var verifier = await context.Verifiers.FirstOrDefaultAsync();
             if (verifier == null)
@@ -241,7 +241,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.LabWorkingHours.AddRangeAsync(workingHours);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {laboratories.Count} Laboratories and {workingHours.Count} Working Hours seeded successfully!");
+            Console.WriteLine($"{laboratories.Count} Laboratories and {workingHours.Count} Working Hours seeded successfully!");
         }
     }
 }

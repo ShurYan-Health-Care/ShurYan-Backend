@@ -16,11 +16,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.Medications.AnyAsync())
             {
-                Console.WriteLine("⏭️  Medications already seeded. Skipping...");
+                Console.WriteLine("Medications already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Medications...");
+            Console.WriteLine("Seeding Medications...");
 
             var medications = new List<Medication>
             {
@@ -95,7 +95,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.Medications.AddRangeAsync(medications);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {medications.Count} Medications seeded successfully!");
+            Console.WriteLine($"{medications.Count} Medications seeded successfully!");
         }
     }
 }

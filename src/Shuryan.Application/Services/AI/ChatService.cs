@@ -163,7 +163,7 @@ namespace Shuryan.Application.Services.AI
                 // 9. احفظ كل حاجة
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("✅ Message processed successfully");
+                _logger.LogInformation("Message processed successfully");
 
                 // 10. ارجع الـ Response
                 return new ChatMessageResponse

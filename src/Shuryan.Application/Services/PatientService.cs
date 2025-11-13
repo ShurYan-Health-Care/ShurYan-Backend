@@ -17,13 +17,16 @@ using Shuryan.Application.DTOs.Responses.Patient;
 using Shuryan.Application.DTOs.Responses.Prescription;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Appointments;
 using Shuryan.Core.Enums.Laboratory;
+using Shuryan.Core.Enums.Pharmacy;
 using Shuryan.Core.Interfaces;
 using Shuryan.Core.Interfaces.Repositories;
+using Shuryan.Core.Interfaces.Repositories.Pharmacies;
 using Shuryan.Core.Interfaces.UnitOfWork;
 
 namespace Shuryan.Application.Services
@@ -31,6 +34,7 @@ namespace Shuryan.Application.Services
     public partial class PatientService : IPatientService
     {
         private readonly IPatientRepository _patientRepository;
+        private readonly IPharmacyRepository _pharmacyRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<PatientService> _logger;
@@ -38,12 +42,14 @@ namespace Shuryan.Application.Services
 
         public PatientService(
             IPatientRepository patientRepository,
+            IPharmacyRepository pharmacyRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             ILogger<PatientService> logger,
             IFileUploadService fileUploadService)
         {
             _patientRepository = patientRepository;
+            _pharmacyRepository = pharmacyRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
@@ -1296,6 +1302,87 @@ namespace Shuryan.Application.Services
 
         #endregion
 
+        #region Pharmacy Operations
+
+        /// <summary>
+        /// البحث عن أقرب 3 صيدليات للمريض بناءً على الإحداثيات
+        /// </summary>
+        public async Task<FindNearbyPharmaciesResponse> FindNearbyPharmaciesAsync(FindNearbyPharmaciesRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Searching for nearby pharmacies at coordinates: {Latitude}, {Longitude}", 
+                    request.Latitude, request.Longitude);
+
+                // جلب كل الصيدليات المفعلة مع تفاصيلها
+                var pharmacies = await _pharmacyRepository.GetAllActivePharmaciesWithDetailsAsync();
+
+                if (!pharmacies.Any())
+                {
+                    _logger.LogWarning("No active pharmacies found in the system");
+                    return new FindNearbyPharmaciesResponse
+                    {
+                        NearbyPharmacies = new List<NearbyPharmacyResponse>(),
+                        TotalFound = 0,
+                        SearchRadiusKm = 0
+                    };
+                }
+
+                // حساب المسافة لكل صيدلية
+                var pharmaciesWithDistance = new List<(Pharmacy pharmacy, double distance)>();
+
+                foreach (var pharmacy in pharmacies)
+                {
+                    if (pharmacy.Address?.Latitude.HasValue == true && pharmacy.Address?.Longitude.HasValue == true)
+                    {
+                        var distance = CalculateDistance(
+                            request.Latitude, request.Longitude,
+                            pharmacy.Address.Latitude.Value, pharmacy.Address.Longitude.Value);
+
+                        pharmaciesWithDistance.Add((pharmacy, distance));
+                    }
+                }
+
+                // ترتيب حسب المسافة وأخذ أقرب 3
+                var nearestPharmacies = pharmaciesWithDistance
+                    .OrderBy(x => x.distance)
+                    .Take(3)
+                    .ToList();
+
+                // تحويل إلى Response DTOs - بس المعلومات المطلوبة
+                var nearbyPharmacyResponses = nearestPharmacies.Select(x => new NearbyPharmacyResponse
+                {
+                    Id = x.pharmacy.Id,
+                    Name = x.pharmacy.Name,
+                    DistanceInKm = Math.Round(x.distance, 2),
+                    OffersDelivery = x.pharmacy.OffersDelivery,
+                    DeliveryFee = x.pharmacy.DeliveryFee,
+                    ProfileImageUrl = x.pharmacy.ProfilePictureUrl,
+                    PhoneNumber = x.pharmacy.PhoneNumber ?? string.Empty
+                }).ToList();
+
+                var maxDistance = nearestPharmacies.Any() ? nearestPharmacies.Max(x => x.distance) : 0;
+
+                _logger.LogInformation("Found {Count} nearby pharmacies within {MaxDistance}km", 
+                    nearbyPharmacyResponses.Count, Math.Round(maxDistance, 2));
+
+                return new FindNearbyPharmaciesResponse
+                {
+                    NearbyPharmacies = nearbyPharmacyResponses,
+                    TotalFound = nearbyPharmacyResponses.Count,
+                    SearchRadiusKm = Math.Round(maxDistance, 2)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error finding nearby pharmacies for coordinates: {Latitude}, {Longitude}", 
+                    request.Latitude, request.Longitude);
+                throw;
+            }
+        }
+
+        #endregion
+
         #region Private Helper Methods
 
         /// <summary>
@@ -1321,6 +1408,460 @@ namespace Shuryan.Application.Services
                     ? query.OrderByDescending(p => p.CreatedAt)
                     : query.OrderBy(p => p.CreatedAt)
             };
+        }
+
+        /// <summary>
+        /// حساب المسافة بين نقطتين باستخدام Haversine formula
+        /// </summary>
+        /// <param name="lat1">خط العرض للنقطة الأولى</param>
+        /// <param name="lon1">خط الطول للنقطة الأولى</param>
+        /// <param name="lat2">خط العرض للنقطة الثانية</param>
+        /// <param name="lon2">خط الطول للنقطة الثانية</param>
+        /// <returns>المسافة بالكيلومتر</returns>
+        private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double earthRadiusKm = 6371.0;
+
+            var dLat = DegreesToRadians(lat2 - lat1);
+            var dLon = DegreesToRadians(lon2 - lon1);
+
+            lat1 = DegreesToRadians(lat1);
+            lat2 = DegreesToRadians(lat2);
+
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2) * Math.Cos(lat1) * Math.Cos(lat2);
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+            return earthRadiusKm * c;
+        }
+
+        /// <summary>
+        /// تحويل الدرجات إلى راديان
+        /// </summary>
+        private static double DegreesToRadians(double degrees)
+        {
+            return degrees * (Math.PI / 180);
+        }
+
+        #endregion
+
+        #region Pharmacy Operations - Patient Specific
+
+        /// <summary>
+        /// البحث عن أقرب 3 صيدليات للمريض بناءً على عنوانه المسجل
+        /// </summary>
+        public async Task<FindNearbyPharmaciesResponse> FindNearbyPharmaciesForPatientAsync(Guid patientId)
+        {
+            try
+            {
+                _logger.LogInformation("Finding nearby pharmacies for patient: {PatientId}", patientId);
+
+                // جلب المريض مع عنوانه
+                var patient = await _patientRepository.GetByIdWithDetailsAsync(patientId);
+                if (patient == null || patient.IsDeleted)
+                {
+                    throw new KeyNotFoundException($"Patient with ID {patientId} not found");
+                }
+
+                // التحقق من وجود عنوان مع إحداثيات
+                if (patient.Address == null)
+                {
+                    throw new KeyNotFoundException("Patient address not found. Please add your address first.");
+                }
+
+                if (!patient.Address.Latitude.HasValue || !patient.Address.Longitude.HasValue)
+                {
+                    throw new KeyNotFoundException("Patient address coordinates not found. Please update your address with location.");
+                }
+
+                // استخدام الـ method الموجود مع إحداثيات المريض
+                var request = new FindNearbyPharmaciesRequest
+                {
+                    Latitude = patient.Address.Latitude.Value,
+                    Longitude = patient.Address.Longitude.Value
+                };
+
+                _logger.LogInformation("Using patient address coordinates: {Latitude}, {Longitude}", 
+                    request.Latitude, request.Longitude);
+
+                return await FindNearbyPharmaciesAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error finding nearby pharmacies for patient: {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// إرسال روشتة إلى صيدلية معينة
+        /// </summary>
+        public async Task<SendPrescriptionResponse> SendPrescriptionToPharmacyAsync(Guid patientId, Guid prescriptionId, SendPrescriptionToPharmacyRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Sending prescription {PrescriptionId} from patient {PatientId} to pharmacy {PharmacyId}", 
+                    prescriptionId, patientId, request.PharmacyId);
+
+                // التحقق من وجود المريض
+                var patient = await _patientRepository.GetByIdAsync(patientId);
+                if (patient == null)
+                {
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+                }
+
+                // التحقق من وجود الروشتة وأنها تخص المريض
+                var prescription = await _unitOfWork.Repository<Prescription>()
+                    .GetQueryable()
+                    .Include(p => p.Doctor)
+                    .Include(p => p.PrescribedMedications)
+                        .ThenInclude(pm => pm.Medication)
+                    .FirstOrDefaultAsync(p => p.Id == prescriptionId && p.PatientId == patientId);
+
+                if (prescription == null)
+                {
+                    throw new ArgumentException($"Prescription with ID {prescriptionId} not found for patient {patientId}");
+                }
+
+                // التحقق من حالة الروشتة (يجب أن تكون Active)
+                if (prescription.Status != PrescriptionStatus.Active)
+                {
+                    throw new InvalidOperationException($"Prescription {prescriptionId} is not active. Current status: {prescription.Status}");
+                }
+
+                // التحقق من وجود الصيدلية
+                var pharmacy = await _pharmacyRepository.GetByIdAsync(request.PharmacyId);
+                if (pharmacy == null)
+                {
+                    throw new ArgumentException($"Pharmacy with ID {request.PharmacyId} not found");
+                }
+
+                // التحقق من أن الروشتة لم يتم إرسالها لصيدلية أخرى من قبل
+                var existingOrder = await _unitOfWork.Repository<PharmacyOrder>()
+                    .GetQueryable()
+                    .FirstOrDefaultAsync(po => po.PrescriptionId == prescriptionId && 
+                                              po.Status != PharmacyOrderStatus.Cancelled);
+
+                if (existingOrder != null)
+                {
+                    throw new InvalidOperationException($"Prescription {prescriptionId} has already been sent to a pharmacy");
+                }
+
+                // إنشاء رقم طلب فريد
+                var orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
+
+                // إنشاء طلب جديد للصيدلية
+                var pharmacyOrder = new PharmacyOrder
+                {
+                    Id = Guid.NewGuid(),
+                    OrderNumber = orderNumber,
+                    Status = PharmacyOrderStatus.PendingPharmacyResponse,
+                    PatientId = patientId,
+                    PharmacyId = request.PharmacyId,
+                    PrescriptionId = prescriptionId,
+                    DeliveryType = OrderDeliveryType.Delivery, // افتراضي: توصيل
+                    PatientNotes = null, // لا توجد ملاحظات
+                    TotalCost = 0, // سيتم تحديده من قبل الصيدلية
+                    DeliveryFee = 0, // سيتم تحديده من قبل الصيدلية
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                // حفظ الطلب في قاعدة البيانات
+                await _unitOfWork.Repository<PharmacyOrder>().AddAsync(pharmacyOrder);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Successfully created pharmacy order {OrderId} for prescription {PrescriptionId}", 
+                    pharmacyOrder.Id, prescriptionId);
+
+                // إنشاء الـ response
+                var response = new SendPrescriptionResponse
+                {
+                    OrderId = pharmacyOrder.Id,
+                    OrderNumber = orderNumber,
+                    PharmacyName = pharmacy.Name,
+                    PrescriptionNumber = prescription.PrescriptionNumber,
+                    Status = (int)pharmacyOrder.Status,
+                    StatusName = pharmacyOrder.Status.ToString(),
+                    SentAt = pharmacyOrder.CreatedAt,
+                    Message = $"تم إرسال الروشتة بنجاح إلى {pharmacy.Name}"
+                };
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending prescription {PrescriptionId} to pharmacy {PharmacyId}", 
+                    prescriptionId, request.PharmacyId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// جلب رد الصيدلية على طلب المريض
+        /// </summary>
+        public async Task<PatientPharmacyResponseView> GetPharmacyResponseAsync(Guid patientId, Guid orderId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting pharmacy response for order {OrderId} and patient {PatientId}", orderId, patientId);
+
+                // التحقق من وجود المريض
+                var patient = await _patientRepository.GetByIdAsync(patientId);
+                if (patient == null)
+                {
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+                }
+
+                // التحقق من وجود الطلب وأنه يخص المريض
+                var order = await _unitOfWork.Repository<PharmacyOrder>()
+                    .GetQueryable()
+                    .Include(po => po.Pharmacy)
+                    .Include(po => po.Prescription)
+                        .ThenInclude(p => p.PrescribedMedications)
+                            .ThenInclude(pm => pm.Medication)
+                    .Include(po => po.OrderItems)
+                        .ThenInclude(oi => oi.RequestedMedication)
+                    .Include(po => po.OrderItems)
+                        .ThenInclude(oi => oi.AlternativeMedication)
+                    .FirstOrDefaultAsync(po => po.Id == orderId && po.PatientId == patientId);
+
+                if (order == null)
+                {
+                    throw new ArgumentException($"Order with ID {orderId} not found for patient {patientId}");
+                }
+
+                // التحقق من أن الصيدلية ردت على الطلب
+                if (order.Status == PharmacyOrderStatus.PendingPharmacyResponse)
+                {
+                    throw new InvalidOperationException("Pharmacy has not responded to this order yet");
+                }
+
+                // إنشاء قائمة الأدوية من البيانات الحقيقية في PharmacyOrderItem
+                var medications = new List<PatientMedicationResponse>();
+                
+                if (order.OrderItems != null && order.OrderItems.Any())
+                {
+                    foreach (var orderItem in order.OrderItems)
+                    {
+                        var alternativeInfo = orderItem.AlternativeMedication != null ? new PatientAlternativeMedicationResponse
+                        {
+                            MedicationName = orderItem.AlternativeMedication.BrandName,
+                            UnitPrice = orderItem.AlternativeUnitPrice ?? 0
+                        } : null;
+
+                        medications.Add(new PatientMedicationResponse
+                        {
+                            MedicationName = orderItem.RequestedMedication.BrandName,
+                            IsAvailable = orderItem.Status == PharmacyItemStatus.Available,
+                            AvailableQuantity = orderItem.AvailableQuantity ?? 0,
+                            UnitPrice = orderItem.UnitPrice ?? 0,
+                            AlternativeOne = alternativeInfo
+                        });
+                    }
+                }
+                else if (order.Prescription?.PrescribedMedications != null)
+                {
+                    // Fallback: لو مفيش OrderItems، نستخدم PrescribedMedications مع قيم افتراضية
+                    foreach (var prescribedMed in order.Prescription.PrescribedMedications)
+                    {
+                        medications.Add(new PatientMedicationResponse
+                        {
+                            MedicationName = prescribedMed.Medication.BrandName,
+                            IsAvailable = false,
+                            AvailableQuantity = 0,
+                            UnitPrice = 0,
+                            AlternativeOne = null
+                        });
+                    }
+                }
+
+                // إنشاء الـ response
+                var response = new PatientPharmacyResponseView
+                {
+                    OrderId = order.Id,
+                    OrderNumber = order.OrderNumber,
+                    PharmacyName = order.Pharmacy.Name,
+                    PharmacyPhone = order.Pharmacy.PhoneNumber ?? string.Empty,
+                    PrescriptionNumber = order.Prescription?.PrescriptionNumber ?? string.Empty,
+                    Status = (int)order.Status,
+                    StatusName = order.Status.ToString(),
+                    Medications = medications,
+                    TotalAmount = order.TotalCost,
+                    DeliveryAvailable = order.DeliveryType == OrderDeliveryType.Delivery,
+                    DeliveryFee = order.DeliveryFee,
+                    PharmacyNotes = "جميع الأدوية أصلية ومرخصة من وزارة الصحة", // dummy data
+                    RespondedAt = order.UpdatedAt ?? DateTime.UtcNow,
+                    SentAt = order.CreatedAt
+                };
+
+                _logger.LogInformation("Successfully retrieved pharmacy response for order {OrderId}", orderId);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting pharmacy response for order {OrderId} and patient {PatientId}", orderId, patientId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// جلب كل ردود الصيدليات على روشتة معينة
+        /// </summary>
+        public async Task<PrescriptionPharmacyResponsesView> GetPrescriptionPharmacyResponsesAsync(Guid patientId, Guid prescriptionId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting all pharmacy responses for prescription {PrescriptionId} and patient {PatientId}", 
+                    prescriptionId, patientId);
+
+                // التحقق من وجود المريض
+                var patient = await _patientRepository.GetByIdAsync(patientId);
+                if (patient == null)
+                {
+                    throw new ArgumentException($"Patient with ID {patientId} not found");
+                }
+
+                // التحقق من وجود الروشتة وأنها تخص المريض
+                var prescription = await _unitOfWork.Repository<Prescription>()
+                    .GetQueryable()
+                    .Include(p => p.Doctor)
+                    .Include(p => p.PrescribedMedications)
+                        .ThenInclude(pm => pm.Medication)
+                    .FirstOrDefaultAsync(p => p.Id == prescriptionId && p.PatientId == patientId);
+
+                if (prescription == null)
+                {
+                    throw new ArgumentException($"Prescription with ID {prescriptionId} not found for patient {patientId}");
+                }
+
+                // جلب كل الطلبات المرتبطة بالروشتة
+                var orders = await _unitOfWork.Repository<PharmacyOrder>()
+                    .GetQueryable()
+                    .Include(po => po.Pharmacy)
+                        .ThenInclude(p => p.Address)
+                    .Include(po => po.OrderItems)
+                        .ThenInclude(oi => oi.RequestedMedication)
+                    .Include(po => po.OrderItems)
+                        .ThenInclude(oi => oi.AlternativeMedication)
+                    .Where(po => po.PrescriptionId == prescriptionId && po.PatientId == patientId)
+                    .Where(po => po.Status != PharmacyOrderStatus.PendingPharmacyResponse) // فقط الردود المكتملة
+                    .OrderBy(po => po.TotalCost) // ترتيب حسب السعر (الأرخص أولاً)
+                    .ToListAsync();
+
+                // إنشاء قائمة ردود الصيدليات
+                var pharmacyResponses = new List<PharmacyResponseSummary>();
+
+                foreach (var order in orders)
+                {
+                    var medications = new List<PatientMedicationResponse>();
+                    int availableCount = 0, unavailableCount = 0, alternativesCount = 0;
+
+                    // معالجة الأدوية
+                    if (order.OrderItems != null && order.OrderItems.Any())
+                    {
+                        foreach (var orderItem in order.OrderItems)
+                        {
+                            var alternativeInfo = orderItem.AlternativeMedication != null ? new PatientAlternativeMedicationResponse
+                            {
+                                MedicationName = orderItem.AlternativeMedication.BrandName,
+                                UnitPrice = orderItem.AlternativeUnitPrice ?? 0
+                            } : null;
+
+                            medications.Add(new PatientMedicationResponse
+                            {
+                                MedicationName = orderItem.RequestedMedication.BrandName,
+                                IsAvailable = orderItem.Status == PharmacyItemStatus.Available,
+                                AvailableQuantity = orderItem.AvailableQuantity ?? 0,
+                                UnitPrice = orderItem.UnitPrice ?? 0,
+                                AlternativeOne = alternativeInfo
+                            });
+
+                            // حساب الإحصائيات
+                            switch (orderItem.Status)
+                            {
+                                case PharmacyItemStatus.Available:
+                                    availableCount++;
+                                    break;
+                                case PharmacyItemStatus.NotAvailable:
+                                    unavailableCount++;
+                                    break;
+                                case PharmacyItemStatus.AlternativeOffered:
+                                    alternativesCount++;
+                                    break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Fallback: استخدام PrescribedMedications إذا لم توجد OrderItems
+                        foreach (var prescribedMed in prescription.PrescribedMedications)
+                        {
+                            medications.Add(new PatientMedicationResponse
+                            {
+                                MedicationName = prescribedMed.Medication.BrandName,
+                                IsAvailable = false,
+                                AvailableQuantity = 0,
+                                UnitPrice = 0,
+                                AlternativeOne = null
+                            });
+                            unavailableCount++;
+                        }
+                    }
+
+                    // إنشاء ملخص رد الصيدلية
+                    var pharmacyResponse = new PharmacyResponseSummary
+                    {
+                        PharmacyId = order.PharmacyId,
+                        PharmacyName = order.Pharmacy.Name,
+                        PharmacyPhone = order.Pharmacy.PhoneNumber ?? string.Empty,
+                        PharmacyAddress = order.Pharmacy.Address != null 
+                            ? $"{order.Pharmacy.Address.Street}, {order.Pharmacy.Address.City}" 
+                            : string.Empty,
+                        OrderId = order.Id,
+                        OrderNumber = order.OrderNumber,
+                        TotalAmount = order.TotalCost,
+                        DeliveryFee = order.DeliveryFee,
+                        DeliveryAvailable = order.DeliveryType == OrderDeliveryType.Delivery,
+                        EstimatedDeliveryTime = order.EstimatedDeliveryTime?.ToString("yyyy-MM-dd HH:mm") ?? "غير محدد",
+                        RespondedAt = order.UpdatedAt ?? DateTime.UtcNow,
+                        Status = (int)order.Status,
+                        StatusName = order.Status.ToString(),
+                        PharmacyNotes = "جميع الأدوية أصلية ومرخصة من وزارة الصحة", // يمكن إضافة حقل للملاحظات لاحقاً
+                        Medications = medications,
+                        AvailableMedicationsCount = availableCount,
+                        UnavailableMedicationsCount = unavailableCount,
+                        AlternativesOfferedCount = alternativesCount
+                    };
+
+                    pharmacyResponses.Add(pharmacyResponse);
+                }
+
+                // إنشاء الـ response النهائي
+                var response = new PrescriptionPharmacyResponsesView
+                {
+                    PrescriptionId = prescription.Id,
+                    PrescriptionNumber = prescription.PrescriptionNumber,
+                    PatientName = $"{patient.FirstName} {patient.LastName}",
+                    DoctorName = $"د. {prescription.Doctor.FirstName} {prescription.Doctor.LastName}",
+                    IssuedAt = prescription.CreatedAt,
+                    TotalMedications = prescription.PrescribedMedications.Count,
+                    TotalPharmacyResponses = pharmacyResponses.Count,
+                    PharmacyResponses = pharmacyResponses
+                };
+
+                _logger.LogInformation("Successfully retrieved {Count} pharmacy responses for prescription {PrescriptionId}", 
+                    pharmacyResponses.Count, prescriptionId);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting pharmacy responses for prescription {PrescriptionId} and patient {PatientId}", 
+                    prescriptionId, patientId);
+                throw;
+            }
         }
 
         #endregion

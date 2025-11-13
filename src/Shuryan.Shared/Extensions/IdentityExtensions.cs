@@ -10,14 +10,10 @@ using Shuryan.Infrastructure.Data;
 
 namespace Shuryan.Shared.Extensions
 {
-    /// <summary>
-    /// Extension methods for configuring ASP.NET Core Identity
-    /// </summary>
     public static class IdentityExtensions
     {
         public static IServiceCollection AddIdentityConfiguration(this IServiceCollection services)
         {
-            // Configure Identity with custom User and Role entities
             services.AddIdentity<User, Role>(options =>
             {
                 // Password settings
@@ -44,7 +40,7 @@ namespace Shuryan.Shared.Extensions
                 options.SignIn.RequireConfirmedAccount = false;
             })
             .AddEntityFrameworkStores<ShuryanDbContext>()
-            .AddDefaultTokenProviders(); // For password reset, email confirmation, etc.
+            .AddDefaultTokenProviders(); // For password reset, email confirmation, etc....
 
             return services;
         }

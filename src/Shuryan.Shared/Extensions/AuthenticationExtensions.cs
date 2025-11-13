@@ -84,9 +84,6 @@ namespace Shuryan.Shared.Extensions
             return services;
         }
 
-        /// <summary>
-        /// Adds authorization policies based on user roles
-        /// </summary>
         public static IServiceCollection AddAuthorizationPolicies(this IServiceCollection services)
         {
             services.AddAuthorization(options =>
