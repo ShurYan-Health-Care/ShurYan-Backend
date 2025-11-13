@@ -16,11 +16,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.DoctorAvailability.AnyAsync())
             {
-                Console.WriteLine("⏭️  Doctor Availabilities already seeded. Skipping...");
+                Console.WriteLine("Doctor Availabilities already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Doctor Availabilities...");
+            Console.WriteLine("Seeding Doctor Availabilities...");
 
             var doctors = await context.Doctors.ToListAsync();
             var availabilities = new List<DoctorAvailability>();
@@ -56,7 +56,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.DoctorAvailability.AddRangeAsync(availabilities);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {availabilities.Count} Doctor Availabilities seeded successfully!");
+            Console.WriteLine($"{availabilities.Count} Doctor Availabilities seeded successfully!");
         }
     }
 }

@@ -254,7 +254,7 @@ namespace Shuryan.Application.Services.Email
 <body>
     <div class='container'>
         <div class='header'>
-            <h1>✅ Password Changed</h1>
+            <h1>Password Changed</h1>
         </div>
         <div class='content'>
             <h2>Hello {userName},</h2>

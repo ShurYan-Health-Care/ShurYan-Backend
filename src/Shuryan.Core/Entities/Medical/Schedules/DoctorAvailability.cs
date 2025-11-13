@@ -10,7 +10,6 @@ using Shuryan.Core.Enums;
 
 namespace Shuryan.Core.Entities.Medical.Schedules
 {
-    // الكلاس د ال هتبقى مسؤولة عن اضافة مواعيد الدكاترة الاساسية الثابته
     public class DoctorAvailability : SoftDeletableEntity
     {
 
@@ -20,8 +19,8 @@ namespace Shuryan.Core.Entities.Medical.Schedules
         public SysDayOfWeek DayOfWeek { get; set; }
 
         // We use TimeOnly to store only the time part
-        public TimeOnly StartTime { get; set; } // The start time of the slot (ex: 10:00 AM)
-        public TimeOnly EndTime { get; set; } // The end time of the slot (ex: 02:00 PM)
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
 
         // Navigation Properties
         public virtual Doctor Doctor { get; set; } = null!;

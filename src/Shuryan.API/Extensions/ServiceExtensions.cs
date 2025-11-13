@@ -9,11 +9,13 @@ using Shuryan.Application.Services.Token;
 using Shuryan.Application.Settings;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Core.Interfaces.Repositories.LaboratoryRepositories;
+using Shuryan.Core.Interfaces.Repositories.Pharmacies;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Infrastructure.Repositories.Doctors;
 using Shuryan.Infrastructure.Repositories.Laboratories;
 using Shuryan.Infrastructure.Repositories.Medical;
 using Shuryan.Infrastructure.Repositories.Patients;
+using Shuryan.Infrastructure.Repositories.Pharmacies;
 using Shuryan.Infrastructure.UnitOfWork;
 using Shuryan.Shared.Configurations;
 
@@ -36,6 +38,7 @@ namespace Shuryan.API.Extensions
         public static IServiceCollection AddRepositories(this IServiceCollection services)
         {
             services.AddScoped<IPatientRepository, PatientRepository>();
+            services.AddScoped<IPharmacyRepository, PharmacyRepository>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IDoctorRepository, DoctorRepository>();
             services.AddScoped<IDoctorConsultationRepository, DoctorConsultationRepository>();
@@ -72,7 +75,6 @@ namespace Shuryan.API.Extensions
 
             // Business Services
             services.AddScoped<IPatientService, PatientService>();
-            services.AddScoped<IPharmacyService, PharmacyService>();
             services.AddScoped<IAppointmentService, AppointmentService>();
             services.AddScoped<IDoctorService, DoctorService>();
             services.AddScoped<IVerifierService, VerifierService>();
@@ -103,6 +105,9 @@ namespace Shuryan.API.Extensions
 
             // Payment Service
             services.AddScoped<IPaymentService, PaymentService>();
+
+            // Pharmacy Profile Service
+            services.AddScoped<IPharmacyProfileService, PharmacyProfileService>();
 
             return services;
         }
@@ -136,12 +141,7 @@ namespace Shuryan.API.Extensions
                 {
                     Title = "Shuryan Healthcare API",
                     Version = "v1",
-                    Description = "API for Shuryan Healthcare System",
-                    Contact = new OpenApiContact
-                    {
-                        Name = "Shuryan Team",
-                        Email = "support@shuryan.com"
-                    }
+                    Description = "Healthcare Management System API",
                 });
 
                 // Custom Schema ID to avoid conflicts

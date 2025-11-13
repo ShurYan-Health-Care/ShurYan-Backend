@@ -77,5 +77,13 @@ namespace Shuryan.Application.Interfaces
         Task<bool> UpdateProfileImageAsync(Guid patientId, string imageUrl);
         Task<bool> RemoveProfileImageAsync(Guid patientId);
         #endregion
+
+        #region Pharmacy Operations
+        Task<FindNearbyPharmaciesResponse> FindNearbyPharmaciesAsync(FindNearbyPharmaciesRequest request);
+        Task<FindNearbyPharmaciesResponse> FindNearbyPharmaciesForPatientAsync(Guid patientId);
+        Task<SendPrescriptionResponse> SendPrescriptionToPharmacyAsync(Guid patientId, Guid prescriptionId, SendPrescriptionToPharmacyRequest request);
+        Task<PatientPharmacyResponseView> GetPharmacyResponseAsync(Guid patientId, Guid orderId);
+        Task<PrescriptionPharmacyResponsesView> GetPrescriptionPharmacyResponsesAsync(Guid patientId, Guid prescriptionId);
+        #endregion
     }
 }

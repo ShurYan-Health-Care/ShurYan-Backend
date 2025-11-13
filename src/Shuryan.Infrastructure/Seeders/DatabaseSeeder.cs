@@ -48,7 +48,7 @@ namespace Shuryan.Infrastructure.Seeders
             // 5. Seed Reviews (depends on completed appointments)
             await ReviewSeed.SeedAsync(context);
 
-            Console.WriteLine("✅ Database seeding completed successfully!");
+            Console.WriteLine("Database seeding completed successfully!");
         }
 
         public static async Task ClearDatabaseAsync(IServiceProvider serviceProvider)
@@ -112,7 +112,7 @@ namespace Shuryan.Infrastructure.Seeders
             context.ConsultationTypes.RemoveRange(context.ConsultationTypes);
 
             await context.SaveChangesAsync();
-            Console.WriteLine("✅ Database cleared successfully!");
+            Console.WriteLine("Database cleared successfully!");
         }
     }
 }

@@ -21,9 +21,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.API.Controllers
 {
-    /// <summary>
-    /// Controller مسؤول عن عمليات الحجز (Booking System)
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -86,7 +83,7 @@ namespace Shuryan.API.Controllers
 
         #endregion
 
-        #region Booking System - Frontend Integration
+        #region Booking System
         [HttpPost("book")]
         [Authorize(Roles = "Patient")]
         [ProducesResponseType(typeof(ApiResponse<BookedAppointmentResponse>), StatusCodes.Status201Created)]
@@ -94,8 +91,7 @@ namespace Shuryan.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<BookedAppointmentResponse>>> BookAppointment(
-            [FromBody] BookAppointmentRequest request)
+        public async Task<ActionResult<ApiResponse<BookedAppointmentResponse>>> BookAppointment([FromBody] BookAppointmentRequest request)
         {
             var patientId = GetCurrentPatientId();
 
@@ -168,7 +164,6 @@ namespace Shuryan.API.Controllers
                 ));
             }
         }
-
         #endregion
 
         #region Get Appointment Details
@@ -229,15 +224,9 @@ namespace Shuryan.API.Controllers
                 ));
             }
         }
-
         #endregion
 
         #region Session Management
-
-        /// <summary>
-        /// بدء جلسة كشف جديدة
-        /// POST /api/Appointments/{appointmentId}/start-session
-        /// </summary>
         [HttpPost("{appointmentId}/start-session")]
         [Authorize(Roles = "Doctor")]
         [ProducesResponseType(typeof(ApiResponse<SessionResponse>), StatusCodes.Status201Created)]
@@ -280,10 +269,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// الحصول على الجلسة النشطة للموعد
-        /// GET /api/Appointments/{appointmentId}/session
-        /// </summary>
         [HttpGet("{appointmentId}/session")]
         [Authorize(Roles = "Doctor")]
         [ProducesResponseType(typeof(ApiResponse<SessionResponse>), StatusCodes.Status200OK)]
@@ -317,10 +302,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// إنهاء الجلسة النشطة
-        /// POST /api/Appointments/{appointmentId}/end-session
-        /// </summary>
         [HttpPost("{appointmentId}/end-session")]
         [Authorize(Roles = "Doctor")]
         [ProducesResponseType(typeof(ApiResponse<EndSessionResponse>), StatusCodes.Status200OK)]
@@ -357,7 +338,6 @@ namespace Shuryan.API.Controllers
                 return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
             }
         }
-
         #endregion
 
         #region Documentation
@@ -367,9 +347,7 @@ namespace Shuryan.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<DocumentationResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
-        public async Task<ActionResult<ApiResponse<DocumentationResponse>>> SaveDocumentation(
-            Guid appointmentId,
-            [FromBody] SaveDocumentationRequest request)
+        public async Task<ActionResult<ApiResponse<DocumentationResponse>>> SaveDocumentation(Guid appointmentId, [FromBody] SaveDocumentationRequest request)
         {
             var doctorId = GetCurrentDoctorId();
             if (doctorId == Guid.Empty)
@@ -397,7 +375,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        
         [HttpGet("{appointmentId}/documentation")]
         [Authorize(Roles = "Doctor,Patient")]
         [ProducesResponseType(typeof(ApiResponse<DocumentationResponse>), StatusCodes.Status200OK)]
@@ -405,7 +382,7 @@ namespace Shuryan.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<ApiResponse<DocumentationResponse>>> GetDocumentation(Guid appointmentId)
         {
-            var userId = GetCurrentDoctorId(); // نفس الـ method بتجيب الـ userId
+            var userId = GetCurrentDoctorId();
             if (userId == Guid.Empty)
             {
                 return Unauthorized(ApiResponse<object>.Failure("Invalid authentication token", statusCode: 401));
@@ -433,7 +410,6 @@ namespace Shuryan.API.Controllers
                 return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
             }
         }
-
         #endregion
 
         #region Prescription
@@ -441,9 +417,7 @@ namespace Shuryan.API.Controllers
         [Authorize(Roles = "Doctor")]
         [ProducesResponseType(typeof(ApiResponse<PrescriptionResponse>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> CreatePrescription(
-            Guid appointmentId,
-            [FromBody] CreatePrescriptionRequest request)
+        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> CreatePrescription(Guid appointmentId, [FromBody] CreatePrescriptionRequest request)
         {
             var doctorId = GetCurrentDoctorId();
             if (doctorId == Guid.Empty)
@@ -475,10 +449,6 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        /// <summary>
-        /// الحصول على الروشتة
-        /// GET /api/Appointments/{appointmentId}/prescription
-        /// </summary>
         [HttpGet("{appointmentId}/prescription")]
         [Authorize(Roles = "Doctor")]
         [ProducesResponseType(typeof(ApiResponse<PrescriptionResponse>), StatusCodes.Status200OK)]
@@ -507,90 +477,7 @@ namespace Shuryan.API.Controllers
                 return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
             }
         }
-
         #endregion
 
-        #region Lab Tests
-
-        /// <summary>
-        /// طلب تحاليل طبية جديدة
-        /// POST /api/Appointments/{appointmentId}/lab-tests
-        /// </summary>
-        [HttpPost("{appointmentId}/lab-tests")]
-        [Authorize(Roles = "Doctor")]
-        [ProducesResponseType(typeof(ApiResponse<LabTestsResponse>), StatusCodes.Status201Created)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<ApiResponse<LabTestsResponse>>> RequestLabTests(
-            Guid appointmentId,
-            [FromBody] RequestLabTestsRequest request)
-        {
-            var doctorId = GetCurrentDoctorId();
-            if (doctorId == Guid.Empty)
-            {
-                return Unauthorized(ApiResponse<object>.Failure("Invalid authentication token", statusCode: 401));
-            }
-
-            try
-            {
-                var labTests = await _labTestService.RequestLabTestsAsync(appointmentId, doctorId, request);
-                return CreatedAtAction(
-                    nameof(GetLabTests),
-                    new { appointmentId },
-                    ApiResponse<LabTestsResponse>.Success(labTests, "تم طلب التحاليل بنجاح", 201)
-                );
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 400));
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 403));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error requesting lab tests for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
-            }
-        }
-
-        /// <summary>
-        /// الحصول على طلبات التحاليل
-        /// GET /api/Appointments/{appointmentId}/lab-tests
-        /// </summary>
-        [HttpGet("{appointmentId}/lab-tests")]
-        [Authorize(Roles = "Doctor")]
-        [ProducesResponseType(typeof(ApiResponse<LabTestsResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<LabTestsResponse>>> GetLabTests(Guid appointmentId)
-        {
-            var doctorId = GetCurrentDoctorId();
-            if (doctorId == Guid.Empty)
-            {
-                return Unauthorized(ApiResponse<object>.Failure("Invalid authentication token", statusCode: 401));
-            }
-
-            try
-            {
-                var labTests = await _labTestService.GetLabTestsAsync(appointmentId, doctorId);
-                if (labTests == null)
-                {
-                    return NotFound(ApiResponse<object>.Failure("لا توجد تحاليل لهذا الموعد", statusCode: 404));
-                }
-
-                return Ok(ApiResponse<LabTestsResponse>.Success(labTests, "تم استرجاع التحاليل بنجاح", 200));
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 403));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting lab tests for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
-            }
-        }
-
-        #endregion
     }
 }

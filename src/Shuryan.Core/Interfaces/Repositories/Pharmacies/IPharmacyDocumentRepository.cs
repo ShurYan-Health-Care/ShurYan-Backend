@@ -9,9 +9,7 @@ namespace Shuryan.Core.Interfaces.Repositories.Pharmacies
     public interface IPharmacyDocumentRepository : IGenericRepository<PharmacyDocument>
     {
         Task<IEnumerable<PharmacyDocument>> GetByPharmacyIdAsync(Guid pharmacyId);
-
         Task<IEnumerable<PharmacyDocument>> GetPendingDocumentsAsync();
-
         Task<IEnumerable<PharmacyDocument>> GetByStatusAsync(VerificationDocumentStatus status);
     }
 }

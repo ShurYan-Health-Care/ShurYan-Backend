@@ -70,7 +70,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.PrescribedMedications.AddRangeAsync(prescribedMeds);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {prescriptions.Count} Prescriptions and {prescribedMeds.Count} Prescribed Medications seeded!");
+            Console.WriteLine($"{prescriptions.Count} Prescriptions and {prescribedMeds.Count} Prescribed Medications seeded!");
         }
     }
 }

@@ -19,7 +19,6 @@ namespace Shuryan.Infrastructure.Repositories.Patients
         public async Task<Patient?> GetByIdWithDetailsAsync(Guid id)
         {
             // Use AsSplitQuery to avoid cartesian explosion and improve performance
-            // Note: This will track the entity for updates
             return await _dbSet
                 .AsSplitQuery() // This splits the query into multiple SQL queries
                 .Include(p => p.Address)
@@ -69,7 +68,6 @@ namespace Shuryan.Infrastructure.Repositories.Patients
             int pageNumber, 
             int pageSize)
         {
-            // Get patients who have at least one COMPLETED appointment with this doctor
             var query = _dbSet
                 .Include(p => p.Address)
                 .Include(p => p.Appointments.Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed))
@@ -77,10 +75,8 @@ namespace Shuryan.Infrastructure.Repositories.Patients
                 .Where(p => p.Appointments.Any(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed) 
                     && !p.IsDeleted);
 
-            // Get total count before pagination
             var totalCount = await query.CountAsync();
 
-            // Apply pagination and order by last visit date (most recent first)
             var patients = await query
                 .OrderByDescending(p => p.Appointments
                     .Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed)

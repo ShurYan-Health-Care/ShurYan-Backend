@@ -16,11 +16,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.DoctorConsultations.AnyAsync())
             {
-                Console.WriteLine("⏭️  Doctor Consultations already seeded. Skipping...");
+                Console.WriteLine("Doctor Consultations already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Doctor Consultations...");
+            Console.WriteLine("Seeding Doctor Consultations...");
 
             var doctors = await context.Doctors.ToListAsync();
             var consultationTypes = await context.ConsultationTypes.ToListAsync();
@@ -47,7 +47,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.DoctorConsultations.AddRangeAsync(consultations);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {consultations.Count} Doctor Consultations seeded successfully!");
+            Console.WriteLine($"{consultations.Count} Doctor Consultations seeded successfully!");
         }
     }
 }
