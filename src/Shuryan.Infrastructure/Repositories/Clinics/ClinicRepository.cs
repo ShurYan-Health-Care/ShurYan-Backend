@@ -35,8 +35,7 @@ namespace Shuryan.Infrastructure.Repositories.Clinics
                 .Where(c => c.Address != null)
                 .ToListAsync();
 
-            // Filter by distance in memory (for simplicity)
-            // For better performance, consider using SQL Server spatial types or PostGIS
+
             var nearbyClinics = clinics.Where(c =>
             {
                 if (c.Address == null) return false;
@@ -54,9 +53,6 @@ namespace Shuryan.Infrastructure.Repositories.Clinics
             return nearbyClinics;
         }
 
-        /// <summary>
-        /// Calculates distance between two points using Haversine formula
-        /// </summary>
         private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
         {
             const double R = 6371; // Earth's radius in kilometers

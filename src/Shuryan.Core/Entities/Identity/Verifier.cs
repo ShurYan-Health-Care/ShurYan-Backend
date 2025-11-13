@@ -10,7 +10,7 @@ namespace Shuryan.Core.Entities.Identity
 {
     public class Verifier : User
     {
-        // TODO: Make this required after Admin module is ready
+        // I need to make it required after Admin module is ready
         public Guid? CreatedByAdminId { get; set; }
 
         // Navigation Properties

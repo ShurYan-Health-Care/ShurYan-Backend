@@ -9,7 +9,6 @@ namespace Shuryan.Core.Enums
 {
 	public enum MedicalHistoryType
 	{
-		// Medical Information - Optional but Recommended
 		[Description("الحساسية من الادوية")]
 		DrugAllergy,
 		[Description("الامراض المزمنة")]

@@ -19,11 +19,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.Clinics.AnyAsync())
             {
-                Console.WriteLine("⏭️  Clinics already seeded. Skipping...");
+                Console.WriteLine("Clinics already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Clinics...");
+            Console.WriteLine("Seeding Clinics...");
 
             var doctors = await context.Doctors.Take(5).ToListAsync();
             var clinics = new List<Clinic>();
@@ -148,7 +148,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.ClinicServices.AddRangeAsync(clinicServices);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {clinics.Count} Clinics, {clinicPhones.Count} Phone Numbers, and {clinicServices.Count} Services seeded!");
+            Console.WriteLine($"{clinics.Count} Clinics, {clinicPhones.Count} Phone Numbers, and {clinicServices.Count} Services seeded!");
         }
     }
 }

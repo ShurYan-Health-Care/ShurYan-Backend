@@ -41,7 +41,7 @@ namespace Shuryan.Application.Services.AI
             // اسم الموديل (gemini-pro أو gemini-1.5-flash)
             _modelName = _configuration["GeminiAI:ModelName"] ?? "gemini-1.5-flash";
 
-            _logger.LogInformation("✅ GeminiAIService initialized with model: {ModelName}", _modelName);
+            _logger.LogInformation("GeminiAIService initialized with model: {ModelName}", _modelName);
         }
 
         public async Task<GeminiResponse> SendMessageAsync(
@@ -85,7 +85,7 @@ namespace Shuryan.Application.Services.AI
                 var reply = result.Candidates[0]?.Content?.Parts?[0]?.Text ?? string.Empty;
                 var tokenCount = result.UsageMetadata?.TotalTokenCount ?? 0;
 
-                _logger.LogInformation("✅ Received response from Gemini AI in {Ms}ms", stopwatch.ElapsedMilliseconds);
+                _logger.LogInformation("Received response from Gemini AI in {Ms}ms", stopwatch.ElapsedMilliseconds);
 
                 return new GeminiResponse
                 {
@@ -163,7 +163,7 @@ namespace Shuryan.Application.Services.AI
 - مختصر ومباشر (3-5 أسطر)
 - استخدم إيموجي بسيط للتوضيح
 
-✅ **مثال على رد مثالي:**
+**مثال على رد مثالي:**
 المريض: ""بطني بتوجعني جداً""
 الرد: 
 ""ربنا يشفيك ويعافيك 🤲

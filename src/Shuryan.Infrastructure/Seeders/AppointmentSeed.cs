@@ -17,11 +17,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.Appointments.AnyAsync())
             {
-                Console.WriteLine("⏭️  Appointments already seeded. Skipping...");
+                Console.WriteLine("Appointments already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Appointments...");
+            Console.WriteLine("Seeding Appointments...");
 
             var patients = await context.Patients.ToListAsync();
             var doctors = await context.Doctors.Include(d => d.Consultations).ToListAsync();
@@ -104,7 +104,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.ConsultationRecords.AddRangeAsync(consultationRecords);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {appointments.Count} Appointments and {consultationRecords.Count} Consultation Records seeded!");
+            Console.WriteLine($"{appointments.Count} Appointments and {consultationRecords.Count} Consultation Records seeded!");
         }
     }
 }

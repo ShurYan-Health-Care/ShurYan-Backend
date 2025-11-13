@@ -19,11 +19,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.Patients.AnyAsync())
             {
-                Console.WriteLine("⏭️  Patients already seeded. Skipping...");
+                Console.WriteLine("Patients already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Patients...");
+            Console.WriteLine("Seeding Patients...");
 
             // Create Addresses for Patients
             var patientAddresses = new List<Address>

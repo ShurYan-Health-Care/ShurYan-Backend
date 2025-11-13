@@ -16,11 +16,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.DoctorReviews.AnyAsync())
             {
-                Console.WriteLine("⏭️  Reviews already seeded. Skipping...");
+                Console.WriteLine("Reviews already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Reviews...");
+            Console.WriteLine("Seeding Reviews...");
 
             var completedAppointments = await context.Appointments
                 .Where(a => a.Status == AppointmentStatus.Completed)
@@ -63,7 +63,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.DoctorReviews.AddRangeAsync(reviews);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {reviews.Count} Doctor Reviews seeded successfully!");
+            Console.WriteLine($"{reviews.Count} Doctor Reviews seeded successfully!");
         }
     }
 }
