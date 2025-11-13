@@ -14,7 +14,7 @@ namespace Shuryan.Core.Entities.External.Payments
 
         [Required]
         [MaxLength(100)]
-        public string TransactionType { get; set; } = string.Empty; // Authorization, Capture, Refund, Void
+        public string TransactionType { get; set; } = string.Empty; 
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
@@ -40,7 +40,7 @@ namespace Shuryan.Core.Entities.External.Payments
         public DateTime? ProcessedAt { get; set; }
 
         [MaxLength(1000)]
-        public string? Metadata { get; set; } // JSON for additional data
+        public string? Metadata { get; set; }
 
         // Navigation Property
         public virtual Payment Payment { get; set; } = null!;

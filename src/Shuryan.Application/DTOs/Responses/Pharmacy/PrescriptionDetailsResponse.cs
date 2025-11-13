@@ -1,21 +1,35 @@
-using Shuryan.Application.DTOs.Common.Base;
-using Shuryan.Application.DTOs.Responses.Prescription;
-
 namespace Shuryan.Application.DTOs.Responses.Pharmacy
 {
-    public class PrescriptionDetailsResponse : BaseAuditableDto
+    /// <summary>
+    /// Detailed prescription response
+    /// </summary>
+    public class PrescriptionDetailsResponse
     {
+        public Guid OrderId { get; set; }
         public string PrescriptionNumber { get; set; } = string.Empty;
-        public string DigitalSignature { get; set; } = string.Empty;
-        public string? GeneralInstructions { get; set; }
-        public string? FollowUpInstructions { get; set; }
-        public bool IsDigitallyShared { get; set; }
-        public DateTime? SharedAt { get; set; }
-        public Guid AppointmentId { get; set; }
-        public Guid DoctorId { get; set; }
-        public string DoctorName { get; set; } = string.Empty;
-        public Guid PatientId { get; set; }
-        public string PatientName { get; set; } = string.Empty;
-        public IEnumerable<PrescribedMedicationResponse> Medications { get; set; } = new List<PrescribedMedicationResponse>();
+        public PrescriptionPatientInfo Patient { get; set; } = null!;
+        public PrescriptionDoctorInfo Doctor { get; set; } = null!;
+        public List<PrescriptionMedicationItemResponse> Medications { get; set; } = new();
+        public int Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    /// <summary>
+    /// Patient information in prescription
+    /// </summary>
+    public class PrescriptionPatientInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Doctor information in prescription
+    /// </summary>
+    public class PrescriptionDoctorInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Specialty { get; set; } = string.Empty;
     }
 }

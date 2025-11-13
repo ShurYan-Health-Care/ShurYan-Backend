@@ -9,9 +9,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Infrastructure.Repositories.Chat
 {
-    /// <summary>
-    /// Implementation للـ ConversationMessage Repository
-    /// </summary>
     public class ConversationMessageRepository : GenericRepository<ConversationMessage>, IConversationMessageRepository
     {
         public ConversationMessageRepository(ShuryanDbContext context) : base(context)

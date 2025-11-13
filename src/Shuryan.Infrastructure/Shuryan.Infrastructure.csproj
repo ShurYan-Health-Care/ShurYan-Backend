@@ -7,9 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ExternalServices\**" />
+    <Compile Remove="Identity\**" />
+    <EmbeddedResource Remove="ExternalServices\**" />
+    <EmbeddedResource Remove="Identity\**" />
+    <None Remove="ExternalServices\**" />
+    <None Remove="Identity\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Data\Migrations\" />
-    <Folder Include="ExternalServices\" />
-    <Folder Include="Identity\" />
   </ItemGroup>
 
   <ItemGroup>

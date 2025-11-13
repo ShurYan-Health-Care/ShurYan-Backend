@@ -18,11 +18,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.Doctors.AnyAsync())
             {
-                Console.WriteLine("⏭️  Doctors already seeded. Skipping...");
+                Console.WriteLine("Doctors already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Doctors...");
+            Console.WriteLine("Seeding Doctors...");
 
             // Get verifiers to assign to doctors
             var verifiers = await context.Verifiers.Take(3).ToListAsync();
@@ -333,7 +333,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.Doctors.AddRangeAsync(doctors);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {doctors.Count} Doctors seeded successfully!");
+            Console.WriteLine($"{doctors.Count} Doctors seeded successfully!");
         }
     }
 }

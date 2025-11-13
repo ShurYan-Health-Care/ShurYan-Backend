@@ -11,6 +11,10 @@ namespace Shuryan.Application.DTOs.Responses.Prescription
         public string PrescriptionNumber { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         
+        // حالة الروشتة
+        public int Status { get; set; }
+        public string StatusName { get; set; } = string.Empty;
+        
         // معلومات الطبيب
         public Guid DoctorId { get; set; }
         public string DoctorName { get; set; } = string.Empty;

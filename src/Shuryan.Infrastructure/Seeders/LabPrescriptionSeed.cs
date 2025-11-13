@@ -16,11 +16,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.LabPrescriptions.AnyAsync())
             {
-                Console.WriteLine("⏭️  Lab Prescriptions already seeded. Skipping...");
+                Console.WriteLine("Lab Prescriptions already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Lab Prescriptions...");
+            Console.WriteLine("Seeding Lab Prescriptions...");
 
             var completedAppointments = await context.Appointments
                 .Where(a => a.Status == AppointmentStatus.Completed)
@@ -67,7 +67,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.LabPrescriptionItems.AddRangeAsync(prescriptionItems);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {labPrescriptions.Count} Lab Prescriptions and {prescriptionItems.Count} Items seeded!");
+            Console.WriteLine($"{labPrescriptions.Count} Lab Prescriptions and {prescriptionItems.Count} Items seeded!");
         }
     }
 }

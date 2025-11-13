@@ -8,9 +8,6 @@ using Shuryan.Core.Enums;
 
 namespace Shuryan.Application.DTOs.Common.Address
 {
-    /// <summary>
-    /// Clean address response without audit fields
-    /// </summary>
     public class AddressResponse
     {
         public string Street { get; set; } = string.Empty;

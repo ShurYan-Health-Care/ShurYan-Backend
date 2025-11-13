@@ -16,11 +16,11 @@ namespace Shuryan.Infrastructure.Seeders
         {
             if (await context.Verifiers.AnyAsync())
             {
-                Console.WriteLine("⏭️  Verifiers already seeded. Skipping...");
+                Console.WriteLine("Verifiers already seeded. Skipping...");
                 return;
             }
 
-            Console.WriteLine("🌱 Seeding Verifiers...");
+            Console.WriteLine("Seeding Verifiers...");
 
             var adminId = Guid.NewGuid(); // Simulated admin ID
 
@@ -70,7 +70,7 @@ namespace Shuryan.Infrastructure.Seeders
             await context.Verifiers.AddRangeAsync(verifiers);
             await context.SaveChangesAsync();
 
-            Console.WriteLine($"✅ {verifiers.Count} Verifiers seeded successfully!");
+            Console.WriteLine($"{verifiers.Count} Verifiers seeded successfully!");
         }
     }
 }

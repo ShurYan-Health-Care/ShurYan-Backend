@@ -582,6 +582,77 @@ namespace Shuryan.API.Controllers
 
         #endregion
 
+        #region Prescription Operations
+        
+        // تم نقل endpoint إرسال الروشتة إلى PatientsController لتجنب التضارب
+
+        /// <summary>
+        /// جلب رد الصيدلية على طلب المريض
+        /// </summary>
+        [HttpGet("orders/{orderId}/pharmacy-response")]
+        [ProducesResponseType(typeof(ApiResponse<PatientPharmacyResponseView>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<PatientPharmacyResponseView>>> GetPharmacyResponse(Guid orderId)
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to get pharmacy response");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get pharmacy response request for order {OrderId} from patient: {PatientId}", 
+                orderId, currentPatientId);
+
+            try
+            {
+                var result = await _patientService.GetPharmacyResponseAsync(currentPatientId, orderId);
+                
+                _logger.LogInformation("Successfully retrieved pharmacy response for order {OrderId} for patient: {PatientId}", 
+                    orderId, currentPatientId);
+                
+                return Ok(ApiResponse<PatientPharmacyResponseView>.Success(
+                    result,
+                    "تم جلب رد الصيدلية بنجاح"
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid argument for pharmacy response request: {PatientId}, {OrderId}", currentPatientId, orderId);
+                return NotFound(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 404
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid operation for pharmacy response request: {PatientId}, {OrderId}", currentPatientId, orderId);
+                return BadRequest(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 400
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving pharmacy response for order {OrderId} for patient: {PatientId}", 
+                    orderId, currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب رد الصيدلية",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private Guid GetCurrentPatientId()

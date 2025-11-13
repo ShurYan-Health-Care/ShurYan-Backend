@@ -1,4 +1,4 @@
-﻿using Shuryan.Core.Entities.Common;
+using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.External.Pharmacies;
 using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Entities.System.Review;
@@ -15,6 +15,7 @@ namespace Shuryan.Core.Entities.Identity
         public string? Website { get; set; }
         public Status PharmacyStatus { get; set; } = Status.Active;
         public bool OffersDelivery { get; set; } = true;
+        public decimal DeliveryFee { get; set; } = 0;
         public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Unverified;
         public DateTime? VerifiedAt { get; set; }
 
