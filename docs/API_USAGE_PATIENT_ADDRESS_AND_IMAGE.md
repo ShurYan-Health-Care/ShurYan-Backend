@@ -594,10 +594,10 @@ var result = await response.Content.ReadFromJsonAsync<ApiResponse<object>>();
 
 | Endpoint | Method | Purpose | Partial Update | Cloudinary |
 |----------|--------|---------|----------------|------------|
-| `/me/address` | GET | جلب العنوان | - | ❌ |
-| `/me/address` | PUT | تحديث/إنشاء العنوان | ✅ | ❌ |
-| `/me/profile-image` | PUT | تحديث الصورة | ❌ | ✅ Delete + Upload |
-| `/me/profile-image` | DELETE | حذف الصورة | ❌ | ✅ Delete |
+| `/me/address` | GET | جلب العنوان | - | |
+| `/me/address` | PUT | تحديث/إنشاء العنوان | | |
+| `/me/profile-image` | PUT | تحديث الصورة | | Delete + Upload |
+| `/me/profile-image` | DELETE | حذف الصورة | | Delete |
 
 ---
 

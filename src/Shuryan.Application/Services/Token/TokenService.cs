@@ -12,9 +12,6 @@ using Shuryan.Shared.Configurations;
 
 namespace Shuryan.Application.Services.Token
 {
-    /// <summary>
-    /// Implementation of JWT token generation and validation service
-    /// </summary>
     public class TokenService : ITokenService
     {
         private readonly JwtSettings _jwtSettings;
@@ -26,7 +23,6 @@ namespace Shuryan.Application.Services.Token
             _tokenHandler = new JwtSecurityTokenHandler();
         }
 
-        /// <inheritdoc/>
         public string GenerateAccessToken(
             Guid userId,
             string email,
@@ -70,7 +66,6 @@ namespace Shuryan.Application.Services.Token
             return _tokenHandler.WriteToken(token);
         }
 
-        /// <inheritdoc/>
         public string GenerateRefreshToken()
         {
             var randomNumber = new byte[64];
@@ -79,7 +74,6 @@ namespace Shuryan.Application.Services.Token
             return Convert.ToBase64String(randomNumber);
         }
 
-        /// <inheritdoc/>
         public ClaimsPrincipal? ValidateToken(string token)
         {
             try
@@ -115,7 +109,6 @@ namespace Shuryan.Application.Services.Token
             }
         }
 
-        /// <inheritdoc/>
         public Guid? GetUserIdFromToken(string token)
         {
             try
@@ -139,7 +132,6 @@ namespace Shuryan.Application.Services.Token
             }
         }
 
-        /// <inheritdoc/>
         public string? GetEmailFromToken(string token)
         {
             try
@@ -158,7 +150,6 @@ namespace Shuryan.Application.Services.Token
             }
         }
 
-        /// <inheritdoc/>
         public IEnumerable<Claim> GetClaimsFromToken(string token)
         {
             try
@@ -172,7 +163,6 @@ namespace Shuryan.Application.Services.Token
             }
         }
 
-        /// <inheritdoc/>
         public bool IsTokenExpired(string token)
         {
             try
@@ -186,7 +176,6 @@ namespace Shuryan.Application.Services.Token
             }
         }
 
-        /// <inheritdoc/>
         public Guid? GetUserIdFromExpiredToken(string token)
         {
             try
@@ -197,12 +186,12 @@ namespace Shuryan.Application.Services.Token
                 {
                     ValidateIssuer = _jwtSettings.ValidateIssuer,
                     ValidateAudience = _jwtSettings.ValidateAudience,
-                    ValidateLifetime = false, // ← Don't validate expiration for refresh token scenarios
+                    ValidateLifetime = false, 
                     ValidateIssuerSigningKey = _jwtSettings.ValidateIssuerSigningKey,
                     ValidIssuer = _jwtSettings.Issuer,
                     ValidAudience = _jwtSettings.Audience,
                     IssuerSigningKey = key,
-                    ClockSkew = TimeSpan.Zero // No clock skew needed when not validating lifetime
+                    ClockSkew = TimeSpan.Zero
                 };
 
                 var principal = _tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);

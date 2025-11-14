@@ -5,9 +5,6 @@ using System.Text.RegularExpressions;
 
 namespace Shuryan.Application.Validators.Configuration.Appointment
 {
-    /// <summary>
-    /// Validator للـ BookAppointmentRequest - حجز موعد جديد
-    /// </summary>
     public class BookAppointmentRequestValidator : AbstractValidator<BookAppointmentRequest>
     {
         public BookAppointmentRequestValidator()
@@ -46,9 +43,6 @@ namespace Shuryan.Application.Validators.Configuration.Appointment
                 .WithErrorCode("CONSULTATION_TYPE_INVALID");
         }
 
-        /// <summary>
-        /// التحقق من صحة صيغة التاريخ YYYY-MM-DD
-        /// </summary>
         private bool BeValidDateFormat(string date)
         {
             if (string.IsNullOrWhiteSpace(date))
@@ -63,9 +57,6 @@ namespace Shuryan.Application.Validators.Configuration.Appointment
             return DateTime.TryParse(date, out _);
         }
 
-        /// <summary>
-        /// التحقق من أن التاريخ في المستقبل
-        /// </summary>
         private bool BeInFuture(string date)
         {
             if (string.IsNullOrWhiteSpace(date))
@@ -78,9 +69,6 @@ namespace Shuryan.Application.Validators.Configuration.Appointment
             return parsedDate.Date >= DateTime.Now.Date;
         }
 
-        /// <summary>
-        /// التحقق من صحة صيغة الوقت HH:mm (24-hour format)
-        /// </summary>
         private bool BeValidTimeFormat(string time)
         {
             if (string.IsNullOrWhiteSpace(time))

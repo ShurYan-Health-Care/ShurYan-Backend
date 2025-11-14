@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -107,13 +107,13 @@ namespace Shuryan.Application.Services.Email
 <html>
 <head>
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #334155; }}
         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: #2563eb; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-        .content {{ background-color: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }}
-        .otp-code {{ font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 5px; text-align: center; padding: 20px; background-color: #eff6ff; border-radius: 8px; margin: 20px 0; }}
-        .footer {{ text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }}
-        .warning {{ background-color: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin-top: 20px; border-radius: 4px; }}
+        .header {{ background-color: #0f766e; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background-color: #f1f5f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .otp-code {{ font-size: 32px; font-weight: bold; color: #0f766e; letter-spacing: 5px; text-align: center; padding: 20px; background-color: #f0fdfa; border-radius: 8px; margin: 20px 0; }}
+        .footer {{ text-align: center; padding: 20px; color: #64748b; font-size: 12px; }}
+        .warning {{ background-color: #ecfdf5; padding: 15px; border-left: 4px solid #10b981; margin-top: 20px; border-radius: 4px; }}
     </style>
 </head>
 <body>
@@ -131,7 +131,7 @@ namespace Shuryan.Application.Services.Email
             <p>This code will expire in <strong>{_emailSettings.VerificationOtpExpirationMinutes} minutes</strong>.</p>
             
             <div class='warning'>
-                <strong>⚠️ Security Notice:</strong> If you didn't request this verification, please ignore this email. Never share this code with anyone.
+                <strong>Security Notice:</strong> If you didn't request this verification, please ignore this email. Never share this code with anyone.
             </div>
             
             <p style='margin-top: 20px;'>Best regards,<br>The Shuryan Healthcare Team</p>
@@ -152,13 +152,13 @@ namespace Shuryan.Application.Services.Email
 <html>
 <head>
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #334155; }}
         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: #dc2626; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-        .content {{ background-color: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }}
-        .otp-code {{ font-size: 32px; font-weight: bold; color: #dc2626; letter-spacing: 5px; text-align: center; padding: 20px; background-color: #fee2e2; border-radius: 8px; margin: 20px 0; }}
-        .footer {{ text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }}
-        .warning {{ background-color: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin-top: 20px; border-radius: 4px; }}
+        .header {{ background-color: #0f172a; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background-color: #f1f5f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .otp-code {{ font-size: 32px; font-weight: bold; color: #0f172a; letter-spacing: 5px; text-align: center; padding: 20px; background-color: #e2e8f0; border-radius: 8px; margin: 20px 0; }}
+        .footer {{ text-align: center; padding: 20px; color: #64748b; font-size: 12px; }}
+        .warning {{ background-color: #f0fdfa; padding: 15px; border-left: 4px solid: #14b8a6; margin-top: 20px; border-radius: 4px; }}
     </style>
 </head>
 <body>
@@ -176,7 +176,7 @@ namespace Shuryan.Application.Services.Email
             <p>This code will expire in <strong>{_emailSettings.PasswordResetOtpExpirationMinutes} minutes</strong>.</p>
             
             <div class='warning'>
-                <strong>⚠️ Security Alert:</strong> If you didn't request a password reset, please ignore this email and ensure your account is secure. Consider changing your password if you suspect unauthorized access.
+                <strong>Security Alert:</strong> If you didn't request a password reset, please ignore this email and ensure your account is secure. Consider changing your password if you suspect unauthorized access.
             </div>
             
             <p style='margin-top: 20px;'>Best regards,<br>The Shuryan Healthcare Team</p>
@@ -197,12 +197,12 @@ namespace Shuryan.Application.Services.Email
 <html>
 <head>
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #334155; }}
         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: #10b981; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-        .content {{ background-color: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }}
-        .footer {{ text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }}
-        .cta-button {{ display: inline-block; padding: 12px 30px; background-color: #10b981; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px; }}
+        .header {{ background-color: #059669; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background-color: #f1f5f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .footer {{ text-align: center; padding: 20px; color: #64748b; font-size: 12px; }}
+        .cta-button {{ display: inline-block; padding: 12px 30px; background-color: #059669; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px; }}
     </style>
 </head>
 <body>
@@ -243,12 +243,12 @@ namespace Shuryan.Application.Services.Email
 <html>
 <head>
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #334155; }}
         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: #10b981; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-        .content {{ background-color: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }}
-        .footer {{ text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }}
-        .warning {{ background-color: #fee2e2; padding: 15px; border-left: 4px solid #dc2626; margin-top: 20px; border-radius: 4px; }}
+        .header {{ background-color: #059669; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background-color: #f1f5f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .footer {{ text-align: center; padding: 20px; color: #64748b; font-size: 12px; }}
+        .warning {{ background-color: #fef7ff; padding: 15px; border-left: 4px solid #0891b2; margin-top: 20px; border-radius: 4px; }}
     </style>
 </head>
 <body>
@@ -261,7 +261,7 @@ namespace Shuryan.Application.Services.Email
             <p>Your password has been successfully changed on <strong>{DateTime.UtcNow:MMMM dd, yyyy 'at' HH:mm} UTC</strong>.</p>
             
             <div class='warning'>
-                <strong>⚠️ Didn't make this change?</strong><br>
+                <strong>Didn't make this change?</strong><br>
                 If you didn't change your password, please contact our support team immediately to secure your account.
             </div>
             
@@ -274,7 +274,6 @@ namespace Shuryan.Application.Services.Email
 </body>
 </html>";
         }
-
         #endregion
     }
 }

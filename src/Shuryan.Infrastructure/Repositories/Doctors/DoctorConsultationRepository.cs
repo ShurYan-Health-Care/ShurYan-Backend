@@ -22,6 +22,13 @@ namespace Shuryan.Infrastructure.Repositories.Doctors
                 .Where(dc => dc.DoctorId == doctorId)
                 .ToListAsync();
         }
+
+        public async Task<DoctorConsultation?> GetByDoctorIdAndConsultationTypeIdAsync(Guid doctorId, Guid consultationTypeId)
+        {
+            return await _dbSet
+                .Include(dc => dc.ConsultationType)
+                .FirstOrDefaultAsync(dc => dc.DoctorId == doctorId && dc.ConsultationTypeId == consultationTypeId);
+        }
     }
 }
 

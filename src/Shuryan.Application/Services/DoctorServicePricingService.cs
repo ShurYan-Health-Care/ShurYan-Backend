@@ -267,10 +267,9 @@ namespace Shuryan.Application.Services
 
         #endregion
 
-        #region Frontend Integration
 
         /// <summary>
-        /// جلب كل الخدمات (كشف عادي + إعادة كشف) في response واحد
+        /// Get all services (normal disclosure + redisclosure) in a single response
         /// </summary>
         public async Task<DoctorServicesResponse> GetAllServicesAsync(Guid doctorId)
         {
@@ -312,6 +311,5 @@ namespace Shuryan.Application.Services
             }
         }
 
-        #endregion
     }
 }

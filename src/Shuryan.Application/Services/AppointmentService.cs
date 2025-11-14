@@ -16,9 +16,6 @@ using Shuryan.Core.Interfaces.UnitOfWork;
 
 namespace Shuryan.Application.Services
 {
-    /// <summary>
-    /// Service for managing patient appointments with comprehensive business logic
-    /// </summary>
     public class AppointmentService : IAppointmentService
     {
         private readonly IAppointmentRepository _appointmentRepository;
@@ -48,10 +45,6 @@ namespace Shuryan.Application.Services
         }
 
         #region Basic CRUD Operations
-
-        /// <summary>
-        /// Get appointment by ID with full details
-        /// </summary>
         public async Task<AppointmentResponse?> GetAppointmentByIdAsync(Guid id)
         {
             try
@@ -74,17 +67,11 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// Create a new appointment with comprehensive validation
-        /// </summary>
         public async Task<AppointmentResponse> CreateAppointmentAsync(CreateAppointmentRequest request)
         {
             try
             {
-                _logger.LogInformation("Creating appointment for Patient {PatientId} with Doctor {DoctorId}", 
-                    request.PatientId, request.DoctorId);
-
-                // ==================== Validation ====================
+                _logger.LogInformation("Creating appointment for Patient {PatientId} with Doctor {DoctorId}", request.PatientId, request.DoctorId);
 
                 // 1. Validate patient exists
                 var patient = await _patientRepository.GetByIdAsync(request.PatientId);
@@ -174,8 +161,8 @@ namespace Shuryan.Application.Services
                 {
                     PatientId = request.PatientId,
                     DoctorId = request.DoctorId,
-                    ScheduledStartTime = scheduledStartTimeUtc, // نستخدم الـ UTC time
-                    ScheduledEndTime = scheduledEndTimeUtc,     // نستخدم الـ UTC time
+                    ScheduledStartTime = scheduledStartTimeUtc,
+                    ScheduledEndTime = scheduledEndTimeUtc,
                     ConsultationType = request.ConsultationType,
                     ConsultationFee = doctorConsultation.ConsultationFee,
                     SessionDurationMinutes = doctorConsultation.SessionDurationMinutes,
@@ -199,9 +186,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// Update appointment details (limited fields)
-        /// </summary>
         public async Task<AppointmentResponse> UpdateAppointmentAsync(Guid id, UpdateAppointmentRequest request)
         {
             try
@@ -267,9 +251,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// Soft delete appointment (mark as cancelled)
-        /// </summary>
         public async Task<bool> DeleteAppointmentAsync(Guid id)
         {
             try
@@ -300,14 +281,9 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
-
         #endregion
 
         #region Appointment Management
-
-        /// <summary>
-        /// Cancel an appointment with reason
-        /// </summary>
         public async Task<AppointmentResponse> CancelAppointmentAsync(Guid id, CancelAppointmentRequest request)
         {
             try
@@ -331,13 +307,13 @@ namespace Shuryan.Application.Services
                     throw new InvalidOperationException("Appointment is already cancelled");
                 }
 
-                // Check cancellation policy (e.g., must cancel at least 24 hours before)
+                // Check cancellation policy (must cancel at least 24 hours before)
                 var hoursUntilAppointment = (appointment.ScheduledStartTime - DateTime.UtcNow).TotalHours;
                 if (hoursUntilAppointment < 24)
                 {
                     _logger.LogWarning("Late cancellation for appointment {AppointmentId} - only {Hours} hours notice", 
                         id, hoursUntilAppointment);
-                    // You might want to apply a cancellation fee here
+                    // i need to apply a cancellation fee here in the future too :)
                 }
 
                 appointment.Status = AppointmentStatus.Cancelled;
@@ -360,9 +336,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// Reschedule an appointment to a new time
-        /// </summary>
         public async Task<AppointmentResponse> RescheduleAppointmentAsync(Guid id, RescheduleAppointmentRequest request)
         {
             try
@@ -429,9 +402,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// Confirm an appointment (typically done by doctor or clinic staff)
-        /// </summary>
         public async Task<AppointmentResponse> ConfirmAppointmentAsync(Guid id)
         {
             try
@@ -467,9 +437,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// Mark appointment as completed
-        /// </summary>
         public async Task<AppointmentResponse> CompleteAppointmentAsync(Guid id)
         {
             try
@@ -509,11 +476,9 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
-
         #endregion
 
         #region Query Operations
-
         /// <summary>
         /// Get all appointments for a specific patient
         /// </summary>
@@ -553,7 +518,7 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// Get upcoming appointments for a user (patient or doctor)
+        /// Get upcoming appointments for a user
         /// </summary>
         public async Task<IEnumerable<AppointmentResponse>> GetUpcomingAppointmentsAsync(Guid userId, string userRole)
         {
@@ -575,7 +540,7 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// Get past appointments for a user (patient or doctor)
+        /// Get past appointments for a user
         /// </summary>
         public async Task<IEnumerable<AppointmentResponse>> GetPastAppointmentsAsync(Guid userId, string userRole)
         {
@@ -709,10 +674,9 @@ namespace Shuryan.Application.Services
 
         #endregion
 
-        #region Booking System - Frontend Integration
-
+        #region Booking System
         /// <summary>
-        /// جلب المواعيد المحجوزة بالفعل ليوم معين
+        /// Get appointments already booked for a specific day
         /// </summary>
         public async Task<IEnumerable<BookedAppointmentSlotResponse>> GetBookedAppointmentsForDateAsync(Guid doctorId, DateTime date)
         {
@@ -729,28 +693,20 @@ namespace Shuryan.Application.Services
                 var startOfDay = date.Date;
                 var endOfDay = date.Date.AddDays(1).AddSeconds(-1);
 
-                // Get appointments for this day
-                var allAppointments = await _appointmentRepository.GetAllAsync();
-                var bookedAppointments = allAppointments
-                    .Where(a => a.DoctorId == doctorId &&
-                               a.ScheduledStartTime >= startOfDay &&
-                               a.ScheduledStartTime <= endOfDay &&
-                               a.Status != AppointmentStatus.Cancelled &&
-                               a.Status != AppointmentStatus.NoShow)
-                    .OrderBy(a => a.ScheduledStartTime)
-                    .Select(a => new BookedAppointmentSlotResponse
-                    {
-                        AppointmentId = a.Id,
-                        Time = a.ScheduledStartTime.ToString("HH:mm"),
-                        PatientName = a.Patient != null ? $"{a.Patient.FirstName} {a.Patient.LastName}" : null,
-                        ConsultationType = a.ConsultationType == ConsultationTypeEnum.Regular ? 0 : 1
-                    })
-                    .ToList();
+                var bookedAppointments = await _appointmentRepository.GetBookedAppointmentsForDateAsync(doctorId, startOfDay, endOfDay);
+
+                var response = bookedAppointments.Select(a => new BookedAppointmentSlotResponse
+                {
+                    AppointmentId = a.Id,
+                    Time = a.ScheduledStartTime.ToString("HH:mm"),
+                    PatientName = a.Patient != null ? $"{a.Patient.FirstName} {a.Patient.LastName}" : null,
+                    ConsultationType = a.ConsultationType == ConsultationTypeEnum.Regular ? 0 : 1
+                }).ToList();
 
                 _logger.LogInformation("Found {Count} booked appointments for doctor {DoctorId} on {Date}",
-                    bookedAppointments.Count, doctorId, date.ToString("yyyy-MM-dd"));
+                    response.Count, doctorId, date.ToString("yyyy-MM-dd"));
 
-                return bookedAppointments;
+                return response;
             }
             catch (Exception ex)
             {
@@ -760,7 +716,7 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// حجز موعد جديد
+        /// Book a new appointment
         /// </summary>
         public async Task<BookedAppointmentResponse> BookAppointmentAsync(Guid patientId, BookAppointmentRequest request)
         {
@@ -768,8 +724,6 @@ namespace Shuryan.Application.Services
             {
                 _logger.LogInformation("Booking appointment for Patient {PatientId} with Doctor {DoctorId} on {Date} at {Time}",
                     patientId, request.DoctorId, request.AppointmentDate, request.AppointmentTime);
-
-                // ==================== Validation ====================
 
                 // 1. Validate patient exists
                 var patient = await _patientRepository.GetByIdAsync(patientId);
@@ -786,35 +740,33 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException("Invalid appointment date format. Expected YYYY-MM-DD");
 
                 var timeParts = request.AppointmentTime.Split(':');
-                if (timeParts.Length != 2 || !int.TryParse(timeParts[0], out var hour) || !int.TryParse(timeParts[1], out var minute))
+                if (timeParts.Length != 2 || 
+                    !int.TryParse(timeParts[0], out var hour) || 
+                    !int.TryParse(timeParts[1], out var minute))
                     throw new ArgumentException("Invalid appointment time format. Expected HH:mm");
 
                 var scheduledStartTime = new DateTime(appointmentDate.Year, appointmentDate.Month, appointmentDate.Day, hour, minute, 0);
 
                 // 4. Validate date is not in the past
                 if (scheduledStartTime < DateTime.Now)
-                    throw new InvalidOperationException("لا يمكن حجز موعد في الماضي");
+                    throw new InvalidOperationException("You cannot book an appointment in the past.");
 
                 // 5. Validate consultationType (0 or 1)
                 if (request.ConsultationType != 0 && request.ConsultationType != 1)
-                    throw new ArgumentException("نوع الاستشارة غير صحيح. يجب أن يكون 0 (كشف عادي) أو 1 (إعادة كشف)");
+                    throw new ArgumentException("Consultation type is incorrect. Must be 0 (normal) or 1 (follow-up)");
 
                 var consultationType = request.ConsultationType == 0 ? ConsultationTypeEnum.Regular : ConsultationTypeEnum.FollowUp;
 
                 // 6. Get consultation pricing and duration
-                var allConsultationTypes = await _unitOfWork.ConsultationTypes.GetAllAsync();
-                var consultationTypeEntity = allConsultationTypes.FirstOrDefault(ct => ct.ConsultationTypeEnum == consultationType);
+                var consultationTypeEntity = await _unitOfWork.ConsultationTypes.GetByEnumAsync(consultationType);
 
                 if (consultationTypeEntity == null)
-                    throw new InvalidOperationException("نوع الاستشارة غير موجود في النظام");
+                    throw new InvalidOperationException("Consultation type not found in system");
 
-                var allDoctorConsultations = await _doctorConsultationRepository.GetAllAsync();
-                var doctorConsultation = allDoctorConsultations.FirstOrDefault(dc =>
-                    dc.DoctorId == request.DoctorId &&
-                    dc.ConsultationTypeId == consultationTypeEntity.Id);
+                var doctorConsultation = await _doctorConsultationRepository.GetByDoctorIdAndConsultationTypeIdAsync(request.DoctorId, consultationTypeEntity.Id);
 
                 if (doctorConsultation == null)
-                    throw new InvalidOperationException("الدكتور لم يحدد سعر أو مدة لهذا النوع من الاستشارة");
+                    throw new InvalidOperationException("Doctor has not set price or duration for this consultation type");
 
                 var consultationFee = doctorConsultation.ConsultationFee;
                 var durationMinutes = doctorConsultation.SessionDurationMinutes;
@@ -823,7 +775,7 @@ namespace Shuryan.Application.Services
                 // 7. Check if time slot is available
                 var isAvailable = await IsTimeSlotAvailableAsync(request.DoctorId, scheduledStartTime, scheduledEndTime);
                 if (!isAvailable)
-                    throw new InvalidOperationException($"الفترة الزمنية {request.AppointmentTime} محجوزة بالفعل");
+                    throw new InvalidOperationException($"The time slot {request.AppointmentTime} is already booked");
 
                 // ==================== Create Appointment ====================
 
@@ -868,9 +820,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// حساب الفترات الزمنية المتاحة ليوم معين (اختياري)
-        /// </summary>
         public async Task<IEnumerable<AvailableTimeSlotResponse>> GetAvailableTimeSlotsAsync(Guid doctorId, DateTime date, int consultationType)
         {
             try
@@ -887,16 +836,13 @@ namespace Shuryan.Application.Services
 
                 // Get duration for this consultation type
                 var consultationTypeEnum = consultationType == 0 ? ConsultationTypeEnum.Regular : ConsultationTypeEnum.FollowUp;
-                var allConsultationTypes = await _unitOfWork.ConsultationTypes.GetAllAsync();
-                var consultationTypeEntity = allConsultationTypes.FirstOrDefault(ct => ct.ConsultationTypeEnum == consultationTypeEnum);
+                var consultationTypeEntity = await _unitOfWork.ConsultationTypes.GetByEnumAsync(consultationTypeEnum);
 
                 if (consultationTypeEntity == null)
                     return slots; // Return empty list
 
-                var allDoctorConsultations = await _doctorConsultationRepository.GetAllAsync();
-                var doctorConsultation = allDoctorConsultations.FirstOrDefault(dc =>
-                    dc.DoctorId == doctorId &&
-                    dc.ConsultationTypeId == consultationTypeEntity.Id);
+                var doctorConsultation = await _doctorConsultationRepository
+                    .GetByDoctorIdAndConsultationTypeIdAsync(doctorId, consultationTypeEntity.Id);
 
                 if (doctorConsultation == null)
                     return slots; // Return empty list
@@ -919,13 +865,11 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
-
         #endregion
 
         #region Doctor Appointments Management
-
         /// <summary>
-        /// جلب مواعيد الدكتور مع Pagination والفلاتر
+        /// Get doctor appointments with pagination and filters
         /// </summary>
         public async Task<PaginatedResponse<DoctorAppointmentResponse>> GetDoctorAppointmentsAsync(
             Guid doctorId, 

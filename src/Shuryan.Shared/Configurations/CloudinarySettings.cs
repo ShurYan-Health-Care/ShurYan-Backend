@@ -1,6 +1,5 @@
-namespace Shuryan.Application.Settings
+namespace Shuryan.Shared.Configurations
 {
-
     public class CloudinarySettings
     {
         public string CloudName { get; set; } = string.Empty;

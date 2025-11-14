@@ -6,7 +6,6 @@ using Shuryan.Application.Services.AI;
 using Shuryan.Application.Services.Auth;
 using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
-using Shuryan.Application.Settings;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Core.Interfaces.Repositories.LaboratoryRepositories;
 using Shuryan.Core.Interfaces.Repositories.Pharmacies;

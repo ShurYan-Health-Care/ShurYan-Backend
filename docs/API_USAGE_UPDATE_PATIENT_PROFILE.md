@@ -340,13 +340,13 @@ updateProfile();
 | Feature | القديم | الجديد |
 |---------|--------|--------|
 | **Content-Type** | `multipart/form-data` | `application/json` |
-| **Partial Update** | ✅ موجود | ✅ محسّن |
-| **Profile Image** | ✅ في نفس الـ endpoint | ❌ endpoint منفصل |
-| **Address** | ✅ في نفس الـ endpoint | ❌ endpoint منفصل |
-| **Validation** | ✅ أساسي | ✅ محسّن |
-| **Error Handling** | ✅ أساسي | ✅ محسّن |
-| **Performance** | ⚠️ بطيء (بسبب الصورة) | ✅ سريع |
-| **Change Tracking** | ❌ مفيش | ✅ موجود |
+| **Partial Update** | موجود | محسّن |
+| **Profile Image** | في نفس الـ endpoint | endpoint منفصل |
+| **Address** | في نفس الـ endpoint | endpoint منفصل |
+| **Validation** | أساسي | محسّن |
+| **Error Handling** | أساسي | محسّن |
+| **Performance** | بطيء (بسبب الصورة) | سريع |
+| **Change Tracking** | مفيش | موجود |
 
 ---
 
@@ -363,11 +363,11 @@ updateProfile();
 ## Summary
 
 الـ endpoint الجديد ده:
-- ✅ **أسرع** - مفيش upload للصور
-- ✅ **أبسط** - JSON بس
-- ✅ **أكثر مرونة** - Partial Update حقيقي
-- ✅ **أفضل validation** - رسائل خطأ واضحة
-- ✅ **Better separation of concerns** - كل حاجة في endpoint منفصل
+- **أسرع** - مفيش upload للصور
+- **أبسط** - JSON بس
+- **أكثر مرونة** - Partial Update حقيقي
+- **أفضل validation** - رسائل خطأ واضحة
+- **Better separation of concerns** - كل حاجة في endpoint منفصل
 
 ---
 
