@@ -10,16 +10,10 @@ using Shuryan.Core.Enums;
 
 namespace Shuryan.Application.Services
 {
-    /// <summary>
-    /// Partial class for Medical Record operations
-    /// </summary>
     public partial class PatientService
     {
         #region Medical Record Operations (Profile)
 
-        /// <summary>
-        /// Get patient medical record grouped by type
-        /// </summary>
         public async Task<MedicalRecordResponse?> GetPatientMedicalRecordAsync(Guid patientId)
         {
             try
@@ -110,10 +104,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// Update patient medical record with upsert logic
-        /// Supports partial updates and add/delete items
-        /// </summary>
         public async Task<MedicalRecordResponse> UpdatePatientMedicalRecordAsync(Guid patientId, UpdateMedicalRecordRequest request)
         {
             try
@@ -218,10 +208,6 @@ namespace Shuryan.Application.Services
         #endregion
 
         #region Private Helper Methods for Medical Record
-
-        /// <summary>
-        /// Process a section of medical history (add/update/delete logic)
-        /// </summary>
         private async Task ProcessMedicalHistorySection(
             Guid patientId,
             MedicalHistoryType type,
@@ -271,9 +257,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// Build medication text from request
-        /// </summary>
         private string BuildMedicationText(CurrentMedicationItemRequest medication)
         {
             var parts = new List<string> { medication.MedicationName };
@@ -299,15 +282,11 @@ namespace Shuryan.Application.Services
             return string.Join(" | ", parts).TrimEnd(' ', '|');
         }
 
-        /// <summary>
-        /// Helper class for medical history updates
-        /// </summary>
         private class MedicalHistoryUpdate
         {
             public Guid? Id { get; set; }
             public string Text { get; set; } = string.Empty;
         }
-
         #endregion
     }
 }

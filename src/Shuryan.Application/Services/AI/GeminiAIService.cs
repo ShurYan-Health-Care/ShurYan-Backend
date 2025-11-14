@@ -13,10 +13,7 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Application.Services.AI
 {
-    /// <summary>
-    /// Service للتعامل مع Gemini AI API
-    /// بيستخدم Google Generative AI REST API
-    /// </summary>
+
     public class GeminiAIService : IGeminiAIService
     {
         private readonly HttpClient _httpClient;
@@ -34,11 +31,9 @@ namespace Shuryan.Application.Services.AI
             _configuration = configuration;
             _logger = logger;
 
-            // جيب الـ API Key من الـ Configuration
             _apiKey = _configuration["GeminiAI:ApiKey"] 
                 ?? throw new InvalidOperationException("Gemini API Key is not configured");
 
-            // اسم الموديل (gemini-pro أو gemini-1.5-flash)
             _modelName = _configuration["GeminiAI:ModelName"] ?? "gemini-1.5-flash";
 
             _logger.LogInformation("GeminiAIService initialized with model: {ModelName}", _modelName);
@@ -53,14 +48,10 @@ namespace Shuryan.Application.Services.AI
 
             try
             {
-                _logger.LogInformation("📤 Sending message to Gemini AI...");
+                _logger.LogInformation("Sending message to Gemini AI...");
 
-                // بناء الـ Request
                 var request = BuildGeminiRequest(userMessage, conversationHistory, systemPrompt);
 
-                // إرسال الـ Request
-                // استخدم v1beta للـ Models الجديدة (1.5-flash, 1.5-pro)
-                // استخدم v1 للـ Models القديمة (gemini-pro)
                 var apiVersion = _modelName.Contains("1.5") ? "v1beta" : "v1";
                 var apiUrl = $"https://generativelanguage.googleapis.com/{apiVersion}/models/{_modelName}:generateContent?key={_apiKey}";
                 
@@ -73,7 +64,7 @@ namespace Shuryan.Application.Services.AI
 
                 if (result?.Candidates == null || !result.Candidates.Any())
                 {
-                    _logger.LogWarning("⚠️ No response from Gemini AI");
+                    _logger.LogWarning("No response from Gemini AI");
                     return new GeminiResponse
                     {
                         HasError = true,
@@ -98,7 +89,7 @@ namespace Shuryan.Application.Services.AI
             catch (HttpRequestException ex)
             {
                 stopwatch.Stop();
-                _logger.LogError(ex, "❌ HTTP error while calling Gemini AI");
+                _logger.LogError(ex, "HTTP error while calling Gemini AI");
                 
                 return new GeminiResponse
                 {
@@ -110,7 +101,7 @@ namespace Shuryan.Application.Services.AI
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                _logger.LogError(ex, "❌ Unexpected error in GeminiAIService");
+                _logger.LogError(ex, "Unexpected error in GeminiAIService");
                 
                 return new GeminiResponse
                 {
@@ -127,37 +118,37 @@ namespace Shuryan.Application.Services.AI
             {
                 "patient" => @"أنت مساعد ذكي ومُطمئن لمنصة شُريان الطبية. دورك مساعدة المرضى بأسلوب دافئ وداعم.
 
-📋 **أسلوب التعامل مع الشكاوى الصحية:**
+**أسلوب التعامل مع الشكاوى الصحية:**
 
-1️⃣ **الطمأنينة أولاً** (جملة واحدة دافئة):
+**الطمأنينة أولاً** (جملة واحدة دافئة):
    - ""ربنا يشفيك ويعافيك 🤲""
    - ""متقلقش، إن شاء الله خير""
    - ""أتمنى تحس بتحسن قريب 💙""
 
-2️⃣ **نصائح عامة مفيدة** (2-3 نصائح بسيطة):
+**نصائح عامة مفيدة** (2-3 نصائح بسيطة):
    - مشروبات دافئة (ينسون، نعناع، زنجبيل)
    - راحة وهدوء
    - تمارين خفيفة أو تنفس عميق
    - أكل صحي خفيف
    - شرب مياه كتير
    
-   ⚠️ **مهم:** لا تعطي تشخيص طبي أبداً!
+ **مهم:** لا تعطي تشخيص طبي أبداً!
 
-3️⃣ **اقتراح التخصص المناسب**:
+**اقتراح التخصص المناسب**:
    - ""أنصحك تستشير دكتور [التخصص]""
    - أمثلة: باطنة، قلب، عظام، جهاز هضمي، إلخ
 
-4️⃣ **مساعدة في البحث**:
+**مساعدة في البحث**:
    - ""تقدر تدور على دكتور [التخصص] من المنصة""
    - ""عاوز أساعدك تلاقي دكتور قريب منك؟""
 
-📌 **مهامك الأخرى:**
+**مهامك الأخرى:**
 - البحث عن أطباء حسب التخصص والموقع
 - حجز المواعيد وإدارتها
 - شرح كيفية استخدام المنصة
 - الإجابة على أسئلة عامة
 
-💬 **أسلوب الكلام:**
+**أسلوب الكلام:**
 - عربي فصيح بسيط وواضح
 - دافئ وودود ومُطمئن
 - مختصر ومباشر (3-5 أسطر)
@@ -173,7 +164,7 @@ namespace Shuryan.Application.Services.AI
 • راحة وتجنب الأكل الثقيل
 • كمادات دافئة على البطن
 
-أنصحك تستشير دكتور جهاز هضمي أو باطنة للاطمئنان. عاوز أساعدك تلاقي دكتور قريب منك؟ 🏥""",
+أنصحك تستشير دكتور جهاز هضمي أو باطنة للاطمئنان. عاوز أساعدك تلاقي دكتور قريب منك؟""",
 
                 "doctor" => @"أنت مساعد ذكي لمنصة شُريان الطبية.
 دورك مساعدة الأطباء في:
@@ -216,7 +207,6 @@ namespace Shuryan.Application.Services.AI
         {
             var contents = new List<object>();
 
-            // أضف الـ System Prompt كأول رسالة
             if (!string.IsNullOrEmpty(systemPrompt))
             {
                 contents.Add(new
@@ -231,7 +221,6 @@ namespace Shuryan.Application.Services.AI
                 });
             }
 
-            // أضف تاريخ المحادثة
             if (conversationHistory != null && conversationHistory.Any())
             {
                 foreach (var item in conversationHistory.TakeLast(10)) // آخر 10 رسائل فقط
@@ -244,7 +233,6 @@ namespace Shuryan.Application.Services.AI
                 }
             }
 
-            // أضف الرسالة الحالية
             contents.Add(new
             {
                 role = "user",

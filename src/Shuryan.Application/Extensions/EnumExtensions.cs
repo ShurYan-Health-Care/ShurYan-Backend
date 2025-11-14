@@ -7,9 +7,6 @@ namespace Shuryan.Application.Extensions
 {
     public static class EnumExtensions
     {
-        /// <summary>
-        /// Get the Description attribute value from an enum
-        /// </summary>
         public static string GetDescription(this Enum value)
         {
             if (value == null)

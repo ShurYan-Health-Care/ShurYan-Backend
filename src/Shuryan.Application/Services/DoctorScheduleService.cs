@@ -111,7 +111,6 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
-
         #endregion
 
         #region Exceptional Dates
@@ -363,12 +362,6 @@ namespace Shuryan.Application.Services
 
         #endregion
 
-        #region Frontend Integration - New Format
-
-        /// <summary>
-        /// جلب الجدول الأسبوعي بصيغة الفرونت (array of 7 days with dayOfWeek 0-6)
-        /// 0=Sunday, 1=Monday, ..., 6=Saturday
-        /// </summary>
         public async Task<List<DayScheduleSlotResponse>> GetWeeklyScheduleForFrontendAsync(Guid doctorId)
         {
             try
@@ -388,27 +381,14 @@ namespace Shuryan.Application.Services
                 var schedule = new List<DayScheduleSlotResponse>();
 
                 // Frontend expects: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
-                // Our system: 1=Saturday, 2=Sunday, 3=Monday, 4=Tuesday, 5=Wednesday, 6=Thursday, 7=Friday
+                // Backend expects: 1=Saturday, 2=Sunday, 3=Monday, 4=Tuesday, 5=Wednesday, 6=Thursday, 7=Friday
                 
-                // Sunday (0 in frontend, 2 in our system)
                 schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Sunday, 0));
-                
-                // Monday (1 in frontend, 3 in our system)
                 schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Monday, 1));
-                
-                // Tuesday (2 in frontend, 4 in our system)
                 schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Tuesday, 2));
-                
-                // Wednesday (3 in frontend, 5 in our system)
                 schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Wednesday, 3));
-                
-                // Thursday (4 in frontend, 6 in our system)
                 schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Thursday, 4));
-                
-                // Friday (5 in frontend, 7 in our system)
                 schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Friday, 5));
-                
-                // Saturday (6 in frontend, 1 in our system)
                 schedule.Add(GetDayScheduleSlot(doctorAvailabilities, SysDayOfWeek.Saturday, 6));
 
                 _logger.LogInformation("Successfully retrieved weekly schedule for frontend for doctor {DoctorId}", doctorId);
@@ -421,9 +401,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// جلب المواعيد الاستثنائية بصيغة الفرونت (مع isClosed flag)
-        /// </summary>
         public async Task<List<ExceptionalDateResponse>> GetExceptionalDatesForFrontendAsync(Guid doctorId)
         {
             try
@@ -461,9 +438,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// Helper method للحصول على معلومات يوم واحد بصيغة الفرونت
-        /// </summary>
         private DayScheduleSlotResponse GetDayScheduleSlot(List<DoctorAvailability> availabilities, SysDayOfWeek dayOfWeek, int frontendDayNumber)
         {
             var availability = availabilities.FirstOrDefault(a => a.DayOfWeek == dayOfWeek);
@@ -488,6 +462,5 @@ namespace Shuryan.Application.Services
             };
         }
 
-        #endregion
     }
 }

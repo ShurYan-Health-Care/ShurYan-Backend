@@ -12,9 +12,6 @@ using Shuryan.Core.Interfaces.UnitOfWork;
 
 namespace Shuryan.Application.Services
 {
-    /// <summary>
-    /// Service مسؤول عن إدارة جلسات الكشف (Consultation Sessions)
-    /// </summary>
     public class SessionService : ISessionService
     {
         private readonly IAppointmentRepository _appointmentRepository;
@@ -34,9 +31,6 @@ namespace Shuryan.Application.Services
             _logger = logger;
         }
 
-        /// <summary>
-        /// بدء جلسة كشف جديدة
-        /// </summary>
         public async Task<SessionResponse> StartSessionAsync(Guid appointmentId, Guid doctorId)
         {
             try
@@ -46,7 +40,6 @@ namespace Shuryan.Application.Services
 
                 // ==================== Validation ====================
 
-                // 1. التحقق من وجود الموعد
                 var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(appointmentId);
                 if (appointment == null)
                 {
@@ -54,7 +47,6 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"الموعد غير موجود");
                 }
 
-                // 2. التحقق من أن الموعد يخص الدكتور المسجل دخوله
                 if (appointment.DoctorId != doctorId)
                 {
                     _logger.LogWarning("Doctor {DoctorId} tried to start session for appointment {AppointmentId} that belongs to another doctor", 
@@ -62,14 +54,12 @@ namespace Shuryan.Application.Services
                     throw new UnauthorizedAccessException("هذا الموعد لا يخصك");
                 }
 
-                // 3. التحقق من وجود جلسة نشطة للموعد - Return existing session بدلاً من error
                 if (appointment.ActualStartTime.HasValue && appointment.Status == AppointmentStatus.InProgress)
                 {
                     _logger.LogInformation("Active session already exists for appointment {AppointmentId}, returning existing session", appointmentId);
                     return BuildSessionResponse(appointment);
                 }
 
-                // 4. التحقق من حالة الموعد (يجب أن يكون Confirmed)
                 if (appointment.Status != AppointmentStatus.Confirmed)
                 {
                     _logger.LogWarning("Cannot start session for appointment {AppointmentId} with status {Status}", 
@@ -77,7 +67,6 @@ namespace Shuryan.Application.Services
                     throw new InvalidOperationException($"لا يمكن بدء جلسة لموعد بحالة {appointment.Status}");
                 }
 
-                // 5. التحقق من عدم وجود جلسة نشطة أخرى للدكتور (Performance Optimized)
                 var doctorActiveAppointment = await _appointmentRepository.GetDoctorActiveAppointmentAsync(doctorId, appointmentId);
                 
                 if (doctorActiveAppointment != null)
@@ -108,16 +97,12 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// الحصول على الجلسة النشطة للموعد
-        /// </summary>
         public async Task<SessionResponse?> GetActiveSessionAsync(Guid appointmentId, Guid doctorId)
         {
             try
             {
                 _logger.LogInformation("Getting active session for Appointment {AppointmentId}", appointmentId);
 
-                // التحقق من وجود الموعد وأنه يخص الدكتور
                 var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(appointmentId);
                 if (appointment == null)
                 {
@@ -149,9 +134,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// إنهاء الجلسة النشطة
-        /// </summary>
         public async Task<EndSessionResponse> EndSessionAsync(Guid appointmentId, Guid doctorId)
         {
             try
@@ -161,7 +143,6 @@ namespace Shuryan.Application.Services
 
                 // ==================== Validation ====================
 
-                // 1. التحقق من وجود الموعد
                 var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(appointmentId);
                 if (appointment == null)
                 {
@@ -169,7 +150,6 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException("الموعد غير موجود");
                 }
 
-                // 2. التحقق من أن الموعد يخص الدكتور
                 if (appointment.DoctorId != doctorId)
                 {
                     _logger.LogWarning("Doctor {DoctorId} tried to end session for appointment {AppointmentId} that belongs to another doctor", 
@@ -177,7 +157,6 @@ namespace Shuryan.Application.Services
                     throw new UnauthorizedAccessException("هذا الموعد لا يخصك");
                 }
 
-                // 3. التحقق من وجود جلسة نشطة
                 if (!appointment.ActualStartTime.HasValue || appointment.Status != AppointmentStatus.InProgress)
                 {
                     _logger.LogWarning("No active session found for Appointment {AppointmentId}", appointmentId);
@@ -208,16 +187,12 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// الحصول على الجلسة النشطة الحالية للدكتور (أي موعد)
-        /// </summary>
         public async Task<SessionResponse?> GetDoctorCurrentActiveSessionAsync(Guid doctorId)
         {
             try
             {
                 _logger.LogInformation("Getting current active session for Doctor {DoctorId}", doctorId);
 
-                // البحث عن أي موعد نشط للدكتور
                 var activeAppointment = await _appointmentRepository.GetDoctorActiveAppointmentAsync(doctorId);
                 
                 if (activeAppointment == null)
@@ -238,9 +213,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// بناء SessionResponse من Appointment
-        /// </summary>
         private SessionResponse BuildSessionResponse(Appointment appointment)
         {
             return new SessionResponse
@@ -262,15 +234,11 @@ namespace Shuryan.Application.Services
             };
         }
 
-        /// <summary>
-        /// حساب العمر من تاريخ الميلاد
-        /// </summary>
         private static int CalculateAge(DateTime birthDate)
         {
             var today = DateTime.Today;
             var age = today.Year - birthDate.Year;
             
-            // لو لسه ما جاش عيد ميلاده السنة دي، نطرح سنة
             if (birthDate.Date > today.AddYears(-age))
             {
                 age--;

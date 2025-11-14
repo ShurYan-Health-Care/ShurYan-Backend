@@ -51,7 +51,7 @@ namespace Shuryan.Application.Services
                 PartnerResponse? pharmacy = null;
                 PartnerResponse? laboratory = null;
 
-                // جلب الصيدلية المقترحة لو موجودة
+                // Bring the suggested pharmacy if it exists
                 if (suggestion.SuggestedPharmacyId.HasValue)
                 {
                     var pharmacyEntity = await _unitOfWork.Pharmacies.GetByIdAsync(suggestion.SuggestedPharmacyId.Value);
@@ -61,7 +61,7 @@ namespace Shuryan.Application.Services
                     }
                 }
 
-                // جلب المعمل المقترح لو موجود
+                // Bring the proposed lab if it exists
                 if (suggestion.SuggestedLaboratoryId.HasValue)
                 {
                     var laboratoryEntity = await _unitOfWork.Laboratories.GetByIdAsync(suggestion.SuggestedLaboratoryId.Value);
@@ -88,16 +88,14 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Suggesting partners for doctor {DoctorId}. Pharmacy: {PharmacyId}, Laboratory: {LaboratoryId}",
                     doctorId, request.PharmacyId, request.LaboratoryId);
 
-                // التحقق من وجود الدكتور
+                // Verify the presence of the 
                 var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
                 if (doctor == null)
                     throw new ArgumentException($"Doctor with ID {doctorId} not found");
 
-                // التحقق من أن على الأقل واحد من الاثنين موجود
                 if (!request.PharmacyId.HasValue && !request.LaboratoryId.HasValue)
-                    throw new ArgumentException("يجب تحديد صيدلية أو معمل على الأقل");
+                    throw new ArgumentException("At least one pharmacy or laboratory must be designated");
 
-                // التحقق من الصيدلية لو موجودة
                 if (request.PharmacyId.HasValue)
                 {
                     var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(request.PharmacyId.Value);
@@ -105,10 +103,9 @@ namespace Shuryan.Application.Services
                         throw new ArgumentException($"Pharmacy with ID {request.PharmacyId} not found");
 
                     if (pharmacy.PharmacyStatus != Status.Active)
-                        throw new InvalidOperationException("لا يمكن اقتراح صيدلية غير نشطة");
+                        throw new InvalidOperationException("An inactive pharmacy cannot be proposed");
                 }
 
-                // التحقق من المعمل لو موجود
                 if (request.LaboratoryId.HasValue)
                 {
                     var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(request.LaboratoryId.Value);
@@ -116,25 +113,24 @@ namespace Shuryan.Application.Services
                         throw new ArgumentException($"Laboratory with ID {request.LaboratoryId} not found");
 
                     if (laboratory.LaboratoryStatus != Status.Active)
-                        throw new InvalidOperationException("لا يمكن اقتراح معمل غير نشط");
+                        throw new InvalidOperationException("An inactive laboratory cannot be proposed");
                 }
 
-                // التحقق من وجود اقتراح سابق
+                // Check for a previous suggestion
                 var existingSuggestion = await _unitOfWork.DoctorPartnerSuggestions.GetByDoctorIdAsync(doctorId);
 
                 if (existingSuggestion != null)
                 {
-                    // تحديث الاقتراح الموجود
                     _logger.LogInformation("Updating existing partner suggestions for doctor {DoctorId}", doctorId);
 
-                    // تحديث الصيدلية
+                    // Pharmacy update
                     if (request.PharmacyId.HasValue)
                     {
                         existingSuggestion.SuggestedPharmacyId = request.PharmacyId.Value;
                         existingSuggestion.PharmacySuggestedAt = DateTime.UtcNow;
                     }
 
-                    // تحديث المعمل
+                    // Lab Update
                     if (request.LaboratoryId.HasValue)
                     {
                         existingSuggestion.SuggestedLaboratoryId = request.LaboratoryId.Value;
@@ -145,7 +141,7 @@ namespace Shuryan.Application.Services
                 }
                 else
                 {
-                    // إنشاء اقتراح جديد
+                    // Create a new suggest
                     _logger.LogInformation("Creating new partner suggestions for doctor {DoctorId}", doctorId);
 
                     var newSuggestion = new DoctorPartnerSuggestion
@@ -203,7 +199,6 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
-
         #endregion
 
         #region Available Partners

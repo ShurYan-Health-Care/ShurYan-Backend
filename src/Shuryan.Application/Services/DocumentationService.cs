@@ -10,9 +10,6 @@ using Shuryan.Core.Interfaces.UnitOfWork;
 
 namespace Shuryan.Application.Services
 {
-    /// <summary>
-    /// Service مسؤول عن إدارة توثيق الكشف (Consultation Documentation)
-    /// </summary>
     public class DocumentationService : IDocumentationService
     {
         private readonly IConsultationRecordRepository _consultationRecordRepository;
@@ -32,9 +29,6 @@ namespace Shuryan.Application.Services
             _logger = logger;
         }
 
-        /// <summary>
-        /// حفظ أو تحديث توثيق الكشف (يدعم الحفظ الجزئي)
-        /// </summary>
         public async Task<DocumentationResponse> SaveDocumentationAsync(
             Guid appointmentId, 
             Guid doctorId, 
@@ -47,7 +41,7 @@ namespace Shuryan.Application.Services
 
                 // ==================== Validation ====================
 
-                // 1. التحقق من وجود الموعد
+                // 1. Verify the appointment exists
                 var appointment = await _appointmentRepository.GetByIdAsync(appointmentId);
                 if (appointment == null)
                 {
@@ -55,7 +49,7 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException("الموعد غير موجود");
                 }
 
-                // 2. التحقق من أن الموعد يخص الدكتور
+                // 2. Verify that the appointment is for the doctor.
                 if (appointment.DoctorId != doctorId)
                 {
                     _logger.LogWarning("Doctor {DoctorId} tried to save documentation for appointment {AppointmentId} that belongs to another doctor", 
@@ -65,7 +59,7 @@ namespace Shuryan.Application.Services
 
                 // ==================== Create or Update ====================
 
-                // التحقق من وجود توثيق سابق
+                // Check for previous documentation
                 var existingRecord = await _consultationRecordRepository.GetByAppointmentIdAsync(appointmentId);
 
                 if (existingRecord != null)
@@ -154,7 +148,6 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Getting documentation for Appointment {AppointmentId} by User {UserId} (IsDoctor: {IsDoctor})", 
                     appointmentId, userId, isDoctor);
 
-                // التحقق من وجود الموعد
                 var appointment = await _appointmentRepository.GetByIdAsync(appointmentId);
                 if (appointment == null)
                 {
@@ -162,14 +155,13 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                // التحقق من الصلاحيات - الدكتور أو المريض فقط
                 if (isDoctor)
                 {
                     if (appointment.DoctorId != userId)
                     {
                         _logger.LogWarning("Doctor {UserId} tried to access documentation for appointment {AppointmentId} that belongs to another doctor", 
                             userId, appointmentId);
-                        throw new UnauthorizedAccessException("هذا الموعد لا يخصك");
+                        throw new UnauthorizedAccessException("This appointment is not for you");
                     }
                 }
                 else // Patient
@@ -178,7 +170,7 @@ namespace Shuryan.Application.Services
                     {
                         _logger.LogWarning("Patient {UserId} tried to access documentation for appointment {AppointmentId} that belongs to another patient", 
                             userId, appointmentId);
-                        throw new UnauthorizedAccessException("هذا الموعد لا يخصك");
+                        throw new UnauthorizedAccessException("This appointment is not for you");
                     }
                 }
 

@@ -15,10 +15,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Application.Services.AI
 {
-    /// <summary>
-    /// Service للتعامل مع المحادثات والـ AI Bot
-    /// بيربط بين الـ Gemini AI والـ Database
-    /// </summary>
     public class ChatService : IChatService
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -47,13 +43,11 @@ namespace Shuryan.Application.Services.AI
             {
                 _logger.LogInformation("💬 User {UserId} sending message", userId);
 
-                // 1. جيب أو اعمل محادثة واحدة للمستخدم
                 var conversation = await _unitOfWork.Conversations
                     .GetUserActiveConversationAsync(userId);
 
                 if (conversation == null)
                 {
-                    // اعمل محادثة جديدة
                     conversation = new Conversation
                     {
                         Id = Guid.NewGuid(),
@@ -68,12 +62,10 @@ namespace Shuryan.Application.Services.AI
                 }
                 else
                 {
-                    // لو المحادثة موجودة، جيب آخر 10 رسائل للـ context
                     conversation = await _unitOfWork.Conversations
                         .GetConversationWithMessagesAsync(conversation.Id);
                 }
 
-                // 2. احفظ رسالة المستخدم
                 var userMessage = new ConversationMessage
                 {
                     Id = Guid.NewGuid(),
@@ -88,7 +80,6 @@ namespace Shuryan.Application.Services.AI
 
                 await _unitOfWork.ConversationMessages.AddAsync(userMessage);
 
-                // 3. جهز تاريخ المحادثة للـ AI
                 var conversationHistory = conversation.Messages?
                     .OrderBy(m => m.CreatedAt)
                     .TakeLast(10)
@@ -99,10 +90,8 @@ namespace Shuryan.Application.Services.AI
                     })
                     .ToList() ?? new List<ConversationHistoryItem>();
 
-                // 4. اعمل Context Enhancement (إثراء السياق)
                 var enrichedMessage = EnrichMessageWithContext(request.Message, request.Context);
 
-                // 5. ابعت للـ Gemini AI
                 var systemPrompt = _geminiAIService.GetSystemPrompt(userRole);
                 var aiResponse = await _geminiAIService.SendMessageAsync(
                     enrichedMessage,
@@ -112,17 +101,15 @@ namespace Shuryan.Application.Services.AI
 
                 if (aiResponse.HasError)
                 {
-                    _logger.LogError("❌ AI returned error: {Error}", aiResponse.ErrorMessage);
+                    _logger.LogError("AI returned error: {Error}", aiResponse.ErrorMessage);
                     return null;
                 }
 
-                // 6. استخرج Suggestions و Actions من رد الـ AI
                 var (suggestions, actions) = ExtractSuggestionsAndActions(
                     aiResponse.Reply, 
                     request.Context
                 );
 
-                // 7. احفظ رد الـ AI
                 var assistantMessage = new ConversationMessage
                 {
                     Id = Guid.NewGuid(),
@@ -143,14 +130,11 @@ namespace Shuryan.Application.Services.AI
 
                 await _unitOfWork.ConversationMessages.AddAsync(assistantMessage);
 
-                // 8. حدّث المحادثة
                 conversation.LastMessage = aiResponse.Reply.Length > 100 
                     ? aiResponse.Reply.Substring(0, 100) + "..." 
                     : aiResponse.Reply;
                 conversation.LastMessageAt = DateTime.UtcNow;
                 conversation.UpdatedAt = DateTime.UtcNow;
-
-                // عنوان المحادثة (أول 50 حرف من أول رسالة)
                 if (string.IsNullOrEmpty(conversation.Title))
                 {
                     conversation.Title = request.Message.Length > 50
@@ -160,12 +144,10 @@ namespace Shuryan.Application.Services.AI
 
                 _unitOfWork.Conversations.Update(conversation);
 
-                // 9. احفظ كل حاجة
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("Message processed successfully");
 
-                // 10. ارجع الـ Response
                 return new ChatMessageResponse
                 {
                     ConversationId = conversation.Id,
@@ -178,7 +160,7 @@ namespace Shuryan.Application.Services.AI
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in SendMessageAsync");
+                _logger.LogError(ex, "Error in SendMessageAsync");
                 return null;
             }
         }
@@ -190,14 +172,12 @@ namespace Shuryan.Application.Services.AI
         {
             try
             {
-                // جيب محادثة المستخدم
                 var conversation = await _unitOfWork.Conversations
                     .GetUserActiveConversationAsync(userId);
 
                 if (conversation == null)
                     return null;
 
-                // جيب عدد الرسائل الكلي
                 var totalMessages = await _unitOfWork.ConversationMessages
                     .GetConversationMessageCountAsync(conversation.Id);
 
@@ -218,11 +198,9 @@ namespace Shuryan.Application.Services.AI
                     };
                 }
 
-                // احسب الـ Pagination
                 var totalPages = (int)Math.Ceiling(totalMessages / (double)pageSize);
                 var skip = (pageNumber - 1) * pageSize;
 
-                // جيب الرسائل مع Pagination (من الأحدث للأقدم)
                 var messages = await _unitOfWork.ConversationMessages
                     .GetConversationMessagesPagedAsync(conversation.Id, skip, pageSize);
 
@@ -256,7 +234,7 @@ namespace Shuryan.Application.Services.AI
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in GetChatHistoryAsync");
+                _logger.LogError(ex, "Error in GetChatHistoryAsync");
                 return null;
             }
         }
@@ -271,11 +249,9 @@ namespace Shuryan.Application.Services.AI
                 if (conversation == null)
                     return false;
 
-                // امسح كل الرسائل
                 await _unitOfWork.ConversationMessages
                     .DeleteConversationMessagesAsync(conversation.Id);
 
-                // حدّث المحادثة
                 conversation.LastMessage = null;
                 conversation.LastMessageAt = null;
                 conversation.Title = null;
@@ -284,21 +260,17 @@ namespace Shuryan.Application.Services.AI
 
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("🧹 User {UserId} chat cleared", userId);
+                _logger.LogInformation("User {UserId} chat cleared", userId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in ClearUserChatAsync");
+                _logger.LogError(ex, "Error in ClearUserChatAsync");
                 return false;
             }
         }
 
         #region Helper Methods
-
-        /// <summary>
-        /// إثراء الرسالة بالـ Context
-        /// </summary>
         private string EnrichMessageWithContext(string message, MessageContextDto? context)
         {
             if (context == null)
@@ -321,9 +293,7 @@ namespace Shuryan.Application.Services.AI
             return $"{message}\n\n[Context: {string.Join(", ", contextInfo)}]";
         }
 
-        /// <summary>
-        /// استخراج Suggestions و Actions من رد الـ AI
-        /// </summary>
+
         private (List<string> suggestions, List<ChatActionDto> actions) ExtractSuggestionsAndActions(
             string aiReply,
             MessageContextDto? context)
@@ -331,7 +301,7 @@ namespace Shuryan.Application.Services.AI
             var suggestions = new List<string>();
             var actions = new List<ChatActionDto>();
 
-            // Suggestions افتراضية حسب الـ Context
+            // Suggestions
             if (context?.CurrentPage == "search-doctors")
             {
                 suggestions.Add("شوف الدكاترة المتاحين");
@@ -358,7 +328,7 @@ namespace Shuryan.Application.Services.AI
             }
             else
             {
-                // Suggestions عامة
+                // Suggestions
                 suggestions.Add("ابحث عن دكتور");
                 suggestions.Add("شوف مواعيدي");
                 suggestions.Add("كيف أستخدم المنصة؟");

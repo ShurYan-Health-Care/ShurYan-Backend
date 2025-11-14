@@ -194,7 +194,6 @@ namespace Shuryan.Application.Services
         }
 
         #endregion
-
         #region Profile Operations - UPDATE
 
         public async Task<DoctorProfileResponse> UpdateDoctorProfileAsync(Guid doctorId, UpdateDoctorProfileRequest request)
@@ -1378,7 +1377,7 @@ namespace Shuryan.Application.Services
         #region Doctor Patient Management Operations
 
         /// <summary>
-        /// الحصول على قائمة المرضى الذين تعاملوا مع الدكتور (مع pagination)
+        /// Get a list of patients for the doctor (with pagination)
         /// </summary>
         public async Task<PaginatedResponse<DoctorPatientResponse>> GetDoctorPatientsWithPaginationAsync(
             Guid doctorId, 
@@ -1390,38 +1389,31 @@ namespace Shuryan.Application.Services
                     "Getting paginated patients list for doctor {DoctorId}. Page: {Page}, Size: {Size}", 
                     doctorId, paginationParams.PageNumber, paginationParams.PageSize);
 
-                // التحقق من وجود الدكتور
                 var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
                 if (doctor == null)
                     throw new ArgumentException($"Doctor with ID {doctorId} not found");
 
-                // جلب المرضى من الـ Repository مع pagination
                 var (patients, totalCount) = await _unitOfWork.Patients.GetDoctorPatientsAsync(
                     doctorId, 
                     paginationParams.PageNumber, 
                     paginationParams.PageSize);
 
-                // تحويل البيانات إلى Response DTOs
                 var patientResponses = patients.Select(patient =>
                 {
-                    // حساب عدد الجلسات المكتملة مع هذا الدكتور
                     var completedAppointments = patient.Appointments
                         .Where(a => a.DoctorId == doctorId && a.Status == Core.Enums.Appointments.AppointmentStatus.Completed)
                         .ToList();
 
                     var totalSessions = completedAppointments.Count;
 
-                    // آخر جلسة
                     var lastVisit = completedAppointments
                         .OrderByDescending(a => a.ScheduledStartTime)
                         .FirstOrDefault();
 
-                    // متوسط التقييم
                     var patientReview = patient.DoctorReviews
                         .Where(r => r.DoctorId == doctorId)
                         .FirstOrDefault();
 
-                    // عنوان المريض
                     var address = patient.Address != null 
                         ? $"{patient.Address.City}, {patient.Address.Governorate}"
                         : null;
@@ -1439,7 +1431,6 @@ namespace Shuryan.Application.Services
                     };
                 }).ToList();
 
-                // إنشاء الـ Paginated Response
                 var totalPages = (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize);
 
                 var paginatedResponse = new PaginatedResponse<DoctorPatientResponse>
@@ -1467,7 +1458,7 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// الحصول على قائمة المرضى الذين تعاملوا مع الدكتور
+        /// Get a list of patients treated by the doctor.
         /// </summary>
         public async Task<IEnumerable<DoctorPatientListItemResponse>> GetDoctorPatientsAsync(Guid doctorId)
         {
@@ -1475,20 +1466,17 @@ namespace Shuryan.Application.Services
             {
                 _logger.LogInformation("Getting patients list for doctor {DoctorId}", doctorId);
 
-                // التحقق من وجود الدكتور
                 var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
                 if (doctor == null)
                     throw new ArgumentException($"Doctor with ID {doctorId} not found");
 
-                // جلب كل المواعيد المكتملة للدكتور مع بيانات المرضى
                 var allAppointments = await _unitOfWork.Appointments.GetAllAsync();
                 var doctorCompletedAppointments = allAppointments
                     .Where(a => a.DoctorId == doctorId && 
                                 a.Status == Core.Enums.Appointments.AppointmentStatus.Completed &&
-                                a.Patient != null) // التأكد من وجود المريض
+                                a.Patient != null) 
                     .ToList();
 
-                // تجميع المرضى (unique patients)
                 var patientGroups = doctorCompletedAppointments
                     .GroupBy(a => a.PatientId)
                     .ToList();
@@ -1501,15 +1489,12 @@ namespace Shuryan.Application.Services
                     var patientAppointments = group.ToList();
                     var patient = patientAppointments.First().Patient;
 
-                    // حساب عدد الجلسات
                     var totalSessions = patientAppointments.Count;
 
-                    // تاريخ آخر جلسة
                     var lastSession = patientAppointments
                         .OrderByDescending(a => a.ScheduledStartTime)
                         .First();
 
-                    // حساب متوسط تقييم المريض للدكتور
                     var allReviews = await _unitOfWork.DoctorReviews.GetAllAsync();
                     var patientReviews = allReviews
                         .Where(r => r.DoctorId == doctorId && r.PatientId == patientId)
@@ -1531,7 +1516,6 @@ namespace Shuryan.Application.Services
                     });
                 }
 
-                // ترتيب حسب تاريخ آخر جلسة (الأحدث أولاً)
                 patientResponses = patientResponses
                     .OrderByDescending(p => p.LastSessionDate)
                     .ToList();
@@ -1549,8 +1533,7 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// الحصول على السجل الطبي الكامل لمريض معين
-        /// بسيط جداً - بيرجع كل الـ MedicalHistoryItems بتاعت المريض
+        /// Get the complete medical history of a specific patient.
         /// </summary>
         public async Task<PatientMedicalRecordResponse?> GetPatientMedicalRecordAsync(Guid patientId, Guid doctorId)
         {
@@ -1559,7 +1542,6 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Getting medical record for patient {PatientId} by doctor {DoctorId}", 
                     patientId, doctorId);
 
-                // التحقق من وجود المريض
                 var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
                 if (patient == null)
                 {
@@ -1567,7 +1549,6 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                // التحقق من أن الدكتور له جلسات مع المريض (أي حجز حتى لو مش مكتمل)
                 var allAppointments = await _unitOfWork.Appointments.GetAllAsync();
                 var hasAppointments = allAppointments.Any(a => 
                     a.DoctorId == doctorId && 
@@ -1581,14 +1562,12 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                // جلب السجل الطبي للمريض - كل الـ items
                 var allMedicalHistory = await _unitOfWork.MedicalHistoryItems.GetAllAsync();
                 var patientMedicalHistory = allMedicalHistory
                     .Where(m => m.PatientId == patientId)
                     .OrderByDescending(m => m.CreatedAt)
                     .ToList();
 
-                // Map to response - بسيط جداً
                 var medicalHistoryItems = patientMedicalHistory.Select(m => new MedicalHistoryItemResponse
                 {
                     Id = m.Id,
@@ -1618,7 +1597,7 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// جلب اسم نوع المعلومة الطبية بالعربي
+        /// Bring the name of the type of medical information in Arabic
         /// </summary>
         private string GetMedicalHistoryTypeName(Core.Enums.MedicalHistoryType type)
         {
@@ -1633,7 +1612,7 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// الحصول على توثيق جميع الجلسات لمريض معين مع الدكتور
+        /// Get documentation of all sessions for a specific patient with the doctor.
         /// </summary>
         public async Task<PatientSessionDocumentationListResponse?> GetPatientSessionDocumentationsAsync(Guid patientId, Guid doctorId)
         {
@@ -1642,7 +1621,6 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Getting session documentations for patient {PatientId} by doctor {DoctorId}", 
                     patientId, doctorId);
 
-                // التحقق من وجود المريض
                 var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
                 if (patient == null)
                 {
@@ -1650,7 +1628,6 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                // جلب كل المواعيد المكتملة بين الدكتور والمريض
                 var allAppointments = await _unitOfWork.Appointments.GetAllAsync();
                 var completedAppointments = allAppointments
                     .Where(a => a.DoctorId == doctorId && 
@@ -1666,7 +1643,6 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                // جلب سجلات الاستشارة لكل موعد
                 var allConsultationRecords = await _unitOfWork.ConsultationRecords.GetAllAsync();
                 
                 var sessions = new List<SessionDocumentationResponse>();
@@ -1718,7 +1694,7 @@ namespace Shuryan.Application.Services
         }
 
         /// <summary>
-        /// الحصول على جميع الروشتات لمريض معين من الدكتور
+        /// Get all prescriptions for a specific patient from the doctor.
         /// </summary>
         public async Task<PatientPrescriptionsListResponse?> GetPatientPrescriptionsAsync(Guid patientId, Guid doctorId)
         {
@@ -1727,7 +1703,6 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Getting prescriptions for patient {PatientId} by doctor {DoctorId}", 
                     patientId, doctorId);
 
-                // التحقق من وجود المريض
                 var patient = await _unitOfWork.Patients.GetByIdAsync(patientId);
                 if (patient == null)
                 {
@@ -1735,7 +1710,6 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                // جلب كل الروشتات للمريض من هذا الدكتور
                 var allPrescriptions = await _unitOfWork.Prescriptions.GetAllAsync();
                 var patientPrescriptions = allPrescriptions
                     .Where(p => p.PatientId == patientId && p.DoctorId == doctorId)
@@ -1749,7 +1723,6 @@ namespace Shuryan.Application.Services
                     return null;
                 }
 
-                // جلب الأدوية المكتوبة في كل روشتة
                 var allPrescribedMedications = await _unitOfWork.PrescribedMedications.GetAllAsync();
                 var allMedications = await _unitOfWork.Medications.GetAllAsync();
 
@@ -1757,7 +1730,6 @@ namespace Shuryan.Application.Services
 
                 foreach (var prescription in patientPrescriptions)
                 {
-                    // جلب الأدوية الخاصة بهذه الروشتة
                     var prescribedMeds = allPrescribedMedications
                         .Where(pm => pm.MedicationPrescriptionId == prescription.Id)
                         .ToList();
@@ -1817,7 +1789,7 @@ namespace Shuryan.Application.Services
         #region Verification Operations
 
         /// <summary>
-        /// تقديم طلب المراجعة - تغيير حالة التحقق إلى "مُرسل"
+        /// Submit review request - Change verification status to "Sent"
         /// </summary>
         public async Task<bool> SubmitForReviewAsync(Guid doctorId)
         {
@@ -1825,7 +1797,6 @@ namespace Shuryan.Application.Services
             {
                 _logger.LogInformation("Doctor {DoctorId} submitting profile for review", doctorId);
 
-                // جلب الدكتور
                 var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
                 if (doctor == null)
                 {
@@ -1833,7 +1804,6 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Doctor with ID {doctorId} not found");
                 }
 
-                // التحقق من أن الحالة الحالية تسمح بالتقديم
                 if (doctor.VerificationStatus == VerificationStatus.Sent)
                 {
                     _logger.LogWarning("Doctor {DoctorId} has already submitted for review", doctorId);
@@ -1852,7 +1822,6 @@ namespace Shuryan.Application.Services
                     throw new InvalidOperationException("Your profile is already verified");
                 }
 
-                // تغيير الحالة إلى Sent
                 doctor.VerificationStatus = VerificationStatus.Sent;
                 doctor.UpdatedAt = DateTime.UtcNow;
 
@@ -1867,7 +1836,6 @@ namespace Shuryan.Application.Services
                 throw;
             }
         }
-
         #endregion
     }
 }
