@@ -284,6 +284,19 @@ namespace Shuryan.Infrastructure.Repositories.Medical
 
             return (appointments, totalCount);
         }
+
+        public async Task<IEnumerable<Appointment>> GetBookedAppointmentsForDateAsync(Guid doctorId, DateTime startOfDay, DateTime endOfDay)
+        {
+            return await _dbSet
+                .Include(a => a.Patient)  // عشان الـ PatientName
+                .Where(a => a.DoctorId == doctorId &&
+                           a.ScheduledStartTime >= startOfDay &&
+                           a.ScheduledStartTime < startOfDay.AddDays(1) &&  // أفضل من endOfDay
+                           a.Status != AppointmentStatus.Cancelled &&
+                           a.Status != AppointmentStatus.NoShow)
+                .OrderBy(a => a.ScheduledStartTime)
+                .ToListAsync();
+        }
     }
 }
 

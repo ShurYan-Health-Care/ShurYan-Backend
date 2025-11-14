@@ -50,7 +50,6 @@ namespace Shuryan.API.Controllers
         }
 
         #region Helper Methods
-        
         private Guid GetCurrentPatientId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -80,7 +79,6 @@ namespace Shuryan.API.Controllers
         {
             return User.IsInRole("Doctor");
         }
-
         #endregion
 
         #region Booking System
@@ -98,10 +96,7 @@ namespace Shuryan.API.Controllers
             if (patientId == Guid.Empty)
             {
                 _logger.LogWarning("Unauthorized booking attempt - invalid token");
-                return Unauthorized(ApiResponse<object>.Failure(
-                    "Invalid or missing authentication token",
-                    statusCode: 401
-                ));
+                return Unauthorized(ApiResponse<object>.Failure("Invalid or missing authentication token", statusCode: 401));
             }
 
             _logger.LogInformation("Booking appointment for Patient {PatientId} with Doctor {DoctorId} on {Date} at {Time}",
@@ -117,51 +112,30 @@ namespace Shuryan.API.Controllers
                 return CreatedAtAction(
                     nameof(BookAppointment),
                     new { id = bookedAppointment.Id },
-                    ApiResponse<BookedAppointmentResponse>.Success(
-                        bookedAppointment,
-                        "تم حجز الموعد بنجاح",
-                        201
-                    )
+                    ApiResponse<BookedAppointmentResponse>.Success(bookedAppointment, "The appointment has been successfully booked", 201)
                 );
             }
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Validation error while booking appointment for Patient {PatientId}", patientId);
-                return BadRequest(ApiResponse<object>.Failure(
-                    ex.Message,
-                    new[] { ex.Message },
-                    400
-                ));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 400));
             }
             catch (InvalidOperationException ex)
             {
                 // Check if it's a "slot already booked" error
-                if (ex.Message.Contains("محجوزة") || ex.Message.Contains("booked"))
+                if (ex.Message.Contains("booked"))
                 {
                     _logger.LogWarning(ex, "Appointment slot conflict for Patient {PatientId}", patientId);
-                    return Conflict(ApiResponse<object>.Failure(
-                        "هذا الموعد محجوز بالفعل",
-                        new[] { ex.Message },
-                        409
-                    ));
+                    return Conflict(ApiResponse<object>.Failure("This date is already booked.", new[] { ex.Message }, 409));
                 }
 
-                // Other business logic errors (e.g., past date, doctor hasn't set pricing)
                 _logger.LogWarning(ex, "Business logic error while booking appointment for Patient {PatientId}", patientId);
-                return BadRequest(ApiResponse<object>.Failure(
-                    ex.Message,
-                    new[] { ex.Message },
-                    400
-                ));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error while booking appointment for Patient {PatientId}", patientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ غير متوقع أثناء حجز الموعد",
-                    new[] { ex.Message },
-                    500
-                ));
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred while booking your appointment.", new[] { ex.Message }, 500));
             }
         }
         #endregion
@@ -180,21 +154,21 @@ namespace Shuryan.API.Controllers
                 if (appointment == null)
                 {
                     return NotFound(ApiResponse<object>.Failure(
-                        "الموعد غير موجود",
+                        "Appointment not found",
                         new[] { "Appointment not found" },
                         404
                     ));
                 }
 
-                // التحقق من الصلاحيات - الدكتور أو المريض فقط
-                var userId = GetCurrentDoctorId(); // نفس الـ method
+                // Checking permissions - only doctor or patient
+                var userId = GetCurrentDoctorId();
                 var isDoctor = IsDoctor();
                 var isPatient = IsPatient();
 
                 if (isDoctor && appointment.DoctorId != userId)
                 {
                     return Unauthorized(ApiResponse<object>.Failure(
-                        "غير مصرح لك بالوصول لهذا الموعد",
+                        "Unauthorized access to this appointment",
                         new[] { "Unauthorized access" },
                         401
                     ));
@@ -203,7 +177,7 @@ namespace Shuryan.API.Controllers
                 if (isPatient && appointment.PatientId != userId)
                 {
                     return Unauthorized(ApiResponse<object>.Failure(
-                        "غير مصرح لك بالوصول لهذا الموعد",
+                        "Unauthorized access to this appointment",
                         new[] { "Unauthorized access" },
                         401
                     ));
@@ -211,14 +185,14 @@ namespace Shuryan.API.Controllers
 
                 return Ok(ApiResponse<AppointmentResponse>.Success(
                     appointment,
-                    "تم الحصول على تفاصيل الموعد بنجاح"
+                    "Appointment details retrieved successfully"
                 ));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting appointment {AppointmentId}", appointmentId);
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء الحصول على تفاصيل الموعد",
+                    "An error occurred while retrieving appointment details",
                     new[] { ex.Message },
                     500
                 ));
@@ -247,7 +221,7 @@ namespace Shuryan.API.Controllers
                 return CreatedAtAction(
                     nameof(GetActiveSession),
                     new { appointmentId },
-                    ApiResponse<SessionResponse>.Success(session, "تم بدء الجلسة بنجاح", 201)
+                    ApiResponse<SessionResponse>.Success(session, "Session started successfully", 201)
                 );
             }
             catch (ArgumentException ex)
@@ -265,7 +239,7 @@ namespace Shuryan.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting session for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
             }
         }
 
@@ -286,10 +260,10 @@ namespace Shuryan.API.Controllers
                 var session = await _sessionService.GetActiveSessionAsync(appointmentId, doctorId);
                 if (session == null)
                 {
-                    return NotFound(ApiResponse<object>.Failure("لا توجد جلسة نشطة لهذا الموعد", statusCode: 404));
+                    return NotFound(ApiResponse<object>.Failure("No active session for this appointment", statusCode: 404));
                 }
 
-                return Ok(ApiResponse<SessionResponse>.Success(session, "تم استرجاع الجلسة بنجاح", 200));
+                return Ok(ApiResponse<SessionResponse>.Success(session, "Session retrieved successfully", 200));
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -298,7 +272,7 @@ namespace Shuryan.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting active session for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
             }
         }
 
@@ -318,7 +292,7 @@ namespace Shuryan.API.Controllers
             try
             {
                 var result = await _sessionService.EndSessionAsync(appointmentId, doctorId);
-                return Ok(ApiResponse<EndSessionResponse>.Success(result, "تم إنهاء الجلسة بنجاح", 200));
+                return Ok(ApiResponse<EndSessionResponse>.Success(result, "Session ended successfully", 200));
             }
             catch (ArgumentException ex)
             {
@@ -335,7 +309,7 @@ namespace Shuryan.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error ending session for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
             }
         }
         #endregion
@@ -358,7 +332,7 @@ namespace Shuryan.API.Controllers
             try
             {
                 var documentation = await _documentationService.SaveDocumentationAsync(appointmentId, doctorId, request);
-                return Ok(ApiResponse<DocumentationResponse>.Success(documentation, "تم حفظ التوثيق بنجاح", 200));
+                return Ok(ApiResponse<DocumentationResponse>.Success(documentation, "Documentation saved successfully", 200));
             }
             catch (ArgumentException ex)
             {
@@ -371,7 +345,7 @@ namespace Shuryan.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving documentation for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
             }
         }
 
@@ -395,10 +369,10 @@ namespace Shuryan.API.Controllers
                 var documentation = await _documentationService.GetDocumentationAsync(appointmentId, userId, isDoctor);
                 if (documentation == null)
                 {
-                    return NotFound(ApiResponse<object>.Failure("لا يوجد توثيق لهذا الموعد", statusCode: 404));
+                    return NotFound(ApiResponse<object>.Failure("No documentation for this appointment", statusCode: 404));
                 }
 
-                return Ok(ApiResponse<DocumentationResponse>.Success(documentation, "تم استرجاع التوثيق بنجاح", 200));
+                return Ok(ApiResponse<DocumentationResponse>.Success(documentation, "Documentation retrieved successfully", 200));
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -407,7 +381,7 @@ namespace Shuryan.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting documentation for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
             }
         }
         #endregion
@@ -435,7 +409,7 @@ namespace Shuryan.API.Controllers
                 return CreatedAtAction(
                     nameof(GetPrescription),
                     new { appointmentId },
-                    ApiResponse<PrescriptionResponse>.Success(prescription, "تم إنشاء الروشتة بنجاح", 201)
+                    ApiResponse<PrescriptionResponse>.Success(prescription, "Prescription created successfully", 201)
                 );
             }
             catch (ArgumentException ex)
@@ -445,7 +419,7 @@ namespace Shuryan.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating prescription for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
             }
         }
 
@@ -466,15 +440,15 @@ namespace Shuryan.API.Controllers
                 var prescription = await _prescriptionService.GetPrescriptionByAppointmentIdAsync(appointmentId);
                 if (prescription == null)
                 {
-                    return NotFound(ApiResponse<object>.Failure("لا توجد روشتة لهذا الموعد", statusCode: 404));
+                    return NotFound(ApiResponse<object>.Failure("No prescription for this appointment", statusCode: 404));
                 }
 
-                return Ok(ApiResponse<PrescriptionResponse>.Success(prescription, "تم استرجاع الروشتة بنجاح", 200));
+                return Ok(ApiResponse<PrescriptionResponse>.Success(prescription, "Prescription retrieved successfully", 200));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting prescription for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ غير متوقع", new[] { ex.Message }, 500));
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
             }
         }
         #endregion

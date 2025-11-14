@@ -627,51 +627,6 @@ namespace Shuryan.API.Controllers
         }
         #endregion
 
-        #region User Info
-        [Authorize]
-        [HttpGet("me")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetCurrentUser()
-        {
-            var userId = GetCurrentUserId();
-
-            if (userId == Guid.Empty)
-            {
-                _logger.LogWarning("Unauthorized attempt to access user info");
-                return Unauthorized(ApiResponse<object>.Failure("User not authenticated", statusCode: 401));
-            }
-
-            _logger.LogInformation("Get current user info request for user: {UserId}", userId);
-
-            try
-            {
-                var result = await _authService.GetCurrentUserAsync(userId);
-
-                if (!result.IsSuccess)
-                {
-                    _logger.LogWarning("Get current user failed for user {UserId}: {Message}", userId, result.Message);
-                    return StatusCode(result.StatusCode ?? 404, result);
-                }
-
-                _logger.LogInformation("User info retrieved successfully for user: {UserId}", userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving user info for user {UserId}", userId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving user information",
-                    new[] { ex.Message },
-                    500
-                ));
-            }
-        }
-        #endregion
-
         #region Helper Methods
         private Guid GetCurrentUserId()
         {

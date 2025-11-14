@@ -29,7 +29,7 @@ namespace Shuryan.Infrastructure.Seeders
             var verifier = await context.Verifiers.FirstOrDefaultAsync();
             if (verifier == null)
             {
-                Console.WriteLine("⚠️  No verifier found. Please seed verifiers first.");
+                Console.WriteLine(" No verifier found. Please seed verifiers first.");
                 return;
             }
 

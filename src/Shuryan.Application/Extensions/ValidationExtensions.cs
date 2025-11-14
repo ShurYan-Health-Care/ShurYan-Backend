@@ -14,7 +14,7 @@ namespace Shuryan.Application.Extensions
     {
         public static IServiceCollection AddFluentValidation(this IServiceCollection services)
         {
-            // Auto-register all validators from this assembly
+            // Register all validators from this assembly
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
             // Configure validation behavior

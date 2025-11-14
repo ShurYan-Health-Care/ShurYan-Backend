@@ -32,6 +32,9 @@ namespace Shuryan.Core.Interfaces.Repositories
 		// Session Management Methods
 		Task<Appointment?> GetDoctorActiveAppointmentAsync(Guid doctorId, Guid? excludeAppointmentId = null);
 
+		// Booking System Methods
+		Task<IEnumerable<Appointment>> GetBookedAppointmentsForDateAsync(Guid doctorId, DateTime startOfDay, DateTime endOfDay);
+
 		// Paginated Query Methods
 		Task<(IEnumerable<Appointment> Appointments, int TotalCount)> GetByDoctorIdWithFiltersAsync(
 			Guid doctorId,
