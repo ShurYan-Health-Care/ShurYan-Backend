@@ -1446,24 +1446,18 @@ namespace Shuryan.Application.Services
         #endregion
 
         #region Pharmacy Operations - Patient Specific
-
-        /// <summary>
-        /// البحث عن أقرب 3 صيدليات للمريض بناءً على عنوانه المسجل
-        /// </summary>
         public async Task<FindNearbyPharmaciesResponse> FindNearbyPharmaciesForPatientAsync(Guid patientId)
         {
             try
             {
                 _logger.LogInformation("Finding nearby pharmacies for patient: {PatientId}", patientId);
 
-                // جلب المريض مع عنوانه
                 var patient = await _patientRepository.GetByIdWithDetailsAsync(patientId);
                 if (patient == null || patient.IsDeleted)
                 {
                     throw new KeyNotFoundException($"Patient with ID {patientId} not found");
                 }
 
-                // التحقق من وجود عنوان مع إحداثيات
                 if (patient.Address == null)
                 {
                     throw new KeyNotFoundException("Patient address not found. Please add your address first.");
@@ -1474,7 +1468,6 @@ namespace Shuryan.Application.Services
                     throw new KeyNotFoundException("Patient address coordinates not found. Please update your address with location.");
                 }
 
-                // استخدام الـ method الموجود مع إحداثيات المريض
                 var request = new FindNearbyPharmaciesRequest
                 {
                     Latitude = patient.Address.Latitude.Value,
@@ -1493,9 +1486,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// إرسال روشتة إلى صيدلية معينة
-        /// </summary>
         public async Task<SendPrescriptionResponse> SendPrescriptionToPharmacyAsync(Guid patientId, Guid prescriptionId, SendPrescriptionToPharmacyRequest request)
         {
             try
@@ -1503,14 +1493,12 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Sending prescription {PrescriptionId} from patient {PatientId} to pharmacy {PharmacyId}", 
                     prescriptionId, patientId, request.PharmacyId);
 
-                // التحقق من وجود المريض
                 var patient = await _patientRepository.GetByIdAsync(patientId);
                 if (patient == null)
                 {
                     throw new ArgumentException($"Patient with ID {patientId} not found");
                 }
 
-                // التحقق من وجود الروشتة وأنها تخص المريض
                 var prescription = await _unitOfWork.Repository<Prescription>()
                     .GetQueryable()
                     .Include(p => p.Doctor)
@@ -1523,20 +1511,17 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Prescription with ID {prescriptionId} not found for patient {patientId}");
                 }
 
-                // التحقق من حالة الروشتة (يجب أن تكون Active)
                 if (prescription.Status != PrescriptionStatus.Active)
                 {
                     throw new InvalidOperationException($"Prescription {prescriptionId} is not active. Current status: {prescription.Status}");
                 }
 
-                // التحقق من وجود الصيدلية
                 var pharmacy = await _pharmacyRepository.GetByIdAsync(request.PharmacyId);
                 if (pharmacy == null)
                 {
                     throw new ArgumentException($"Pharmacy with ID {request.PharmacyId} not found");
                 }
 
-                // التحقق من أن الروشتة لم يتم إرسالها لصيدلية أخرى من قبل
                 var existingOrder = await _unitOfWork.Repository<PharmacyOrder>()
                     .GetQueryable()
                     .FirstOrDefaultAsync(po => po.PrescriptionId == prescriptionId && 
@@ -1547,10 +1532,8 @@ namespace Shuryan.Application.Services
                     throw new InvalidOperationException($"Prescription {prescriptionId} has already been sent to a pharmacy");
                 }
 
-                // إنشاء رقم طلب فريد
                 var orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
 
-                // إنشاء طلب جديد للصيدلية
                 var pharmacyOrder = new PharmacyOrder
                 {
                     Id = Guid.NewGuid(),
@@ -1559,22 +1542,20 @@ namespace Shuryan.Application.Services
                     PatientId = patientId,
                     PharmacyId = request.PharmacyId,
                     PrescriptionId = prescriptionId,
-                    DeliveryType = OrderDeliveryType.Delivery, // افتراضي: توصيل
-                    PatientNotes = null, // لا توجد ملاحظات
-                    TotalCost = 0, // سيتم تحديده من قبل الصيدلية
-                    DeliveryFee = 0, // سيتم تحديده من قبل الصيدلية
+                    DeliveryType = OrderDeliveryType.Delivery,
+                    PatientNotes = null, 
+                    TotalCost = 0, 
+                    DeliveryFee = 0,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                // حفظ الطلب في قاعدة البيانات
                 await _unitOfWork.Repository<PharmacyOrder>().AddAsync(pharmacyOrder);
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully created pharmacy order {OrderId} for prescription {PrescriptionId}", 
                     pharmacyOrder.Id, prescriptionId);
 
-                // إنشاء الـ response
                 var response = new SendPrescriptionResponse
                 {
                     OrderId = pharmacyOrder.Id,
@@ -1597,23 +1578,18 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// جلب رد الصيدلية على طلب المريض
-        /// </summary>
         public async Task<PatientPharmacyResponseView> GetPharmacyResponseAsync(Guid patientId, Guid orderId)
         {
             try
             {
                 _logger.LogInformation("Getting pharmacy response for order {OrderId} and patient {PatientId}", orderId, patientId);
 
-                // التحقق من وجود المريض
                 var patient = await _patientRepository.GetByIdAsync(patientId);
                 if (patient == null)
                 {
                     throw new ArgumentException($"Patient with ID {patientId} not found");
                 }
 
-                // التحقق من وجود الطلب وأنه يخص المريض
                 var order = await _unitOfWork.Repository<PharmacyOrder>()
                     .GetQueryable()
                     .Include(po => po.Pharmacy)
@@ -1631,13 +1607,11 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Order with ID {orderId} not found for patient {patientId}");
                 }
 
-                // التحقق من أن الصيدلية ردت على الطلب
                 if (order.Status == PharmacyOrderStatus.PendingPharmacyResponse)
                 {
                     throw new InvalidOperationException("Pharmacy has not responded to this order yet");
                 }
 
-                // إنشاء قائمة الأدوية من البيانات الحقيقية في PharmacyOrderItem
                 var medications = new List<PatientMedicationResponse>();
                 
                 if (order.OrderItems != null && order.OrderItems.Any())
@@ -1662,7 +1636,6 @@ namespace Shuryan.Application.Services
                 }
                 else if (order.Prescription?.PrescribedMedications != null)
                 {
-                    // Fallback: لو مفيش OrderItems، نستخدم PrescribedMedications مع قيم افتراضية
                     foreach (var prescribedMed in order.Prescription.PrescribedMedications)
                     {
                         medications.Add(new PatientMedicationResponse
@@ -1690,7 +1663,7 @@ namespace Shuryan.Application.Services
                     TotalAmount = order.TotalCost,
                     DeliveryAvailable = order.DeliveryType == OrderDeliveryType.Delivery,
                     DeliveryFee = order.DeliveryFee,
-                    PharmacyNotes = "جميع الأدوية أصلية ومرخصة من وزارة الصحة", // dummy data
+                    PharmacyNotes = "جميع الأدوية أصلية ومرخصة من وزارة الصحة",
                     RespondedAt = order.UpdatedAt ?? DateTime.UtcNow,
                     SentAt = order.CreatedAt
                 };
@@ -1706,9 +1679,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// جلب كل ردود الصيدليات على روشتة معينة
-        /// </summary>
         public async Task<PrescriptionPharmacyResponsesView> GetPrescriptionPharmacyResponsesAsync(Guid patientId, Guid prescriptionId)
         {
             try
@@ -1716,14 +1686,12 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Getting all pharmacy responses for prescription {PrescriptionId} and patient {PatientId}", 
                     prescriptionId, patientId);
 
-                // التحقق من وجود المريض
                 var patient = await _patientRepository.GetByIdAsync(patientId);
                 if (patient == null)
                 {
                     throw new ArgumentException($"Patient with ID {patientId} not found");
                 }
 
-                // التحقق من وجود الروشتة وأنها تخص المريض
                 var prescription = await _unitOfWork.Repository<Prescription>()
                     .GetQueryable()
                     .Include(p => p.Doctor)
@@ -1736,7 +1704,6 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Prescription with ID {prescriptionId} not found for patient {patientId}");
                 }
 
-                // جلب كل الطلبات المرتبطة بالروشتة
                 var orders = await _unitOfWork.Repository<PharmacyOrder>()
                     .GetQueryable()
                     .Include(po => po.Pharmacy)
@@ -1746,11 +1713,10 @@ namespace Shuryan.Application.Services
                     .Include(po => po.OrderItems)
                         .ThenInclude(oi => oi.AlternativeMedication)
                     .Where(po => po.PrescriptionId == prescriptionId && po.PatientId == patientId)
-                    .Where(po => po.Status != PharmacyOrderStatus.PendingPharmacyResponse) // فقط الردود المكتملة
-                    .OrderBy(po => po.TotalCost) // ترتيب حسب السعر (الأرخص أولاً)
+                    .Where(po => po.Status != PharmacyOrderStatus.PendingPharmacyResponse) 
+                    .OrderBy(po => po.TotalCost) 
                     .ToListAsync();
 
-                // إنشاء قائمة ردود الصيدليات
                 var pharmacyResponses = new List<PharmacyResponseSummary>();
 
                 foreach (var order in orders)
@@ -1758,7 +1724,6 @@ namespace Shuryan.Application.Services
                     var medications = new List<PatientMedicationResponse>();
                     int availableCount = 0, unavailableCount = 0, alternativesCount = 0;
 
-                    // معالجة الأدوية
                     if (order.OrderItems != null && order.OrderItems.Any())
                     {
                         foreach (var orderItem in order.OrderItems)
@@ -1778,7 +1743,6 @@ namespace Shuryan.Application.Services
                                 AlternativeOne = alternativeInfo
                             });
 
-                            // حساب الإحصائيات
                             switch (orderItem.Status)
                             {
                                 case PharmacyItemStatus.Available:
@@ -1795,7 +1759,6 @@ namespace Shuryan.Application.Services
                     }
                     else
                     {
-                        // Fallback: استخدام PrescribedMedications إذا لم توجد OrderItems
                         foreach (var prescribedMed in prescription.PrescribedMedications)
                         {
                             medications.Add(new PatientMedicationResponse
@@ -1810,7 +1773,6 @@ namespace Shuryan.Application.Services
                         }
                     }
 
-                    // إنشاء ملخص رد الصيدلية
                     var pharmacyResponse = new PharmacyResponseSummary
                     {
                         PharmacyId = order.PharmacyId,
@@ -1828,7 +1790,7 @@ namespace Shuryan.Application.Services
                         RespondedAt = order.UpdatedAt ?? DateTime.UtcNow,
                         Status = (int)order.Status,
                         StatusName = order.Status.ToString(),
-                        PharmacyNotes = "جميع الأدوية أصلية ومرخصة من وزارة الصحة", // يمكن إضافة حقل للملاحظات لاحقاً
+                        PharmacyNotes = "جميع الأدوية أصلية ومرخصة من وزارة الصحة",
                         Medications = medications,
                         AvailableMedicationsCount = availableCount,
                         UnavailableMedicationsCount = unavailableCount,
@@ -1838,7 +1800,6 @@ namespace Shuryan.Application.Services
                     pharmacyResponses.Add(pharmacyResponse);
                 }
 
-                // إنشاء الـ response النهائي
                 var response = new PrescriptionPharmacyResponsesView
                 {
                     PrescriptionId = prescription.Id,

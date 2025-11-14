@@ -13,9 +13,7 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Application.Services
 {
-    /// <summary>
-    /// Service للـ Verifier - إدارة حالات التحقق للأطباء
-    /// </summary>
+
     public class VerifierService : IVerifierService
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -28,10 +26,6 @@ namespace Shuryan.Application.Services
         }
 
         #region Doctor Verification Status Management
-
-        /// <summary>
-        /// بدء مراجعة الدكتور - تغيير حالة التحقق إلى "تحت المراجعة"
-        /// </summary>
         public async Task<bool> StartDoctorReviewAsync(Guid doctorId)
         {
             try
@@ -60,9 +54,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// اعتماد الدكتور - تغيير حالة التحقق إلى "معتمد"
-        /// </summary>
         public async Task<bool> VerifyDoctorAsync(Guid doctorId, Guid verifierId)
         {
             try
@@ -79,7 +70,7 @@ namespace Shuryan.Application.Services
                 doctor.VerificationStatus = VerificationStatus.Verified;
                 doctor.VerifiedAt = DateTime.UtcNow;
                 doctor.UpdatedAt = DateTime.UtcNow;
-                doctor.VerifierId = verifierId; // حفظ الـ Verifier اللي عمل الـ verification
+                doctor.VerifierId = verifierId;
 
                 await _unitOfWork.SaveChangesAsync();
 
@@ -93,9 +84,7 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// رفض طلب الدكتور - تغيير حالة التحقق إلى "مرفوض"
-        /// </summary>
+
         public async Task<bool> RejectDoctorAsync(Guid doctorId)
         {
             try
@@ -128,10 +117,6 @@ namespace Shuryan.Application.Services
         #endregion
 
         #region Get Doctors by Verification Status
-
-        /// <summary>
-        /// جلب جميع الأطباء الذين حالتهم "مُرسل"
-        /// </summary>
         public async Task<PaginatedResponse<DoctorVerificationListResponse>> GetDoctorsWithSentStatusAsync(PaginationParams paginationParams)
         {
             try
@@ -173,9 +158,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// جلب جميع الأطباء الذين حالتهم "تحت المراجعة"
-        /// </summary>
         public async Task<PaginatedResponse<DoctorVerificationListResponse>> GetDoctorsUnderReviewAsync(PaginationParams paginationParams)
         {
             try
@@ -217,9 +199,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// جلب جميع الأطباء المعتمدين من قبل الـ Verifier المحدد
-        /// </summary>
         public async Task<PaginatedResponse<DoctorVerificationListResponse>> GetVerifiedDoctorsAsync(PaginationParams paginationParams, Guid verifierId)
         {
             try
@@ -229,7 +208,6 @@ namespace Shuryan.Application.Services
 
                 var allDoctors = await _unitOfWork.Doctors.GetVerifiedDoctorsAsync();
                 
-                // فلترة الدكاترة حسب الـ Verifier اللي عملهم verify
                 var verifiedByCurrentVerifier = allDoctors.Where(d => d.VerifierId == verifierId).ToList();
 
                 var totalCount = verifiedByCurrentVerifier.Count;
@@ -263,9 +241,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// جلب جميع الأطباء الذين حالتهم "مرفوض"
-        /// </summary>
         public async Task<PaginatedResponse<DoctorVerificationListResponse>> GetRejectedDoctorsAsync(PaginationParams paginationParams)
         {
             try
@@ -363,16 +338,12 @@ namespace Shuryan.Application.Services
 
         #region Document Verification
 
-        /// <summary>
-        /// جلب مستندات دكتور معين
-        /// </summary>
         public async Task<List<DoctorDocumentItemResponse>> GetDoctorDocumentsAsync(Guid doctorId)
         {
             try
             {
                 _logger.LogInformation("Getting documents for doctor {DoctorId}", doctorId);
 
-                // التحقق من وجود الدكتور
                 var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
                 if (doctor == null)
                 {
@@ -380,7 +351,6 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Doctor with ID {doctorId} not found");
                 }
 
-                // جلب المستندات الخاصة بالدكتور
                 var documents = await _unitOfWork.DoctorDocuments.GetByDoctorIdAsync(doctorId);
                 
                 var documentResponses = documents.Select(d => new DoctorDocumentItemResponse
@@ -407,9 +377,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// قبول مستند الدكتور
-        /// </summary>
         public async Task<bool> ApproveDocumentAsync(Guid documentId)
         {
             try
@@ -424,7 +391,7 @@ namespace Shuryan.Application.Services
                 }
 
                 document.Status = Shuryan.Core.Enums.VerificationDocumentStatus.Approved;
-                document.RejectionReason = null; // مسح سبب الرفض لو كان موجود
+                document.RejectionReason = null;
                 document.UpdatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.SaveChangesAsync();
@@ -439,9 +406,6 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// رفض مستند الدكتور مع سبب الرفض
-        /// </summary>
         public async Task<bool> RejectDocumentAsync(Guid documentId, string? rejectionReason)
         {
             try
@@ -456,7 +420,7 @@ namespace Shuryan.Application.Services
                 }
 
                 document.Status = Shuryan.Core.Enums.VerificationDocumentStatus.Rejected;
-                document.RejectionReason = rejectionReason; // حفظ سبب الرفض (اختياري)
+                document.RejectionReason = rejectionReason; 
                 document.UpdatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.SaveChangesAsync();

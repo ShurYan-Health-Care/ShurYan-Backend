@@ -101,7 +101,7 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Request: ClinicName={ClinicName}, PhoneCount={PhoneCount}, ServiceCount={ServiceCount}", 
                     request.ClinicName ?? "null", request.PhoneNumbers?.Count ?? 0, request.Services?.Count ?? 0);
 
-                _logger.LogInformation("Step 1: Getting doctor...");
+                _logger.LogInformation("Getting doctor...");
                 var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
                 if (doctor == null)
                 {
@@ -111,18 +111,17 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Doctor found: {DoctorId}", doctor.Id);
 
                 // Get clinic separately to ensure it's loaded
-                _logger.LogInformation("Step 2: Getting clinic...");
+                _logger.LogInformation("Getting clinic...");
                 var allClinics = await _unitOfWork.Clinics.GetAllAsync();
                 _logger.LogInformation("Total clinics in DB: {Count}", allClinics.Count());
                 var clinic = allClinics.FirstOrDefault(c => c.DoctorId == doctorId);
 
-                // إذا مفيش clinic، نعمل واحدة جديدة
                 if (clinic == null)
                 {
-                    _logger.LogInformation("Step 3: No clinic found. Creating new clinic for doctor {DoctorId}", doctorId);
+                    _logger.LogInformation("No clinic found. Creating new clinic for doctor {DoctorId}", doctorId);
 
                     // Create address first
-                    _logger.LogInformation("Step 3.1: Creating address...");
+                    _logger.LogInformation("Creating address...");
                     var address = new Address
                     {
                         Id = Guid.NewGuid(),
@@ -134,7 +133,7 @@ namespace Shuryan.Application.Services
                     await _unitOfWork.Repository<Address>().AddAsync(address);
                     _logger.LogInformation("Address created: {AddressId}", address.Id);
 
-                    _logger.LogInformation("Step 3.2: Creating clinic...");
+                    _logger.LogInformation("Creating clinic...");
                     clinic = new Core.Entities.External.Clinic.Clinic
                     {
                         Id = Guid.NewGuid(),
@@ -142,7 +141,7 @@ namespace Shuryan.Application.Services
                         Name = request.ClinicName,
                         AddressId = address.Id,
                         ClinicStatus = Status.Active,
-                        FacilityVideoUrl = "", // Fix: Database doesn't allow NULL
+                        FacilityVideoUrl = "",
                         CreatedAt = DateTime.UtcNow
                     };
                     await _unitOfWork.Repository<Core.Entities.External.Clinic.Clinic>().AddAsync(clinic);
@@ -150,7 +149,7 @@ namespace Shuryan.Application.Services
                 }
                 else
                 {
-                    _logger.LogInformation("Step 3: Clinic found: {ClinicId}. Updating...", clinic.Id);
+                    _logger.LogInformation("Clinic found: {ClinicId}. Updating...", clinic.Id);
                     
                     // Update clinic name only if provided
                     if (!string.IsNullOrWhiteSpace(request.ClinicName))

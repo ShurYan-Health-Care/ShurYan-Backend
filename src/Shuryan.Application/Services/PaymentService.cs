@@ -394,9 +394,6 @@ namespace Shuryan.Application.Services
                 // This is a placeholder - implement based on your payment provider
                 _logger.LogInformation("Received callback from provider {Provider}", provider);
                 
-                // Extract payment ID or transaction ID from callback
-                // Verify callback signature
-                // Update payment status
                 
                 return ApiResponse<PaymentResponse>.Failure(
                     "Provider callback handling not implemented",
