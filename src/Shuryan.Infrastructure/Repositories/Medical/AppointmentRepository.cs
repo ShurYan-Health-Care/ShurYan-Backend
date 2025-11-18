@@ -297,6 +297,37 @@ namespace Shuryan.Infrastructure.Repositories.Medical
                 .OrderBy(a => a.ScheduledStartTime)
                 .ToListAsync();
         }
+
+        public async Task<Dictionary<AppointmentStatus, int>> GetAppointmentStatisticsByDoctorIdAsync(
+            Guid doctorId,
+            DateTime? startDate,
+            DateTime? endDate)
+        {
+            var query = _dbSet
+                .AsNoTracking()
+                .Where(a => a.DoctorId == doctorId);
+
+            // Apply date range filter if provided
+            if (startDate.HasValue)
+            {
+                var startOfDay = startDate.Value.Date;
+                query = query.Where(a => a.ScheduledStartTime >= startOfDay);
+            }
+
+            if (endDate.HasValue)
+            {
+                var endOfDay = endDate.Value.Date.AddDays(1);
+                query = query.Where(a => a.ScheduledStartTime < endOfDay);
+            }
+
+            // Group by status and count
+            var statistics = await query
+                .GroupBy(a => a.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Status, x => x.Count);
+
+            return statistics;
+        }
     }
 }
 

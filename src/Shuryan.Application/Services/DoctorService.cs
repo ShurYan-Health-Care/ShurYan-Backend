@@ -11,6 +11,7 @@ using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Doctor;
 using Shuryan.Core.Enums.Identity;
 using Shuryan.Core.Interfaces.UnitOfWork;
+using Shuryan.Core.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -1376,85 +1377,48 @@ namespace Shuryan.Application.Services
 
         #region Doctor Patient Management Operations
 
-        /// <summary>
-        /// Get a list of patients for the doctor (with pagination)
-        /// </summary>
         public async Task<PaginatedResponse<DoctorPatientResponse>> GetDoctorPatientsWithPaginationAsync(
             Guid doctorId, 
             PaginationParams paginationParams)
         {
-            try
+            _logger.LogInformation(
+                "Getting paginated patients list for doctor {DoctorId}. Page: {Page}, Size: {Size}", 
+                doctorId, paginationParams.PageNumber, paginationParams.PageSize);
+            
+            var (patients, totalCount) = await _unitOfWork.Patients.GetDoctorPatientsOptimizedAsync(
+                doctorId, 
+                paginationParams.PageNumber, 
+                paginationParams.PageSize);
+
+            var patientResponses = patients.Select(p => new DoctorPatientResponse
             {
-                _logger.LogInformation(
-                    "Getting paginated patients list for doctor {DoctorId}. Page: {Page}, Size: {Size}", 
-                    doctorId, paginationParams.PageNumber, paginationParams.PageSize);
+                Id = p.PatientId,
+                FullName = $"{p.FirstName} {p.LastName}",
+                PhoneNumber = p.PhoneNumber,
+                ProfileImageUrl = p.ProfileImageUrl,
+                TotalSessions = p.TotalSessions,
+                LastVisitDate = p.LastVisitDate,
+                Address = !string.IsNullOrEmpty(p.City) && !string.IsNullOrEmpty(p.Governorate)
+                    ? $"{p.City}, {p.Governorate}"
+                    : null
+            }).ToList();
 
-                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId);
-                if (doctor == null)
-                    throw new ArgumentException($"Doctor with ID {doctorId} not found");
+            var totalPages = (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize);
 
-                var (patients, totalCount) = await _unitOfWork.Patients.GetDoctorPatientsAsync(
-                    doctorId, 
-                    paginationParams.PageNumber, 
-                    paginationParams.PageSize);
+            _logger.LogInformation(
+                "Successfully retrieved {Count} patients out of {TotalCount} for doctor {DoctorId}",
+                patientResponses.Count, totalCount, doctorId);
 
-                var patientResponses = patients.Select(patient =>
-                {
-                    var completedAppointments = patient.Appointments
-                        .Where(a => a.DoctorId == doctorId && a.Status == Core.Enums.Appointments.AppointmentStatus.Completed)
-                        .ToList();
-
-                    var totalSessions = completedAppointments.Count;
-
-                    var lastVisit = completedAppointments
-                        .OrderByDescending(a => a.ScheduledStartTime)
-                        .FirstOrDefault();
-
-                    var patientReview = patient.DoctorReviews
-                        .Where(r => r.DoctorId == doctorId)
-                        .FirstOrDefault();
-
-                    var address = patient.Address != null 
-                        ? $"{patient.Address.City}, {patient.Address.Governorate}"
-                        : null;
-
-                    return new DoctorPatientResponse
-                    {
-                        Id = patient.Id,
-                        FullName = $"{patient.FirstName} {patient.LastName}",
-                        PhoneNumber = patient.PhoneNumber,
-                        ProfileImageUrl = patient.ProfileImageUrl,
-                        TotalSessions = totalSessions,
-                        LastVisitDate = lastVisit?.ScheduledStartTime,
-                        Address = address,
-                        Rating = patientReview != null ? (decimal?)patientReview.AverageRating : null
-                    };
-                }).ToList();
-
-                var totalPages = (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize);
-
-                var paginatedResponse = new PaginatedResponse<DoctorPatientResponse>
-                {
-                    PageNumber = paginationParams.PageNumber,
-                    PageSize = paginationParams.PageSize,
-                    TotalCount = totalCount,
-                    TotalPages = totalPages,
-                    HasPreviousPage = paginationParams.PageNumber > 1,
-                    HasNextPage = paginationParams.PageNumber < totalPages,
-                    Data = patientResponses
-                };
-
-                _logger.LogInformation(
-                    "Successfully retrieved {Count} patients out of {TotalCount} for doctor {DoctorId}",
-                    patientResponses.Count, totalCount, doctorId);
-
-                return paginatedResponse;
-            }
-            catch (Exception ex)
+            return new PaginatedResponse<DoctorPatientResponse>
             {
-                _logger.LogError(ex, "Error getting paginated patients list for doctor {DoctorId}", doctorId);
-                throw;
-            }
+                PageNumber = paginationParams.PageNumber,
+                PageSize = paginationParams.PageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = paginationParams.PageNumber > 1,
+                HasNextPage = paginationParams.PageNumber < totalPages,
+                Data = patientResponses
+            };
         }
 
         /// <summary>

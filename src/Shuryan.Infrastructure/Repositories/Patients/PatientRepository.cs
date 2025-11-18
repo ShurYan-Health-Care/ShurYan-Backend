@@ -1,4 +1,4 @@
-using System;
+﻿﻿﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums.Appointments;
 using Shuryan.Core.Interfaces.Repositories;
+using Shuryan.Core.DTOs;
 using Shuryan.Infrastructure.Data;
 using Shuryan.Infrastructure.Repositories.Patients;
 
@@ -63,28 +64,52 @@ namespace Shuryan.Infrastructure.Repositories.Patients
             await _context.SaveChangesAsync();
         }
 
-        public async Task<(IEnumerable<Patient> Patients, int TotalCount)> GetDoctorPatientsAsync(
+        public async Task<(IEnumerable<DoctorPatientDto> Patients, int TotalCount)> GetDoctorPatientsOptimizedAsync(
             Guid doctorId, 
             int pageNumber, 
             int pageSize)
         {
             var query = _dbSet
-                .Include(p => p.Address)
-                .Include(p => p.Appointments.Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed))
-                .Include(p => p.DoctorReviews.Where(r => r.DoctorId == doctorId))
-                .Where(p => p.Appointments.Any(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed) 
-                    && !p.IsDeleted);
+                .Where(p => !p.IsDeleted && 
+                            p.Appointments.Any(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed))
+                .Select(p => new DoctorPatientDto
+                {
+                    PatientId = p.Id,
+                    FirstName = p.FirstName,
+                    LastName = p.LastName,
+                    PhoneNumber = p.PhoneNumber,
+                    ProfileImageUrl = p.ProfileImageUrl,
+                    
+                    City = p.Address != null ? p.Address.City : null,
+                    Governorate = p.Address != null ? p.Address.Governorate.ToString() : null,
+                    
+                    TotalSessions = p.Appointments
+                        .Count(a => a.DoctorId == doctorId && 
+                                   a.Status == AppointmentStatus.Completed),
+                    
+                    // Last visit - using Max directly in projection
+                    LastVisitDate = p.Appointments
+                        .Where(a => a.DoctorId == doctorId && 
+                                   a.Status == AppointmentStatus.Completed)
+                        .Max(a => (DateTime?)a.ScheduledStartTime) // Nullable in case no appointments
+                });
 
-            var totalCount = await query.CountAsync();
-
-            var patients = await query
-                .OrderByDescending(p => p.Appointments
-                    .Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Completed)
-                    .Max(a => a.ScheduledStartTime))
+            var pagedQuery = query
+                .OrderByDescending(p => p.LastVisitDate ?? DateTime.MinValue) // Handle nulls
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
+                .Take(pageSize);
+
+            var result = await pagedQuery
+                .Select(p => new 
+                { 
+                    Patient = p,
+                    TotalCount = query.Count()
+                })
                 .AsNoTracking()
                 .ToListAsync();
+
+            var patients = result.Select(r => r.Patient).ToList();
+            var totalCount = result.FirstOrDefault()?.TotalCount ?? 0;
 
             return (patients, totalCount);
         }
