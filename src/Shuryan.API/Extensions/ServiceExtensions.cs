@@ -108,6 +108,9 @@ namespace Shuryan.API.Extensions
             // Pharmacy Profile Service
             services.AddScoped<IPharmacyProfileService, PharmacyProfileService>();
 
+            // Review Services
+            services.AddScoped<IDoctorReviewService, DoctorReviewService>();
+
             return services;
         }
         #endregion

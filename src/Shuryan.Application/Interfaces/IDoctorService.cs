@@ -45,48 +45,24 @@ namespace Shuryan.Application.Interfaces
         #endregion
 
         #region Public Doctor Directory Operations
-        /// <summary>
-        /// الحصول على قائمة الدكاترة مع pagination - معلومات مختصرة للعرض في القائمة
-        /// </summary>
         Task<PaginatedResponse<DoctorListItemResponse>> GetDoctorsListAsync(PaginationParams paginationParams);
 
-        /// <summary>
-        /// الحصول على التفاصيل الكاملة للدكتور مع معلومات العيادة
-        /// </summary>
         Task<DoctorDetailsWithClinicResponse?> GetDoctorDetailsWithClinicAsync(Guid doctorId);
         #endregion
 
         #region Doctor Patient Management Operations
-        /// <summary>
-        /// الحصول على قائمة المرضى الذين تعاملوا مع الدكتور (مع pagination)
-        /// </summary>
         Task<PaginatedResponse<DoctorPatientResponse>> GetDoctorPatientsWithPaginationAsync(Guid doctorId, PaginationParams paginationParams);
         
-        /// <summary>
-        /// الحصول على قائمة المرضى الذين تعاملوا مع الدكتور
-        /// </summary>
         Task<IEnumerable<DoctorPatientListItemResponse>> GetDoctorPatientsAsync(Guid doctorId);
 
-        /// <summary>
-        /// الحصول على السجل الطبي الكامل لمريض معين
-        /// </summary>
         Task<PatientMedicalRecordResponse?> GetPatientMedicalRecordAsync(Guid patientId, Guid doctorId);
 
-        /// <summary>
-        /// الحصول على توثيق جميع الجلسات لمريض معين مع الدكتور
-        /// </summary>
         Task<PatientSessionDocumentationListResponse?> GetPatientSessionDocumentationsAsync(Guid patientId, Guid doctorId);
 
-        /// <summary>
-        /// الحصول على جميع الروشتات لمريض معين من الدكتور
-        /// </summary>
         Task<PatientPrescriptionsListResponse?> GetPatientPrescriptionsAsync(Guid patientId, Guid doctorId);
         #endregion
 
         #region Verification Operations
-        /// <summary>
-        /// تقديم طلب المراجعة - تغيير حالة التحقق إلى "مُرسل"
-        /// </summary>
         Task<bool> SubmitForReviewAsync(Guid doctorId);
         #endregion
     }
