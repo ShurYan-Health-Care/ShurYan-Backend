@@ -12,17 +12,24 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
         public string? SearchTerm { get; set; }
 
         public MedicalSpecialty? Specialty { get; set; }
+        
+        public MedicalSpecialty? MedicalSpecialty { get; set; }
 
         public Governorate? Governorate { get; set; }
 
-        [Range(0, 30, ErrorMessage = "Minimum years of experience must be between 0-70")]
-        public int? MinYearsOfExperience { get; set; }
-
-        [Range(0, 10000, ErrorMessage = "Maximum consultation fee must be between 0-10000")]
-        public decimal? MaxConsultationFee { get; set; }
+        [StringLength(100, ErrorMessage = "City cannot exceed 100 characters")]
+        public string? City { get; set; }
 
         [Range(0, 5, ErrorMessage = "Minimum rating must be between 0-5")]
         public double? MinRating { get; set; }
+
+        [Range(0, 100000, ErrorMessage = "Minimum price must be between 0-100000")]
+        public decimal? MinPrice { get; set; }
+
+        [Range(0, 100000, ErrorMessage = "Maximum price must be between 0-100000")]
+        public decimal? MaxPrice { get; set; }
+
+        public bool? AvailableToday { get; set; }
     }
 }
 

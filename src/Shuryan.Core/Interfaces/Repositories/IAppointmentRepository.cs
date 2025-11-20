@@ -45,5 +45,11 @@ namespace Shuryan.Core.Interfaces.Repositories
 			int pageSize,
 			string sortBy,
 			string sortOrder);
+		
+		// Statistics Methods
+		Task<Dictionary<AppointmentStatus, int>> GetAppointmentStatisticsByDoctorIdAsync(
+			Guid doctorId,
+			DateTime? startDate,
+			DateTime? endDate);
 	}
 }

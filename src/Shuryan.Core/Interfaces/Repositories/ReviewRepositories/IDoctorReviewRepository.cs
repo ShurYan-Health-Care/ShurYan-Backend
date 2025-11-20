@@ -12,6 +12,18 @@ namespace Shuryan.Core.Interfaces.Repositories.ReviewRepositories
         Task<DoctorReview?> GetReviewByAppointmentAsync(Guid appointmentId);
         Task<double> GetAverageRatingForDoctorAsync(Guid doctorId);
         Task<int> GetReviewCountForDoctorAsync(Guid doctorId);
+        
+        // Pagination support
+        Task<(IEnumerable<DoctorReview> Reviews, int TotalCount)> GetPaginatedReviewsByDoctorAsync(
+            Guid doctorId, 
+            int pageNumber, 
+            int pageSize);
+        
+        // Statistics support
+        Task<Dictionary<int, int>> GetRatingDistributionAsync(Guid doctorId);
+        
+        // Get review with patient details
+        Task<DoctorReview?> GetReviewByIdWithPatientAsync(Guid reviewId, Guid doctorId);
     }
 }
 

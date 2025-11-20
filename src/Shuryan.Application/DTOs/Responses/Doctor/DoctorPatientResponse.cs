@@ -1,10 +1,7 @@
-using System;
+﻿﻿using System;
 
 namespace Shuryan.Application.DTOs.Responses.Doctor
 {
-    /// <summary>
-    /// Response DTO لعرض معلومات المرضى التابعين للدكتور
-    /// </summary>
     public class DoctorPatientResponse
     {
         public Guid Id { get; set; }
@@ -14,6 +11,5 @@ namespace Shuryan.Application.DTOs.Responses.Doctor
         public int TotalSessions { get; set; }
         public DateTime? LastVisitDate { get; set; }
         public string? Address { get; set; }
-        public decimal? Rating { get; set; }
     }
 }

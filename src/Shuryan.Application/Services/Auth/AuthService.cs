@@ -1115,6 +1115,7 @@ namespace Shuryan.Application.Services.Auth
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Roles = roles,
+                ProfileImage = user is ProfileUser pUser ? (pUser.ProfileImageUrl ?? user.ProfilePictureUrl) : user.ProfilePictureUrl,
                 AdditionalInfo = new Dictionary<string, object>
                 {
                     { "EmailVerified", user.EmailConfirmed },

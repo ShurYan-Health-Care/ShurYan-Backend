@@ -141,6 +141,120 @@ namespace Shuryan.Application.Services
 
         #endregion
 
+        #region Order Status Updates
+
+        public async Task<PharmacyOrderStatusUpdateResponse> UpdateOrderStatusAsync(
+            Guid pharmacyId,
+            Guid orderId,
+            UpdatePharmacyOrderStatusRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Updating pharmacy order {OrderId} status to {Status} by pharmacy {PharmacyId}",
+                    orderId, request.NewStatus, pharmacyId);
+
+                // Ensure pharmacy exists
+                var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+                if (pharmacy == null)
+                {
+                    throw new KeyNotFoundException($"Pharmacy with ID {pharmacyId} not found");
+                }
+
+                // Fetch order and ensure ownership
+                var order = await _unitOfWork.Repository<PharmacyOrder>().GetByIdAsync(orderId);
+                if (order == null || order.PharmacyId != pharmacyId)
+                {
+                    throw new KeyNotFoundException($"Order with ID {orderId} not found for pharmacy {pharmacyId}");
+                }
+
+                // Allowed target statuses
+                var allowedStatuses = new[]
+                {
+                    PharmacyOrderStatus.PreparationInProgress,
+                    PharmacyOrderStatus.OutForDelivery,
+                    PharmacyOrderStatus.ReadyForPickup,
+                    PharmacyOrderStatus.Delivered
+                };
+
+                if (!allowedStatuses.Contains(request.NewStatus))
+                {
+                    throw new InvalidOperationException("هذه الحالة غير مسموح بتعيينها من قبل الصيدلية");
+                }
+
+                // Validate transitions
+                var current = order.Status;
+
+                switch (request.NewStatus)
+                {
+                    case PharmacyOrderStatus.PreparationInProgress:
+                        if (current != PharmacyOrderStatus.Confirmed)
+                            throw new InvalidOperationException($"Cannot move to PreparationInProgress from {current}");
+                        order.Status = PharmacyOrderStatus.PreparationInProgress;
+                        // optional ETA
+                        order.EstimatedDeliveryTime = request.EstimatedDeliveryTime;
+                        break;
+
+                    case PharmacyOrderStatus.OutForDelivery:
+                        if (order.DeliveryType != OrderDeliveryType.Delivery)
+                            throw new InvalidOperationException("لا يمكن تعيين 'خرج للتوصيل' لأن نوع الطلب ليس توصيل");
+                        if (current != PharmacyOrderStatus.PreparationInProgress)
+                            throw new InvalidOperationException($"Cannot move to OutForDelivery from {current}");
+                        order.Status = PharmacyOrderStatus.OutForDelivery;
+                        order.EstimatedDeliveryTime = request.EstimatedDeliveryTime;
+                        if (!string.IsNullOrWhiteSpace(request.DeliveryPersonName))
+                            order.DeliveryPersonName = request.DeliveryPersonName;
+                        if (!string.IsNullOrWhiteSpace(request.DeliveryPersonPhone))
+                            order.DeliveryPersonPhone = request.DeliveryPersonPhone!;
+                        if (!string.IsNullOrWhiteSpace(request.DeliveryNotes))
+                            order.DeliveryNotes = request.DeliveryNotes;
+                        break;
+
+                    case PharmacyOrderStatus.ReadyForPickup:
+                        if (order.DeliveryType != OrderDeliveryType.PharmacyPickup)
+                            throw new InvalidOperationException("لا يمكن تعيين 'جاهز للاستلام' لأن نوع الطلب ليس استلام من الصيدلية");
+                        if (current != PharmacyOrderStatus.PreparationInProgress)
+                            throw new InvalidOperationException($"Cannot move to ReadyForPickup from {current}");
+                        order.Status = PharmacyOrderStatus.ReadyForPickup;
+                        if (!string.IsNullOrWhiteSpace(request.DeliveryNotes))
+                            order.DeliveryNotes = request.DeliveryNotes;
+                        break;
+
+                    case PharmacyOrderStatus.Delivered:
+                        if (current != PharmacyOrderStatus.OutForDelivery && current != PharmacyOrderStatus.ReadyForPickup)
+                            throw new InvalidOperationException($"Cannot move to Delivered from {current}");
+                        order.Status = PharmacyOrderStatus.Delivered;
+                        order.ActualDeliveryTime = request.ActualDeliveryTime ?? DateTime.UtcNow;
+                        break;
+                }
+
+                order.UpdatedAt = DateTime.UtcNow;
+
+                _unitOfWork.Repository<PharmacyOrder>().Update(order);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Order {OrderId} status updated to {Status}", orderId, order.Status);
+
+                return new PharmacyOrderStatusUpdateResponse
+                {
+                    OrderId = order.Id,
+                    OrderNumber = order.OrderNumber,
+                    Status = order.Status,
+                    StatusName = order.Status.ToString(),
+                    UpdatedAt = order.UpdatedAt ?? DateTime.UtcNow,
+                    EstimatedDeliveryTime = order.EstimatedDeliveryTime,
+                    ActualDeliveryTime = order.ActualDeliveryTime,
+                    Message = "تم تحديث حالة الطلب بنجاح"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating order {OrderId} status for pharmacy {PharmacyId}", orderId, pharmacyId);
+                throw;
+            }
+        }
+
+        #endregion
+
         #region Address Operations
 
         public async Task<PharmacyAddressResponse?> GetAddressAsync(Guid pharmacyId)
@@ -983,6 +1097,179 @@ namespace Shuryan.Application.Services
             {
                 _logger.LogError(ex, "Error finding medication by name: {MedicationName}", medicationName);
                 return null;
+            }
+        }
+
+        public async Task<PharmacyStatisticsResponse> GetPharmacyStatisticsAsync(Guid pharmacyId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting statistics for pharmacy {PharmacyId}", pharmacyId);
+
+                var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+                if (pharmacy == null || pharmacy.IsDeleted)
+                {
+                    throw new KeyNotFoundException($"Pharmacy with ID {pharmacyId} not found");
+                }
+
+                var today = DateTime.UtcNow.Date;
+                var currentYear = DateTime.UtcNow.Year;
+                var currentMonth = DateTime.UtcNow.Month;
+
+                // Execute queries sequentially to avoid DbContext threading issues
+                var newOrdersToday = await _unitOfWork.PharmacyOrders.CountNewOrdersByDateAsync(pharmacyId, today);
+                var pendingOrders = await _unitOfWork.PharmacyOrders.CountPendingOrdersAsync(pharmacyId);
+                var completedOrders = await _unitOfWork.PharmacyOrders.CountCompletedOrdersAsync(pharmacyId);
+                var todayRevenue = await _unitOfWork.PharmacyOrders.CalculateRevenueByDateAsync(pharmacyId, today);
+                var monthlyOrders = await _unitOfWork.PharmacyOrders.CountOrdersByMonthAsync(pharmacyId, currentYear, currentMonth);
+                var monthlyRevenue = await _unitOfWork.PharmacyOrders.CalculateRevenueByMonthAsync(pharmacyId, currentYear, currentMonth);
+
+                var response = new PharmacyStatisticsResponse
+                {
+                    NewOrdersToday = newOrdersToday,
+                    PendingOrders = pendingOrders,
+                    CompletedOrders = completedOrders,
+                    TodayRevenue = todayRevenue,
+                    MonthlyOrders = monthlyOrders,
+                    MonthlyRevenue = monthlyRevenue
+                };
+
+                _logger.LogInformation("Retrieved statistics for pharmacy {PharmacyId}: NewToday={NewToday}, Pending={Pending}, Completed={Completed}",
+                    pharmacyId, response.NewOrdersToday, response.PendingOrders, response.CompletedOrders);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting statistics for pharmacy {PharmacyId}", pharmacyId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region New Order Operations
+
+        public async Task<PharmacyOrdersListOptimizedResponse> GetOptimizedOrdersAsync(Guid pharmacyId, int pageNumber, int pageSize)
+        {
+            try
+            {
+                _logger.LogInformation("Getting optimized orders list for pharmacy {PharmacyId}, Page: {Page}, Size: {Size}",
+                    pharmacyId, pageNumber, pageSize);
+
+                var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+                if (pharmacy == null)
+                {
+                    throw new KeyNotFoundException($"Pharmacy with ID {pharmacyId} not found");
+                }
+
+                var (orders, totalCount) = await _unitOfWork.PharmacyOrders
+                    .GetOptimizedOrdersForPharmacyAsync(pharmacyId, pageNumber, pageSize);
+
+                var ordersList = orders.Select(o => new PharmacyOrderListItemResponse
+                {
+                    OrderId = o.Id,
+                    PrescriptionNumber = o.Prescription?.PrescriptionNumber ?? "N/A",
+                    PatientName = $"{o.Patient?.FirstName} {o.Patient?.LastName}".Trim(),
+                    OrderDate = o.CreatedAt,
+                    TotalCost = o.TotalCost,
+                    Status = o.Status
+                }).ToList();
+
+                var response = new PharmacyOrdersListOptimizedResponse
+                {
+                    Orders = ordersList,
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+
+                _logger.LogInformation("Retrieved {Count} orders out of {Total} for pharmacy {PharmacyId}",
+                    ordersList.Count, totalCount, pharmacyId);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting optimized orders for pharmacy {PharmacyId}", pharmacyId);
+                throw;
+            }
+        }
+
+        public async Task<PharmacyOrderDetailResponse> GetOrderDetailAsync(Guid pharmacyId, Guid orderId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting order detail for order {OrderId}, pharmacy {PharmacyId}",
+                    orderId, pharmacyId);
+
+                var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+                if (pharmacy == null)
+                {
+                    throw new KeyNotFoundException($"Pharmacy with ID {pharmacyId} not found");
+                }
+
+                var order = await _unitOfWork.PharmacyOrders.GetOrderDetailForPharmacyAsync(orderId, pharmacyId);
+                if (order == null)
+                {
+                    throw new KeyNotFoundException($"Order with ID {orderId} not found for pharmacy {pharmacyId}");
+                }
+
+                var medications = new List<OrderMedicationDetailResponse>();
+
+                // Get medication details from PrescribedMedications (which has dosage, frequency, duration)
+                if (order.Prescription?.PrescribedMedications != null && order.Prescription.PrescribedMedications.Any())
+                {
+                    // Create a dictionary of medication prices from OrderItems
+                    var medicationPrices = new Dictionary<Guid, decimal>();
+                    if (order.OrderItems != null && order.OrderItems.Any())
+                    {
+                        foreach (var orderItem in order.OrderItems)
+                        {
+                            medicationPrices[orderItem.RequestedMedicationId] = orderItem.UnitPrice ?? 0;
+                        }
+                    }
+
+                    medications = order.Prescription.PrescribedMedications.Select(pm => new OrderMedicationDetailResponse
+                    {
+                        MedicationName = pm.Medication?.BrandName ?? "N/A",
+                        Price = medicationPrices.ContainsKey(pm.MedicationId) ? medicationPrices[pm.MedicationId] : 0,
+                        Dosage = pm.Dosage ?? "N/A",
+                        Frequency = pm.Frequency ?? "N/A",
+                        Duration = pm.DurationDays > 0 ? $"{pm.DurationDays} أيام" : "N/A"
+                    }).ToList();
+                }
+
+                var patientAddress = order.Patient?.Address != null
+                    ? $"{order.Patient.Address.City}, {order.Patient.Address.Street}"
+                    : "غير متوفر";
+
+                var response = new PharmacyOrderDetailResponse
+                {
+                    OrderId = order.Id,
+                    PrescriptionNumber = order.Prescription?.PrescriptionNumber ?? "N/A",
+                    OrderDate = order.CreatedAt,
+                    Status = order.Status,
+                    Medications = medications,
+                    DeliveryFee = order.DeliveryFee,
+                    TotalCost = order.TotalCost,
+                    DeliveryInfo = new OrderDeliveryInfoResponse
+                    {
+                        PatientName = $"{order.Patient?.FirstName} {order.Patient?.LastName}".Trim(),
+                        PatientPhone = order.Patient?.PhoneNumber ?? "N/A",
+                        Address = patientAddress
+                    }
+                };
+
+                _logger.LogInformation("Retrieved order detail for order {OrderId}", orderId);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting order detail for order {OrderId}, pharmacy {PharmacyId}",
+                    orderId, pharmacyId);
+                throw;
             }
         }
 

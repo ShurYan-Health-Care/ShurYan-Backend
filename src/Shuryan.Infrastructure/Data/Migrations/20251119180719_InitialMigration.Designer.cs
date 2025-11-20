@@ -12,8 +12,8 @@ using Shuryan.Infrastructure.Data;
 namespace Shuryan.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    [Migration("20251108190407_MakeVerifierCreatedByAdminIdNullable")]
-    partial class MakeVerifierCreatedByAdminIdNullable
+    [Migration("20251119180719_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1789,6 +1789,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.HasIndex("PatientId", "Status")
                         .HasDatabaseName("IX_Appointment_Patient_Status");
 
+                    b.HasIndex("DoctorId", "Status", "ScheduledStartTime")
+                        .HasDatabaseName("IX_Appointment_Doctor_Status_StartTime");
+
                     b.ToTable("Appointments", null, t =>
                         {
                             t.HasCheckConstraint("CK_Appointment_ConsultationFee", "[ConsultationFee] >= 0");
@@ -2898,6 +2901,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
 
                     b.Property<Guid?>("AddressId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("DeliveryFee")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1000)

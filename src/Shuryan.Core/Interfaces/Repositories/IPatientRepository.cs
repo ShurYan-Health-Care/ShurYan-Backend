@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Shuryan.Core.Entities.Identity;
+using Shuryan.Core.DTOs;
 
 namespace Shuryan.Core.Interfaces.Repositories
 {
@@ -13,7 +14,7 @@ namespace Shuryan.Core.Interfaces.Repositories
 		Task<Patient?> GetByEmailAsync(string email);
 		Task<IEnumerable<Patient>> GetPatientsWithMedicalHistoryAsync();
         Task RemoveAsync(Patient patient, bool softDelete = true);
-		Task<(IEnumerable<Patient> Patients, int TotalCount)> GetDoctorPatientsAsync(
+		Task<(IEnumerable<DoctorPatientDto> Patients, int TotalCount)> GetDoctorPatientsOptimizedAsync(
 			Guid doctorId, 
 			int pageNumber, 
 			int pageSize);
