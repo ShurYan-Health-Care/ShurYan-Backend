@@ -18,9 +18,6 @@ namespace Shuryan.Core.Enums.Pharmacy
         [Description("في انتظار الدفع")]
         PendingPayment = 3,
 
-        [Description("تم الدفع - في انتظار تأكيد الصيدلية")]
-        PaidPendingPharmacyConfirmation = 4,
-
         [Description("تم تأكيد الطلب")]
         Confirmed = 5,
 

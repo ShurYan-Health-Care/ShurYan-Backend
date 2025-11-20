@@ -492,20 +492,16 @@ namespace Shuryan.API.Controllers
         [AllowAnonymous]
         [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<DoctorListItemResponse>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<PaginatedResponse<DoctorListItemResponse>>>> GetDoctorsList(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 6)
+            [FromQuery] SearchDoctorsRequest searchRequest)
         {
-            _logger.LogInformation("Request to get doctors list. Page: {Page}, Size: {Size}", pageNumber, pageSize);
+            _logger.LogInformation("Request to get doctors list with filters. Page: {Page}, Size: {Size}, SearchTerm: {SearchTerm}, Specialty: {Specialty}, Governorate: {Governorate}, City: {City}, MinRating: {MinRating}, MinPrice: {MinPrice}, MaxPrice: {MaxPrice}, AvailableToday: {AvailableToday}",
+                searchRequest.PageNumber, searchRequest.PageSize, searchRequest.SearchTerm,
+                searchRequest.Specialty ?? searchRequest.MedicalSpecialty, searchRequest.Governorate,
+                searchRequest.City, searchRequest.MinRating, searchRequest.MinPrice, searchRequest.MaxPrice, searchRequest.AvailableToday);
 
             try
             {
-                var paginationParams = new PaginationParams
-                {
-                    PageNumber = pageNumber,
-                    PageSize = pageSize
-                };
-
-                var result = await _doctorService.GetDoctorsListAsync(paginationParams);
+                var result = await _doctorService.GetDoctorsListAsync(searchRequest);
 
                 _logger.LogInformation("Successfully retrieved {Count} doctors out of {Total}",
                     result.Data.Count(), result.TotalCount);
