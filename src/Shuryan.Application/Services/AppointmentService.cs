@@ -892,6 +892,12 @@ namespace Shuryan.Application.Services
                     request.SortBy,
                     request.SortOrder);
 
+                // Get statistics for ALL appointments (not just current page)
+                var statisticsDict = await _appointmentRepository.GetAppointmentStatisticsByDoctorIdAsync(
+                    doctorId,
+                    request.StartDate,
+                    request.EndDate);
+
                 // Map to response DTOs
                 var appointmentResponses = appointments.Select(a => new DoctorAppointmentResponse
                 {
@@ -909,6 +915,19 @@ namespace Shuryan.Application.Services
                     Price = a.ConsultationFee
                 }).ToList();
 
+                // Build statistics object
+                var statistics = new AppointmentStatistics
+                {
+                    Total = totalCount,
+                    Pending = 0, // Pending is not a status in the enum
+                    Confirmed = statisticsDict.GetValueOrDefault(AppointmentStatus.Confirmed, 0),
+                    CheckedIn = statisticsDict.GetValueOrDefault(AppointmentStatus.CheckedIn, 0),
+                    InProgress = statisticsDict.GetValueOrDefault(AppointmentStatus.InProgress, 0),
+                    Completed = statisticsDict.GetValueOrDefault(AppointmentStatus.Completed, 0),
+                    NoShow = statisticsDict.GetValueOrDefault(AppointmentStatus.NoShow, 0),
+                    Cancelled = statisticsDict.GetValueOrDefault(AppointmentStatus.Cancelled, 0)
+                };
+
                 // Build paginated response
                 var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
                 
@@ -920,7 +939,8 @@ namespace Shuryan.Application.Services
                     TotalPages = totalPages,
                     HasPreviousPage = request.PageNumber > 1,
                     HasNextPage = request.PageNumber < totalPages,
-                    Data = appointmentResponses
+                    Data = appointmentResponses,
+                    Statistics = statistics
                 };
 
                 _logger.LogInformation(

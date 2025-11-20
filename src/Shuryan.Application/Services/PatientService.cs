@@ -14,6 +14,7 @@ using Shuryan.Application.DTOs.Requests.Patient;
 using Shuryan.Application.DTOs.Responses.Appointment;
 using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Application.DTOs.Responses.Patient;
+using Shuryan.Application.DTOs.Responses.Pharmacy;
 using Shuryan.Application.DTOs.Responses.Prescription;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.Common;
@@ -1821,6 +1822,51 @@ namespace Shuryan.Application.Services
             {
                 _logger.LogError(ex, "Error getting pharmacy responses for prescription {PrescriptionId} and patient {PatientId}", 
                     prescriptionId, patientId);
+                throw;
+            }
+        }
+
+        public async Task<ConfirmOrderResponse> ConfirmPharmacyOrderAsync(Guid patientId, Guid orderId)
+        {
+            try
+            {
+                _logger.LogInformation("Patient {PatientId} attempting to confirm order {OrderId}", patientId, orderId);
+
+                var patient = await _patientRepository.GetByIdAsync(patientId);
+                if (patient == null)
+                {
+                    throw new KeyNotFoundException($"Patient with ID {patientId} not found");
+                }
+
+                var order = await _unitOfWork.PharmacyOrders.GetOrderForPatientAsync(orderId, patientId);
+                if (order == null)
+                {
+                    throw new KeyNotFoundException($"Order with ID {orderId} not found for patient {patientId}");
+                }
+
+                if (order.Status != PharmacyOrderStatus.WaitingForPatientConfirmation)
+                {
+                    throw new InvalidOperationException($"Order cannot be confirmed. Current status: {order.Status}");
+                }
+
+                order.Status = PharmacyOrderStatus.Confirmed;
+                order.UpdatedAt = DateTime.UtcNow;
+
+                _unitOfWork.PharmacyOrders.Update(order);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Order {OrderId} confirmed successfully by patient {PatientId}", orderId, patientId);
+
+                return new ConfirmOrderResponse
+                {
+                    OrderId = orderId,
+                    Status = PharmacyOrderStatus.Confirmed,
+                    ConfirmedAt = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error confirming order {OrderId} for patient {PatientId}", orderId, patientId);
                 throw;
             }
         }

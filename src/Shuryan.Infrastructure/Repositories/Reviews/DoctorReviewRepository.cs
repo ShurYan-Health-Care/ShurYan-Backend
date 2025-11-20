@@ -57,6 +57,60 @@ namespace Shuryan.Infrastructure.Repositories.Reviews
                 .Where(r => r.DoctorId == doctorId)
                 .CountAsync();
         }
+
+        public async Task<(IEnumerable<DoctorReview> Reviews, int TotalCount)> GetPaginatedReviewsByDoctorAsync(
+            Guid doctorId, 
+            int pageNumber, 
+            int pageSize)
+        {
+            var query = _dbSet
+                .Include(r => r.Patient)
+                .Where(r => r.DoctorId == doctorId);
+
+            var totalCount = await query.CountAsync();
+
+            var reviews = await query
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (reviews, totalCount);
+        }
+
+        public async Task<Dictionary<int, int>> GetRatingDistributionAsync(Guid doctorId)
+        {
+            var reviews = await _dbSet
+                .Where(r => r.DoctorId == doctorId)
+                .ToListAsync();
+
+            var distribution = new Dictionary<int, int>
+            {
+                { 5, 0 },
+                { 4, 0 },
+                { 3, 0 },
+                { 2, 0 },
+                { 1, 0 }
+            };
+
+            foreach (var review in reviews)
+            {
+                var roundedRating = (int)Math.Round(review.AverageRating);
+                if (roundedRating >= 1 && roundedRating <= 5)
+                {
+                    distribution[roundedRating]++;
+                }
+            }
+
+            return distribution;
+        }
+
+        public async Task<DoctorReview?> GetReviewByIdWithPatientAsync(Guid reviewId, Guid doctorId)
+        {
+            return await _dbSet
+                .Include(r => r.Patient)
+                .FirstOrDefaultAsync(r => r.Id == reviewId && r.DoctorId == doctorId);
+        }
     }
 }
 

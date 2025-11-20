@@ -432,7 +432,7 @@ namespace Shuryan.Application.Services
                         var pharmacyOrder = await _unitOfWork.PharmacyOrders.GetByIdAsync(orderId);
                         if (pharmacyOrder != null && pharmacyOrder.Status == PharmacyOrderStatus.PendingPayment)
                         {
-                            pharmacyOrder.Status = PharmacyOrderStatus.PaidPendingPharmacyConfirmation;
+                            pharmacyOrder.Status = PharmacyOrderStatus.Confirmed;
                             pharmacyOrder.UpdatedAt = DateTime.UtcNow;
                             _unitOfWork.PharmacyOrders.Update(pharmacyOrder);
                             await _unitOfWork.SaveChangesAsync();

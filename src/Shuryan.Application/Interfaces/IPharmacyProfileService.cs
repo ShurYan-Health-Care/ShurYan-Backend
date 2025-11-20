@@ -97,6 +97,28 @@ namespace Shuryan.Application.Interfaces
         /// </summary>
         Task<PharmacyOrderResponseResponse> RespondToOrderAsync(Guid pharmacyId, Guid orderId, PharmacyOrderResponseRequest request);
 
+        /// <summary>
+        /// جلب إحصائيات الصيدلية
+        /// </summary>
+        Task<PharmacyStatisticsResponse> GetPharmacyStatisticsAsync(Guid pharmacyId);
+
+        /// <summary>
+        /// جلب قائمة الطلبات المحسّنة للصيدلية
+        /// </summary>
+        Task<PharmacyOrdersListOptimizedResponse> GetOptimizedOrdersAsync(Guid pharmacyId, int pageNumber, int pageSize);
+
+        /// <summary>
+        /// جلب تفاصيل طلب معين
+        /// </summary>
+        Task<PharmacyOrderDetailResponse> GetOrderDetailAsync(Guid pharmacyId, Guid orderId);
+
+        /// <summary>
+        /// تحديث حالة طلب صيدلية إلى واحدة من الحالات التالية فقط:
+        /// PreparationInProgress, OutForDelivery, ReadyForPickup, Delivered
+        /// </summary>
+        Task<PharmacyOrderStatusUpdateResponse> UpdateOrderStatusAsync(Guid pharmacyId, Guid orderId, UpdatePharmacyOrderStatusRequest request);
+
         #endregion
+
     }
 }

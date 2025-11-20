@@ -83,6 +83,78 @@ namespace Shuryan.API.Controllers
             }
         }
 
+        [HttpPut("orders/{orderId}/status")]
+        [ProducesResponseType(typeof(ApiResponse<PharmacyOrderStatusUpdateResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<PharmacyOrderStatusUpdateResponse>>> UpdateOrderStatus(
+            Guid orderId,
+            [FromBody] UpdatePharmacyOrderStatusRequest request)
+        {
+            var currentPharmacyId = GetCurrentPharmacyId();
+
+            if (currentPharmacyId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to update order status");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid order status update request for pharmacy: {PharmacyId}", currentPharmacyId);
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(ApiResponse<object>.Failure(
+                    "بيانات غير صحيحة",
+                    errors,
+                    400
+                ));
+            }
+
+            _logger.LogInformation("Pharmacy {PharmacyId} updating status for order {OrderId}", currentPharmacyId, orderId);
+
+            try
+            {
+                var result = await _pharmacyProfileService.UpdateOrderStatusAsync(currentPharmacyId, orderId, request);
+
+                _logger.LogInformation("Successfully updated status for order {OrderId}", orderId);
+
+                return Ok(ApiResponse<PharmacyOrderStatusUpdateResponse>.Success(
+                    result,
+                    "تم تحديث حالة الطلب بنجاح"
+                ));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Order or pharmacy not found for status update: {OrderId}, {PharmacyId}", orderId, currentPharmacyId);
+                return NotFound(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 404
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid operation for order status update: {OrderId}, {PharmacyId}", orderId, currentPharmacyId);
+                return BadRequest(ApiResponse<object>.Failure(
+                    ex.Message,
+                    statusCode: 400
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating status for order {OrderId}", orderId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث حالة الطلب",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
         /// <summary>
         /// تحديث المعلومات الأساسية للصيدلية (Partial Update)
         /// PUT /api/pharmacies/me/profile/basic
@@ -785,6 +857,183 @@ namespace Shuryan.API.Controllers
                 _logger.LogError(ex, "Error processing pharmacy response for order {OrderId}", orderId);
                 return StatusCode(500, ApiResponse<object>.Failure(
                     "حدث خطأ أثناء معالجة رد الصيدلية",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// جلب إحصائيات الصيدلية
+        /// GET /api/pharmacies/me/statistics
+        /// </summary>
+        [HttpGet("statistics")]
+        [ProducesResponseType(typeof(ApiResponse<PharmacyStatisticsResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<PharmacyStatisticsResponse>>> GetStatistics()
+        {
+            var currentPharmacyId = GetCurrentPharmacyId();
+
+            if (currentPharmacyId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to access pharmacy statistics");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get statistics request for pharmacy: {PharmacyId}", currentPharmacyId);
+
+            try
+            {
+                var statistics = await _pharmacyProfileService.GetPharmacyStatisticsAsync(currentPharmacyId);
+
+                _logger.LogInformation("Retrieved statistics for pharmacy: {PharmacyId}", currentPharmacyId);
+
+                return Ok(ApiResponse<PharmacyStatisticsResponse>.Success(
+                    statistics,
+                    "تم جلب الإحصائيات بنجاح"
+                ));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Pharmacy not found: {PharmacyId}", currentPharmacyId);
+                return NotFound(ApiResponse<object>.Failure(
+                    "تعذر العثور على الصيدلية",
+                    new[] { ex.Message },
+                    404
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving statistics for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب الإحصائيات",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// جلب قائمة الطلبات المحسّنة للصيدلية
+        /// GET /api/pharmacies/me/orders/list
+        /// </summary>
+        [HttpGet("orders/list")]
+        [ProducesResponseType(typeof(ApiResponse<PharmacyOrdersListOptimizedResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<PharmacyOrdersListOptimizedResponse>>> GetOrdersList(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            var currentPharmacyId = GetCurrentPharmacyId();
+
+            if (currentPharmacyId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to access pharmacy orders list");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get orders list request for pharmacy: {PharmacyId}, Page: {Page}, Size: {Size}",
+                currentPharmacyId, pageNumber, pageSize);
+
+            try
+            {
+                var orders = await _pharmacyProfileService.GetOptimizedOrdersAsync(
+                    currentPharmacyId,
+                    pageNumber,
+                    pageSize);
+
+                _logger.LogInformation("Retrieved {Count} orders for pharmacy: {PharmacyId}",
+                    orders.Orders.Count, currentPharmacyId);
+
+                return Ok(ApiResponse<PharmacyOrdersListOptimizedResponse>.Success(
+                    orders,
+                    "تم جلب الطلبات بنجاح"
+                ));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Pharmacy not found: {PharmacyId}", currentPharmacyId);
+                return NotFound(ApiResponse<object>.Failure(
+                    "تعذر العثور على الصيدلية",
+                    new[] { ex.Message },
+                    404
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving orders list for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب الطلبات",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// جلب تفاصيل طلب معين
+        /// GET /api/pharmacies/me/orders/{orderId}
+        /// </summary>
+        [HttpGet("orders/{orderId}")]
+        [ProducesResponseType(typeof(ApiResponse<PharmacyOrderDetailResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<PharmacyOrderDetailResponse>>> GetOrderDetail(Guid orderId)
+        {
+            var currentPharmacyId = GetCurrentPharmacyId();
+
+            if (currentPharmacyId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to access order detail");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get order detail request for order: {OrderId}, pharmacy: {PharmacyId}",
+                orderId, currentPharmacyId);
+
+            try
+            {
+                var orderDetail = await _pharmacyProfileService.GetOrderDetailAsync(
+                    currentPharmacyId,
+                    orderId);
+
+                _logger.LogInformation("Retrieved order detail for order: {OrderId}", orderId);
+
+                return Ok(ApiResponse<PharmacyOrderDetailResponse>.Success(
+                    orderDetail,
+                    "تم جلب تفاصيل الطلب بنجاح"
+                ));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Order or pharmacy not found: {OrderId}, {PharmacyId}",
+                    orderId, currentPharmacyId);
+                return NotFound(ApiResponse<object>.Failure(
+                    "تعذر العثور على الطلب",
+                    new[] { ex.Message },
+                    404
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving order detail: {OrderId}, {PharmacyId}",
+                    orderId, currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب تفاصيل الطلب",
                     new[] { ex.Message },
                     500
                 ));

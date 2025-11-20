@@ -79,6 +79,117 @@ namespace Shuryan.Infrastructure.Repositories.Pharmacies
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
         }
+
+        public async Task<int> CountNewOrdersByDateAsync(Guid pharmacyId, DateTime date)
+        {
+            var startOfDay = date.Date;
+            var endOfDay = startOfDay.AddDays(1);
+
+            return await _dbSet
+                .Where(o => o.PharmacyId == pharmacyId &&
+                           o.CreatedAt >= startOfDay &&
+                           o.CreatedAt < endOfDay)
+                .CountAsync();
+        }
+
+        public async Task<int> CountPendingOrdersAsync(Guid pharmacyId)
+        {
+            return await _dbSet
+                .Where(o => o.PharmacyId == pharmacyId &&
+                           o.Status == PharmacyOrderStatus.PendingPharmacyResponse)
+                .CountAsync();
+        }
+
+        public async Task<int> CountCompletedOrdersAsync(Guid pharmacyId)
+        {
+            return await _dbSet
+                .Where(o => o.PharmacyId == pharmacyId &&
+                           o.Status == PharmacyOrderStatus.Confirmed)
+                .CountAsync();
+        }
+
+        public async Task<decimal> CalculateRevenueByDateAsync(Guid pharmacyId, DateTime date)
+        {
+            var startOfDay = date.Date;
+            var endOfDay = startOfDay.AddDays(1);
+
+            return await _dbSet
+                .Where(o => o.PharmacyId == pharmacyId &&
+                           o.Status == PharmacyOrderStatus.Confirmed &&
+                           o.CreatedAt >= startOfDay &&
+                           o.CreatedAt < endOfDay)
+                .SumAsync(o => o.TotalCost);
+        }
+
+        public async Task<int> CountOrdersByMonthAsync(Guid pharmacyId, int year, int month)
+        {
+            var startOfMonth = new DateTime(year, month, 1);
+            var endOfMonth = startOfMonth.AddMonths(1);
+
+            return await _dbSet
+                .Where(o => o.PharmacyId == pharmacyId &&
+                           o.CreatedAt >= startOfMonth &&
+                           o.CreatedAt < endOfMonth)
+                .CountAsync();
+        }
+
+        public async Task<decimal> CalculateRevenueByMonthAsync(Guid pharmacyId, int year, int month)
+        {
+            var startOfMonth = new DateTime(year, month, 1);
+            var endOfMonth = startOfMonth.AddMonths(1);
+
+            return await _dbSet
+                .Where(o => o.PharmacyId == pharmacyId &&
+                           o.Status == PharmacyOrderStatus.Confirmed &&
+                           o.CreatedAt >= startOfMonth &&
+                           o.CreatedAt < endOfMonth)
+                .SumAsync(o => o.TotalCost);
+        }
+
+        public async Task<PharmacyOrder?> GetOrderForPatientAsync(Guid orderId, Guid patientId)
+        {
+            return await _dbSet
+                .Where(o => o.Id == orderId && o.PatientId == patientId)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<(IEnumerable<PharmacyOrder> Orders, int TotalCount)> GetOptimizedOrdersForPharmacyAsync(
+            Guid pharmacyId,
+            int pageNumber,
+            int pageSize)
+        {
+            var query = _dbSet
+                .Include(o => o.Patient)
+                .Include(o => o.Prescription)
+                .Where(o => o.PharmacyId == pharmacyId);
+
+            var totalCount = await query.CountAsync();
+
+            var orders = await query
+                .OrderByDescending(o => o.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return (orders, totalCount);
+        }
+
+        public async Task<PharmacyOrder?> GetOrderDetailForPharmacyAsync(Guid orderId, Guid pharmacyId)
+        {
+            return await _dbSet
+                .Include(o => o.Patient)
+                    .ThenInclude(p => p.Address)
+                .Include(o => o.Prescription)
+                    .ThenInclude(pr => pr.PrescribedMedications)
+                        .ThenInclude(pm => pm.Medication)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.RequestedMedication)
+                .Where(o => o.Id == orderId && o.PharmacyId == pharmacyId)
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
+        }
+
     }
 }
 
