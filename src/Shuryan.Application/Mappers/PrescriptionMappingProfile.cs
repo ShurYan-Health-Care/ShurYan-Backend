@@ -10,14 +10,22 @@ namespace Shuryan.Application.Mappers
         public PrescriptionMappingProfile()
         {
             #region Prescription Mappings
-            //CreateMap<Prescription, PrescriptionResponse>();
-            //CreateMap<Prescription, PrescriptionDetailsResponse>()
-            //    .ForMember(dest => dest.DoctorName, opt => opt.MapFrom(src => src.Doctor != null ? src.Doctor.FirstName : string.Empty))
-            //    .ForMember(dest => dest.PatientName, opt => opt.MapFrom(src => src.Patient != null ? src.Patient.FirstName : string.Empty))
-            //    .ForMember(dest => dest.Medications, opt => opt.MapFrom(src => src.PrescribedMedications));
-            //CreateMap<CreatePrescriptionRequest, Prescription>();
-            //CreateMap<UpdatePrescriptionRequest, Prescription>()
-            //    .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<Prescription, PrescriptionResponse>()
+                .ForMember(dest => dest.Doctor, opt => opt.MapFrom(src => src.Doctor))
+                .ForMember(dest => dest.Patient, opt => opt.MapFrom(src => src.Patient))
+                .ForMember(dest => dest.PrescribedMedications, opt => opt.MapFrom(src => src.PrescribedMedications));
+            
+            CreateMap<CreatePrescriptionRequest, Prescription>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.Doctor, opt => opt.Ignore())
+                .ForMember(dest => dest.Patient, opt => opt.Ignore())
+                .ForMember(dest => dest.Appointment, opt => opt.Ignore())
+                .ForMember(dest => dest.PrescribedMedications, opt => opt.Ignore());
+            
+            CreateMap<UpdatePrescriptionRequest, Prescription>()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
             #endregion
 
             #region Prescribed Medication Mappings

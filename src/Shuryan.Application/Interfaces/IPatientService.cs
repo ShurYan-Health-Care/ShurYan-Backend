@@ -10,6 +10,7 @@ using Shuryan.Application.DTOs.Requests.Patient;
 using Shuryan.Application.DTOs.Responses.Appointment;
 using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Application.DTOs.Responses.Patient;
+using Shuryan.Application.DTOs.Responses.Pharmacy;
 using Shuryan.Application.DTOs.Responses.Prescription;
 
 namespace Shuryan.Application.Interfaces
@@ -84,6 +85,7 @@ namespace Shuryan.Application.Interfaces
         Task<SendPrescriptionResponse> SendPrescriptionToPharmacyAsync(Guid patientId, Guid prescriptionId, SendPrescriptionToPharmacyRequest request);
         Task<PatientPharmacyResponseView> GetPharmacyResponseAsync(Guid patientId, Guid orderId);
         Task<PrescriptionPharmacyResponsesView> GetPrescriptionPharmacyResponsesAsync(Guid patientId, Guid prescriptionId);
+        Task<ConfirmOrderResponse> ConfirmPharmacyOrderAsync(Guid patientId, Guid orderId);
         #endregion
     }
 }

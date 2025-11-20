@@ -8,9 +8,6 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Interfaces.Repositories.Pharmacies
 {
-    /// <summary>
-    /// واجهة مخصصة لعمليات قاعدة البيانات الخاصة بطلبات الصيدلية.
-    /// </summary>
     public interface IPharmacyOrderRepository : IGenericRepository<PharmacyOrder>
     {
         /// <summary>
@@ -56,5 +53,81 @@ namespace Shuryan.Core.Interfaces.Repositories.Pharmacies
         /// <param name="status">الحالة المطلوبة</param>
         /// <returns>قائمة بالطلبات التي تطابق الحالة.</returns>
         Task<IEnumerable<PharmacyOrder>> GetOrdersByStatusAsync(PharmacyOrderStatus status);
+
+        /// <summary>
+        /// يحسب عدد الطلبات الجديدة لصيدلية معينة في تاريخ محدد
+        /// </summary>
+        /// <param name="pharmacyId">الرقم التعريفي للصيدلية</param>
+        /// <param name="date">التاريخ المطلوب</param>
+        /// <returns>عدد الطلبات الجديدة</returns>
+        Task<int> CountNewOrdersByDateAsync(Guid pharmacyId, DateTime date);
+
+        /// <summary>
+        /// يحسب عدد الطلبات المعلقة لصيدلية معينة
+        /// </summary>
+        /// <param name="pharmacyId">الرقم التعريفي للصيدلية</param>
+        /// <returns>عدد الطلبات المعلقة</returns>
+        Task<int> CountPendingOrdersAsync(Guid pharmacyId);
+
+        /// <summary>
+        /// يحسب عدد الطلبات المكتملة لصيدلية معينة
+        /// </summary>
+        /// <param name="pharmacyId">الرقم التعريفي للصيدلية</param>
+        /// <returns>عدد الطلبات المكتملة</returns>
+        Task<int> CountCompletedOrdersAsync(Guid pharmacyId);
+
+        /// <summary>
+        /// يحسب إيرادات صيدلية معينة في تاريخ محدد
+        /// </summary>
+        /// <param name="pharmacyId">الرقم التعريفي للصيدلية</param>
+        /// <param name="date">التاريخ المطلوب</param>
+        /// <returns>إجمالي الإيرادات</returns>
+        Task<decimal> CalculateRevenueByDateAsync(Guid pharmacyId, DateTime date);
+
+        /// <summary>
+        /// يحسب عدد الطلبات لصيدلية معينة في شهر وسنة محددة
+        /// </summary>
+        /// <param name="pharmacyId">الرقم التعريفي للصيدلية</param>
+        /// <param name="year">السنة</param>
+        /// <param name="month">الشهر</param>
+        /// <returns>عدد الطلبات</returns>
+        Task<int> CountOrdersByMonthAsync(Guid pharmacyId, int year, int month);
+
+        /// <summary>
+        /// يحسب إيرادات صيدلية معينة في شهر وسنة محددة
+        /// </summary>
+        /// <param name="pharmacyId">الرقم التعريفي للصيدلية</param>
+        /// <param name="year">السنة</param>
+        /// <param name="month">الشهر</param>
+        /// <returns>إجمالي الإيرادات</returns>
+        Task<decimal> CalculateRevenueByMonthAsync(Guid pharmacyId, int year, int month);
+
+        /// <summary>
+        /// يجلب طلب معين للمريض للتحقق من ملكيته
+        /// </summary>
+        /// <param name="orderId">الرقم التعريفي للطلب</param>
+        /// <param name="patientId">الرقم التعريفي للمريض</param>
+        /// <returns>كائن الطلب أو null إذا لم يتم العثور عليه</returns>
+        Task<PharmacyOrder?> GetOrderForPatientAsync(Guid orderId, Guid patientId);
+
+        /// <summary>
+        /// يجلب جميع الطلبات لصيدلية معينة بشكل محسّن مع pagination
+        /// </summary>
+        /// <param name="pharmacyId">الرقم التعريفي للصيدلية</param>
+        /// <param name="pageNumber">رقم الصفحة</param>
+        /// <param name="pageSize">حجم الصفحة</param>
+        /// <returns>قائمة الطلبات والعدد الإجمالي</returns>
+        Task<(IEnumerable<PharmacyOrder> Orders, int TotalCount)> GetOptimizedOrdersForPharmacyAsync(
+            Guid pharmacyId,
+            int pageNumber,
+            int pageSize);
+
+        /// <summary>
+        /// يجلب تفاصيل طلب معين لصيدلية معينة مع كل البيانات المطلوبة
+        /// </summary>
+        /// <param name="orderId">الرقم التعريفي للطلب</param>
+        /// <param name="pharmacyId">الرقم التعريفي للصيدلية</param>
+        /// <returns>كائن الطلب مع كل التفاصيل أو null إذا لم يتم العثور عليه</returns>
+        Task<PharmacyOrder?> GetOrderDetailForPharmacyAsync(Guid orderId, Guid pharmacyId);
     }
 }

@@ -45,7 +45,7 @@ namespace Shuryan.Application.Interfaces
         #endregion
 
         #region Public Doctor Directory Operations
-        Task<PaginatedResponse<DoctorListItemResponse>> GetDoctorsListAsync(PaginationParams paginationParams);
+        Task<PaginatedResponse<DoctorListItemResponse>> GetDoctorsListAsync(SearchDoctorsRequest searchRequest);
 
         Task<DoctorDetailsWithClinicResponse?> GetDoctorDetailsWithClinicAsync(Guid doctorId);
         #endregion

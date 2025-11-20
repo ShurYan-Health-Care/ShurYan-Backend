@@ -7,6 +7,7 @@ using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Doctor;
 using Shuryan.Application.DTOs.Requests.Patient;
 using Shuryan.Application.DTOs.Responses.Patient;
+using Shuryan.Application.DTOs.Responses.Pharmacy;
 using Shuryan.Application.Interfaces;
 using System;
 using System.Linq;
@@ -645,6 +646,75 @@ namespace Shuryan.API.Controllers
                     orderId, currentPatientId);
                 return StatusCode(500, ApiResponse<object>.Failure(
                     "حدث خطأ أثناء جلب رد الصيدلية",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// تأكيد طلب الصيدلية بعد الدفع
+        /// PUT /api/patients/me/orders/{orderId}/confirm
+        /// </summary>
+        [HttpPut("orders/{orderId}/confirm")]
+        [ProducesResponseType(typeof(ApiResponse<ConfirmOrderResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<ConfirmOrderResponse>>> ConfirmOrder(Guid orderId)
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to confirm order");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Patient {PatientId} attempting to confirm order {OrderId}",
+                currentPatientId, orderId);
+
+            try
+            {
+                var result = await _patientService.ConfirmPharmacyOrderAsync(currentPatientId, orderId);
+
+                _logger.LogInformation("Order {OrderId} confirmed successfully by patient {PatientId}",
+                    orderId, currentPatientId);
+
+                return Ok(ApiResponse<ConfirmOrderResponse>.Success(
+                    result,
+                    "تم تأكيد الطلب بنجاح"
+                ));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Order or patient not found: {OrderId}, {PatientId}",
+                    orderId, currentPatientId);
+                return NotFound(ApiResponse<object>.Failure(
+                    "تعذر العثور على الطلب",
+                    new[] { ex.Message },
+                    404
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid operation: {Message}", ex.Message);
+                return BadRequest(ApiResponse<object>.Failure(
+                    ex.Message,
+                    new[] { ex.Message },
+                    400
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error confirming order {OrderId} for patient {PatientId}",
+                    orderId, currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تأكيد الطلب",
                     new[] { ex.Message },
                     500
                 ));

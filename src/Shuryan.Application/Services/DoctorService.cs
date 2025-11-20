@@ -858,32 +858,24 @@ namespace Shuryan.Application.Services
         #region Public Doctor Directory Operations
 
         /// <summary>
-        /// الحصول على قائمة الدكاترة مع pagination - معلومات مختصرة للعرض في القائمة
+        /// الحصول على قائمة الدكاترة مع pagination وفلترة - معلومات مختصرة للعرض في القائمة
         /// </summary>
-        public async Task<PaginatedResponse<DoctorListItemResponse>> GetDoctorsListAsync(PaginationParams paginationParams)
+        public async Task<PaginatedResponse<DoctorListItemResponse>> GetDoctorsListAsync(SearchDoctorsRequest searchRequest)
         {
             try
             {
-                _logger.LogInformation("Getting doctors list. Page: {Page}, Size: {Size}",
-                    paginationParams.PageNumber, paginationParams.PageSize);
+                _logger.LogInformation("Getting doctors list with filters. Page: {Page}, Size: {Size}, SearchTerm: {SearchTerm}, Specialty: {Specialty}, Governorate: {Governorate}, City: {City}, MinRating: {MinRating}, MinPrice: {MinPrice}, MaxPrice: {MaxPrice}, AvailableToday: {AvailableToday}",
+                    searchRequest.PageNumber, searchRequest.PageSize, searchRequest.SearchTerm, 
+                    searchRequest.Specialty ?? searchRequest.MedicalSpecialty, searchRequest.Governorate, 
+                    searchRequest.City, searchRequest.MinRating, searchRequest.MinPrice, searchRequest.MaxPrice, searchRequest.AvailableToday);
 
                 // جلب كل الدكاترة الموثقين فقط
                 var allDoctors = await _unitOfWork.Doctors.GetVerifiedDoctorsAsync();
-
-                // حساب الـ pagination
-                var totalCount = allDoctors.Count();
-                var totalPages = (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize);
-
-                // تطبيق الـ pagination
-                var paginatedDoctors = allDoctors
-                    .Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
-                    .Take(paginationParams.PageSize)
-                    .ToList();
-
-                // تحويل للـ response DTOs
+                
+                // تحويل للـ response DTOs مع حساب البيانات المطلوبة للفلترة
                 var doctorResponses = new List<DoctorListItemResponse>();
 
-                foreach (var doctor in paginatedDoctors)
+                foreach (var doctor in allDoctors)
                 {
                     // جلب معلومات العيادة والعنوان
                     var clinic = doctor.Clinic;
@@ -918,18 +910,94 @@ namespace Shuryan.Application.Services
                     });
                 }
 
-                _logger.LogInformation("Successfully retrieved {Count} doctors out of {Total}",
-                    doctorResponses.Count, totalCount);
+                // تطبيق الفلاتر
+                var filteredDoctors = doctorResponses.AsEnumerable();
+
+                // فلتر البحث بالاسم (SearchTerm)
+                if (!string.IsNullOrWhiteSpace(searchRequest.SearchTerm))
+                {
+                    var searchTerm = searchRequest.SearchTerm.Trim().ToLower();
+                    filteredDoctors = filteredDoctors.Where(d =>
+                        d.FirstName.ToLower().Contains(searchTerm) ||
+                        d.LastName.ToLower().Contains(searchTerm) ||
+                        d.FullName.ToLower().Contains(searchTerm));
+                }
+
+                // فلتر التخصص (Specialty or MedicalSpecialty)
+                var specialtyFilter = searchRequest.Specialty ?? searchRequest.MedicalSpecialty;
+                if (specialtyFilter.HasValue)
+                {
+                    filteredDoctors = filteredDoctors.Where(d => d.MedicalSpecialty == specialtyFilter.Value);
+                }
+
+                // فلتر المحافظة (Governorate)
+                if (searchRequest.Governorate.HasValue)
+                {
+                    var governorateName = searchRequest.Governorate.Value.GetDescription();
+                    filteredDoctors = filteredDoctors.Where(d => d.Governorate == governorateName);
+                }
+
+                // فلتر المدينة (City)
+                if (!string.IsNullOrWhiteSpace(searchRequest.City))
+                {
+                    var citySearch = searchRequest.City.Trim().ToLower();
+                    filteredDoctors = filteredDoctors.Where(d => 
+                        !string.IsNullOrEmpty(d.City) && d.City.ToLower().Contains(citySearch));
+                }
+
+                // فلتر التقييم الأدنى (MinRating)
+                if (searchRequest.MinRating.HasValue)
+                {
+                    filteredDoctors = filteredDoctors.Where(d => 
+                        d.AverageRating.HasValue && d.AverageRating.Value >= searchRequest.MinRating.Value);
+                }
+
+                // فلتر نطاق السعر (MinPrice / MaxPrice)
+                if (searchRequest.MinPrice.HasValue)
+                {
+                    filteredDoctors = filteredDoctors.Where(d => d.RegularConsultationFee >= searchRequest.MinPrice.Value);
+                }
+                if (searchRequest.MaxPrice.HasValue)
+                {
+                    filteredDoctors = filteredDoctors.Where(d => d.RegularConsultationFee <= searchRequest.MaxPrice.Value);
+                }
+
+                // فلتر المتاحين اليوم (AvailableToday)
+                if (searchRequest.AvailableToday.HasValue && searchRequest.AvailableToday.Value)
+                {
+                    var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+                    var nowEgypt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, egyptTimeZone);
+                    var todayEgypt = nowEgypt.Date;
+                    
+                    filteredDoctors = filteredDoctors.Where(d => 
+                        d.NextAvailableSlot.HasValue && d.NextAvailableSlot.Value.Date == todayEgypt);
+                }
+
+                // تحويل لقائمة بعد الفلترة
+                var filteredList = filteredDoctors.ToList();
+
+                // حساب الـ pagination
+                var totalCount = filteredList.Count;
+                var totalPages = (int)Math.Ceiling(totalCount / (double)searchRequest.PageSize);
+
+                // تطبيق الـ pagination
+                var paginatedDoctors = filteredList
+                    .Skip((searchRequest.PageNumber - 1) * searchRequest.PageSize)
+                    .Take(searchRequest.PageSize)
+                    .ToList();
+
+                _logger.LogInformation("Successfully retrieved {Count} doctors out of {Total} (after filtering)",
+                    paginatedDoctors.Count, totalCount);
 
                 return new PaginatedResponse<DoctorListItemResponse>
                 {
-                    PageNumber = paginationParams.PageNumber,
-                    PageSize = paginationParams.PageSize,
+                    PageNumber = searchRequest.PageNumber,
+                    PageSize = searchRequest.PageSize,
                     TotalCount = totalCount,
                     TotalPages = totalPages,
-                    HasPreviousPage = paginationParams.PageNumber > 1,
-                    HasNextPage = paginationParams.PageNumber < totalPages,
-                    Data = doctorResponses
+                    HasPreviousPage = searchRequest.PageNumber > 1,
+                    HasNextPage = searchRequest.PageNumber < totalPages,
+                    Data = paginatedDoctors
                 };
             }
             catch (Exception ex)
