@@ -38,7 +38,7 @@ namespace Shuryan.Application.Validators.Configuration.Appointment
 
             // Validate ConsultationType
             RuleFor(x => x.ConsultationType)
-                .Must(x => x == 0 || x == 1)
+                .Must(x => x == 1 || x == 2)
                 .WithMessage("نوع الاستشارة غير صحيح. يجب أن يكون 0 (كشف عادي) أو 1 (إعادة كشف)")
                 .WithErrorCode("CONSULTATION_TYPE_INVALID");
         }

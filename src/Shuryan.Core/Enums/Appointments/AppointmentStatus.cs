@@ -26,5 +26,8 @@ namespace Shuryan.Core.Enums.Appointments
 
         [Description("ملغي")]
         Cancelled = 6,
+
+        [Description("الدفع المعلق")]
+        PendingPayment = 7,
     }
 }

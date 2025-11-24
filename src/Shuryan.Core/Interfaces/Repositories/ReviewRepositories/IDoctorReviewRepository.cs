@@ -24,6 +24,11 @@ namespace Shuryan.Core.Interfaces.Repositories.ReviewRepositories
         
         // Get review with patient details
         Task<DoctorReview?> GetReviewByIdWithPatientAsync(Guid reviewId, Guid doctorId);
+        
+        /// <summary>
+        /// جلب متوسط التقييمات لمجموعة دكاترة دفعة واحدة (batch operation)
+        /// </summary>
+        Task<Dictionary<Guid, double?>> GetAverageRatingsForDoctorsAsync(IEnumerable<Guid> doctorIds);
     }
 }
 

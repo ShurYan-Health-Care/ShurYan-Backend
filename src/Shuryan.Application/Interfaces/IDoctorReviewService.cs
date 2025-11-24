@@ -9,6 +9,11 @@ namespace Shuryan.Application.Interfaces
     public interface IDoctorReviewService
     {
         /// <summary>
+        /// Create a new review for a doctor (Patient only)
+        /// </summary>
+        Task<DoctorReviewResponse> CreateReviewAsync(Guid patientId, CreateDoctorReviewRequest request);
+
+        /// <summary>
         /// Get paginated reviews for a doctor
         /// </summary>
         Task<PaginatedResponse<DoctorReviewListItemResponse>> GetDoctorReviewsAsync(Guid doctorId, PaginationParams paginationParams);
