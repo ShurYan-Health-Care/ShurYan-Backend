@@ -1147,7 +1147,7 @@ namespace Shuryan.Application.Services
                         DoctorName = p.Doctor != null ? $"{p.Doctor.FirstName} {p.Doctor.LastName}" : "Unknown",
                         DoctorSpecialty = p.Doctor != null ? GetMedicalSpecialtyDescription(p.Doctor.MedicalSpecialty) : "غير محدد",
                         DoctorProfileImageUrl = p.Doctor?.ProfileImageUrl,
-                        AppointmentType = p.Appointment?.PreviousAppointmentId.HasValue == true ? "followup" : "regular",
+                        AppointmentType = p.Appointment?.ConsultationType == Core.Enums.Appointments.ConsultationTypeEnum.FollowUp ? "followup" : "regular",
                         AppointmentId = p.AppointmentId
                     })
                     .ToList();

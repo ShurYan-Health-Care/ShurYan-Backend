@@ -1,4 +1,5 @@
 using Shuryan.API.Extensions;
+using Shuryan.API.Hubs;
 using Shuryan.Shared.Extensions;
 using SwaggerThemes;
 
@@ -29,6 +30,7 @@ builder.Services.AddValidation();
 #region API Configuration
 builder.Services.AddControllers();
 builder.Services.AddSwaggerDocumentation();
+builder.Services.AddSignalR();
 #endregion
 
 
@@ -50,5 +52,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

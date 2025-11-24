@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Shuryan.Core.Entities.Medical.Consultations;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
+using Shuryan.Core.Enums.Appointments;
 
 namespace Shuryan.Infrastructure.Repositories.Doctors
 {
@@ -28,6 +29,38 @@ namespace Shuryan.Infrastructure.Repositories.Doctors
             return await _dbSet
                 .Include(dc => dc.ConsultationType)
                 .FirstOrDefaultAsync(dc => dc.DoctorId == doctorId && dc.ConsultationTypeId == consultationTypeId);
+        }
+
+        public async Task<Dictionary<Guid, decimal>> GetRegularConsultationFeesForDoctorsAsync(IEnumerable<Guid> doctorIds)
+        {
+            var doctorIdsList = doctorIds.ToList();
+            
+            // جلب كل الـ consultations للدكاترة المطلوبين في query واحد
+            var consultations = await _dbSet
+                .Include(dc => dc.ConsultationType)
+                .Where(dc => doctorIdsList.Contains(dc.DoctorId) 
+                    && dc.ConsultationType.ConsultationTypeEnum == ConsultationTypeEnum.Regular)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // تحويل لـ Dictionary
+            var fees = consultations
+                .GroupBy(dc => dc.DoctorId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.First().ConsultationFee
+                );
+
+            // إضافة الدكاترة اللي ملهمش regular consultation بقيمة 0
+            foreach (var doctorId in doctorIdsList)
+            {
+                if (!fees.ContainsKey(doctorId))
+                {
+                    fees[doctorId] = 0;
+                }
+            }
+
+            return fees;
         }
     }
 }

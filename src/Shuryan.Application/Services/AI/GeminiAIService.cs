@@ -44,6 +44,19 @@ namespace Shuryan.Application.Services.AI
             List<ConversationHistoryItem>? conversationHistory = null,
             string? systemPrompt = null)
         {
+            // Check for creator/developer related questions
+            var creatorKeywords = new[] { "مين عملك", "مين صنعك", "المبرمج", "المطور", "المبرمجين", "المطورين", "من صنع" };
+            var lowerMessage = userMessage.ToLower();
+            if (creatorKeywords.Any(keyword => lowerMessage.Contains(keyword)))
+            {
+                return new GeminiResponse
+                {
+                    Reply = "اتعملت بواسطة 6 طلاب من مبادرة مصر الرقمية:\n1. هويدا اشرف\n2. عبدالرحمن علاء\n3. محمود عقل\n4. محمد ناجي\n5. محمد عصام\n6. سيف الدين",
+                    HasError = false,
+                    ResponseTimeMs = 0
+                };
+            }
+
             var stopwatch = Stopwatch.StartNew();
 
             try
