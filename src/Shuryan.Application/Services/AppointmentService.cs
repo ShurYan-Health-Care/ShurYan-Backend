@@ -25,6 +25,8 @@ namespace Shuryan.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<AppointmentService> _logger;
+        private readonly INotificationService _notificationService;
+        private readonly INotificationHubService _notificationHubService;
 
         public AppointmentService(
             IAppointmentRepository appointmentRepository,
@@ -33,7 +35,9 @@ namespace Shuryan.Application.Services
             IDoctorConsultationRepository doctorConsultationRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            ILogger<AppointmentService> logger)
+            ILogger<AppointmentService> logger,
+            INotificationService notificationService,
+            INotificationHubService notificationHubService)
         {
             _appointmentRepository = appointmentRepository;
             _doctorRepository = doctorRepository;
@@ -42,6 +46,8 @@ namespace Shuryan.Application.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _notificationService = notificationService;
+            _notificationHubService = notificationHubService;
         }
 
         #region Basic CRUD Operations
@@ -166,7 +172,7 @@ namespace Shuryan.Application.Services
                     ConsultationType = request.ConsultationType,
                     ConsultationFee = doctorConsultation.ConsultationFee,
                     SessionDurationMinutes = doctorConsultation.SessionDurationMinutes,
-                    Status = AppointmentStatus.Confirmed,
+                    Status = AppointmentStatus.PendingPayment,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -751,11 +757,11 @@ namespace Shuryan.Application.Services
                 if (scheduledStartTime < DateTime.Now)
                     throw new InvalidOperationException("You cannot book an appointment in the past.");
 
-                // 5. Validate consultationType (0 or 1)
-                if (request.ConsultationType != 0 && request.ConsultationType != 1)
-                    throw new ArgumentException("Consultation type is incorrect. Must be 0 (normal) or 1 (follow-up)");
+                // 5. Validate consultationType (1 or 2)
+                if (request.ConsultationType != 1 && request.ConsultationType != 2)
+                    throw new ArgumentException("Consultation type is incorrect. Must be 1 (Regular) or 2 (FollowUp)");
 
-                var consultationType = request.ConsultationType == 0 ? ConsultationTypeEnum.Regular : ConsultationTypeEnum.FollowUp;
+                var consultationType = request.ConsultationType == 1 ? ConsultationTypeEnum.Regular : ConsultationTypeEnum.FollowUp;
 
                 // 6. Get consultation pricing and duration
                 var consultationTypeEntity = await _unitOfWork.ConsultationTypes.GetByEnumAsync(consultationType);
@@ -799,6 +805,72 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully booked appointment {AppointmentId} for Patient {PatientId}",
                     appointment.Id, patientId);
 
+                // ==================== Send Real-time Appointment Data to Doctor ====================
+                // بنبعت الـ appointment data كاملة للدكتور عبر SignalR بس لو الحجز في نفس اليوم
+                try
+                {
+                    var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+                    var todayInEgypt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, egyptTimeZone).Date;
+                    var appointmentDateInEgypt = TimeZoneInfo.ConvertTimeFromUtc(scheduledStartTime, egyptTimeZone).Date;
+
+                    // لو الحجز في نفس اليوم، ابعت الـ appointment data للدكتور
+                    if (appointmentDateInEgypt == todayInEgypt)
+                    {
+                        // بناء الـ appointment DTO للإرسال
+                        var appointmentDto = new DTOs.Responses.Appointment.DoctorAppointmentResponse
+                        {
+                            Id = appointment.Id,
+                            PatientId = appointment.PatientId,
+                            PatientName = $"{patient.FirstName} {patient.LastName}",
+                            PatientPhoneNumber = patient.PhoneNumber,
+                            AppointmentDate = appointmentDate.ToString("yyyy-MM-dd"),
+                            AppointmentTime = request.AppointmentTime,
+                            Duration = durationMinutes,
+                            AppointmentType = consultationType == ConsultationTypeEnum.FollowUp ? "followup" : "regular",
+                            Status = appointment.Status,
+                            CreatedAt = appointment.CreatedAt,
+                            Notes = null,
+                            Price = appointment.ConsultationFee
+                        };
+
+                        // إرسال عبر SignalR Hub
+                        await _notificationHubService.SendNotificationToUserAsync(
+                            userId: request.DoctorId,
+                            title: "NewAppointmentToday", // Event name للـ Frontend
+                            message: $"حجز جديد من {patient.FirstName} {patient.LastName}",
+                            data: appointmentDto
+                        );
+
+                        // كمان نحفظ notification في الـ Database (للـ persistence)
+                        await _notificationService.SendNotificationAsync(
+                            userId: request.DoctorId,
+                            type: Core.Enums.Notifications.NotificationType.AppointmentConfirmed,
+                            title: "حجز جديد اليوم",
+                            message: $"المريض {patient.FirstName} {patient.LastName} حجز معاك موعد النهاردة الساعة {request.AppointmentTime}",
+                            relatedEntityId: appointment.Id,
+                            relatedEntityType: "Appointment",
+                            priority: Core.Enums.Notifications.NotificationPriority.High
+                        );
+
+                        _logger.LogInformation(
+                            "Sent real-time appointment data to Doctor {DoctorId} for same-day appointment {AppointmentId}",
+                            request.DoctorId, appointment.Id);
+                    }
+                    else
+                    {
+                        _logger.LogInformation(
+                            "Skipped real-time update for Doctor {DoctorId} - appointment {AppointmentId} is not today",
+                            request.DoctorId, appointment.Id);
+                    }
+                }
+                catch (Exception signalREx)
+                {
+                    // لو في مشكلة في إرسال الـ SignalR، ما نخليش ده يأثر على إنشاء الحجز
+                    _logger.LogError(signalREx, 
+                        "Failed to send real-time update to Doctor {DoctorId} for appointment {AppointmentId}. Appointment was created successfully.",
+                        request.DoctorId, appointment.Id);
+                }
+
                 // Return response
                 return new BookedAppointmentResponse
                 {
@@ -835,7 +907,7 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Doctor with ID {doctorId} not found");
 
                 // Get duration for this consultation type
-                var consultationTypeEnum = consultationType == 0 ? ConsultationTypeEnum.Regular : ConsultationTypeEnum.FollowUp;
+                var consultationTypeEnum = consultationType == 1 ? ConsultationTypeEnum.Regular : ConsultationTypeEnum.FollowUp;
                 var consultationTypeEntity = await _unitOfWork.ConsultationTypes.GetByEnumAsync(consultationTypeEnum);
 
                 if (consultationTypeEntity == null)
@@ -908,7 +980,7 @@ namespace Shuryan.Application.Services
                     AppointmentDate = a.ScheduledStartTime.ToString("yyyy-MM-dd"),
                     AppointmentTime = a.ScheduledStartTime.ToString("HH:mm:ss"),
                     Duration = a.SessionDurationMinutes,
-                    AppointmentType = a.PreviousAppointmentId.HasValue ? "followup" : "regular",
+                    AppointmentType = a.ConsultationType == ConsultationTypeEnum.FollowUp ? "followup" : "regular",
                     Status = a.Status,
                     CreatedAt = a.CreatedAt,
                     Notes = a.CancellationReason,

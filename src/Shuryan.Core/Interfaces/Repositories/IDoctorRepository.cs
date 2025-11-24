@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,5 +27,10 @@ namespace Shuryan.Core.Interfaces.Repositories
 			double? minRating = null
 		);
 		Task<bool> IsAvailableAtAsync(Guid doctorId, DateTime dateTime);
+		
+		/// <summary>
+		/// جلب الدكاترة الموثقين مع كل البيانات المطلوبة للـ list (optimized for performance)
+		/// </summary>
+		Task<IEnumerable<Doctor>> GetVerifiedDoctorsWithDetailsForListAsync();
 	}
 }

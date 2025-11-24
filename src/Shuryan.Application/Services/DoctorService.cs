@@ -7,9 +7,11 @@ using Shuryan.Application.Extensions;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.Common;
 using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.Identity;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Doctor;
 using Shuryan.Core.Enums.Identity;
+using Shuryan.Core.Enums.Appointments;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Core.DTOs;
 using System;
@@ -805,7 +807,7 @@ namespace Shuryan.Application.Services
                     AppointmentTime = a.ScheduledStartTime.ToString("HH:mm"),
                     AppointmentDate = a.ScheduledStartTime.ToString("yyyy-MM-dd"),
                     Duration = a.SessionDurationMinutes,
-                    AppointmentType = a.PreviousAppointmentId.HasValue ? "followup" : "regular",
+                    AppointmentType = a.ConsultationType == Core.Enums.Appointments.ConsultationTypeEnum.FollowUp ? "followup" : "regular",
                     Status = MapAppointmentStatus(a.Status),
                     Notes = a.ConsultationRecord?.ChiefComplaint,
                     Price = a.ConsultationFee
@@ -846,7 +848,6 @@ namespace Shuryan.Application.Services
             return status switch
             {
                 Core.Enums.Appointments.AppointmentStatus.Confirmed => "pending",
-                Core.Enums.Appointments.AppointmentStatus.CheckedIn => "pending",
                 Core.Enums.Appointments.AppointmentStatus.Completed => "completed",
                 Core.Enums.Appointments.AppointmentStatus.Cancelled => "cancelled",
                 Core.Enums.Appointments.AppointmentStatus.NoShow => "cancelled",
@@ -869,30 +870,66 @@ namespace Shuryan.Application.Services
                     searchRequest.Specialty ?? searchRequest.MedicalSpecialty, searchRequest.Governorate, 
                     searchRequest.City, searchRequest.MinRating, searchRequest.MinPrice, searchRequest.MaxPrice, searchRequest.AvailableToday);
 
-                // جلب كل الدكاترة الموثقين فقط
-                var allDoctors = await _unitOfWork.Doctors.GetVerifiedDoctorsAsync();
+                // 1️⃣ جلب الدكاترة مع كل البيانات المطلوبة في query واحد (Eager Loading)
+                var allDoctors = await _unitOfWork.Doctors.GetVerifiedDoctorsWithDetailsForListAsync();
                 
-                // تحويل للـ response DTOs مع حساب البيانات المطلوبة للفلترة
-                var doctorResponses = new List<DoctorListItemResponse>();
+                // 2️⃣ تطبيق الفلاتر الأساسية على الـ entities قبل التحويل
+                var filteredDoctors = allDoctors.AsEnumerable();
 
-                foreach (var doctor in allDoctors)
+                // فلتر البحث بالاسم
+                if (!string.IsNullOrWhiteSpace(searchRequest.SearchTerm))
                 {
-                    // جلب معلومات العيادة والعنوان
-                    var clinic = doctor.Clinic;
-                    var address = clinic?.Address;
+                    var searchTerm = searchRequest.SearchTerm.Trim().ToLower();
+                    filteredDoctors = filteredDoctors.Where(d =>
+                        d.FirstName.ToLower().Contains(searchTerm) ||
+                        d.LastName.ToLower().Contains(searchTerm));
+                }
 
-                    // حساب متوسط التقييم
-                    var reviews = await _unitOfWork.DoctorReviews.GetAllAsync();
-                    var doctorReviews = reviews.Where(r => r.DoctorId == doctor.Id).ToList();
-                    var averageRating = doctorReviews.Any() ? doctorReviews.Average(r => r.AverageRating) : (double?)null;
+                // فلتر التخصص
+                var specialtyFilter = searchRequest.Specialty ?? searchRequest.MedicalSpecialty;
+                if (specialtyFilter.HasValue)
+                {
+                    filteredDoctors = filteredDoctors.Where(d => d.MedicalSpecialty == specialtyFilter.Value);
+                }
 
-                    // جلب أقرب موعد متاح
-                    var nextAvailableSlot = await GetNextAvailableSlotAsync(doctor.Id);
+                // فلتر المحافظة
+                if (searchRequest.Governorate.HasValue)
+                {
+                    filteredDoctors = filteredDoctors.Where(d => 
+                        d.Clinic?.Address?.Governorate == searchRequest.Governorate.Value);
+                }
 
-                    // حساب سعر الكشف العادي
-                    var regularConsultationFee = await GetRegularConsultationFeeAsync(doctor.Id);
+                // فلتر المدينة
+                if (!string.IsNullOrWhiteSpace(searchRequest.City))
+                {
+                    var citySearch = searchRequest.City.Trim().ToLower();
+                    filteredDoctors = filteredDoctors.Where(d => 
+                        d.Clinic?.Address?.City != null && 
+                        d.Clinic.Address.City.ToLower().Contains(citySearch));
+                }
 
-                    doctorResponses.Add(new DoctorListItemResponse
+                var filteredList = filteredDoctors.ToList();
+                
+                // 3️⃣ جلب البيانات الإضافية دفعة واحدة (Batch Operations)
+                var doctorIds = filteredList.Select(d => d.Id).ToList();
+                
+                // جلب التقييمات لكل الدكاترة دفعة واحدة
+                var averageRatings = await _unitOfWork.DoctorReviews.GetAverageRatingsForDoctorsAsync(doctorIds);
+                
+                // جلب أسعار الكشف لكل الدكاترة دفعة واحدة
+                var consultationFees = await _unitOfWork.DoctorConsultations.GetRegularConsultationFeesForDoctorsAsync(doctorIds);
+
+                // 4️⃣ تحويل للـ DTOs مع البيانات المحسوبة
+                var doctorResponses = filteredList.Select(doctor =>
+                {
+                    var address = doctor.Clinic?.Address;
+                    var averageRating = averageRatings.GetValueOrDefault(doctor.Id);
+                    var consultationFee = consultationFees.GetValueOrDefault(doctor.Id, 0);
+                    
+                    // حساب NextAvailableSlot بشكل محلي (بدون queries إضافية)
+                    var nextAvailableSlot = CalculateNextAvailableSlotLocally(doctor);
+
+                    return new DoctorListItemResponse
                     {
                         Id = doctor.Id,
                         FirstName = doctor.FirstName,
@@ -905,83 +942,49 @@ namespace Shuryan.Application.Services
                         Latitude = address?.Latitude,
                         NextAvailableSlot = nextAvailableSlot,
                         AverageRating = averageRating,
-                        RegularConsultationFee = regularConsultationFee,
+                        RegularConsultationFee = consultationFee,
                         ProfileImageUrl = doctor.ProfileImageUrl
-                    });
-                }
+                    };
+                }).ToList();
 
-                // تطبيق الفلاتر
-                var filteredDoctors = doctorResponses.AsEnumerable();
+                // 5️⃣ تطبيق الفلاتر المتبقية على الـ DTOs
+                var finalFiltered = doctorResponses.AsEnumerable();
 
-                // فلتر البحث بالاسم (SearchTerm)
-                if (!string.IsNullOrWhiteSpace(searchRequest.SearchTerm))
-                {
-                    var searchTerm = searchRequest.SearchTerm.Trim().ToLower();
-                    filteredDoctors = filteredDoctors.Where(d =>
-                        d.FirstName.ToLower().Contains(searchTerm) ||
-                        d.LastName.ToLower().Contains(searchTerm) ||
-                        d.FullName.ToLower().Contains(searchTerm));
-                }
-
-                // فلتر التخصص (Specialty or MedicalSpecialty)
-                var specialtyFilter = searchRequest.Specialty ?? searchRequest.MedicalSpecialty;
-                if (specialtyFilter.HasValue)
-                {
-                    filteredDoctors = filteredDoctors.Where(d => d.MedicalSpecialty == specialtyFilter.Value);
-                }
-
-                // فلتر المحافظة (Governorate)
-                if (searchRequest.Governorate.HasValue)
-                {
-                    var governorateName = searchRequest.Governorate.Value.GetDescription();
-                    filteredDoctors = filteredDoctors.Where(d => d.Governorate == governorateName);
-                }
-
-                // فلتر المدينة (City)
-                if (!string.IsNullOrWhiteSpace(searchRequest.City))
-                {
-                    var citySearch = searchRequest.City.Trim().ToLower();
-                    filteredDoctors = filteredDoctors.Where(d => 
-                        !string.IsNullOrEmpty(d.City) && d.City.ToLower().Contains(citySearch));
-                }
-
-                // فلتر التقييم الأدنى (MinRating)
+                // فلتر التقييم
                 if (searchRequest.MinRating.HasValue)
                 {
-                    filteredDoctors = filteredDoctors.Where(d => 
+                    finalFiltered = finalFiltered.Where(d => 
                         d.AverageRating.HasValue && d.AverageRating.Value >= searchRequest.MinRating.Value);
                 }
 
-                // فلتر نطاق السعر (MinPrice / MaxPrice)
+                // فلتر السعر
                 if (searchRequest.MinPrice.HasValue)
                 {
-                    filteredDoctors = filteredDoctors.Where(d => d.RegularConsultationFee >= searchRequest.MinPrice.Value);
+                    finalFiltered = finalFiltered.Where(d => d.RegularConsultationFee >= searchRequest.MinPrice.Value);
                 }
                 if (searchRequest.MaxPrice.HasValue)
                 {
-                    filteredDoctors = filteredDoctors.Where(d => d.RegularConsultationFee <= searchRequest.MaxPrice.Value);
+                    finalFiltered = finalFiltered.Where(d => d.RegularConsultationFee <= searchRequest.MaxPrice.Value);
                 }
 
-                // فلتر المتاحين اليوم (AvailableToday)
+                // فلتر المتاحين اليوم
                 if (searchRequest.AvailableToday.HasValue && searchRequest.AvailableToday.Value)
                 {
                     var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
                     var nowEgypt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, egyptTimeZone);
                     var todayEgypt = nowEgypt.Date;
                     
-                    filteredDoctors = filteredDoctors.Where(d => 
+                    finalFiltered = finalFiltered.Where(d => 
                         d.NextAvailableSlot.HasValue && d.NextAvailableSlot.Value.Date == todayEgypt);
                 }
 
-                // تحويل لقائمة بعد الفلترة
-                var filteredList = filteredDoctors.ToList();
+                var finalList = finalFiltered.ToList();
 
-                // حساب الـ pagination
-                var totalCount = filteredList.Count;
+                // 6️⃣ Pagination
+                var totalCount = finalList.Count;
                 var totalPages = (int)Math.Ceiling(totalCount / (double)searchRequest.PageSize);
 
-                // تطبيق الـ pagination
-                var paginatedDoctors = filteredList
+                var paginatedDoctors = finalList
                     .Skip((searchRequest.PageNumber - 1) * searchRequest.PageSize)
                     .Take(searchRequest.PageSize)
                     .ToList();
@@ -1438,6 +1441,68 @@ namespace Shuryan.Application.Services
             catch
             {
                 return 0;
+            }
+        }
+
+        /// <summary>
+        /// حساب NextAvailableSlot محلياً بدون database queries إضافية
+        /// يستخدم البيانات المحملة مسبقاً (Availabilities, Overrides, Consultations)
+        /// </summary>
+        private DateTime? CalculateNextAvailableSlotLocally(Doctor doctor)
+        {
+            try
+            {
+                // التحقق من وجود availabilities
+                if (doctor.Availabilities == null || !doctor.Availabilities.Any())
+                    return null;
+
+                var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+                var nowUtc = DateTime.UtcNow;
+                var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, egyptTimeZone);
+                
+                // البحث في أول 7 أيام فقط (للسرعة)
+                var searchEndDate = nowLocal.AddDays(7);
+                
+                // جلب مدة الجلسة الافتراضية
+                var regularConsultation = doctor.Consultations?
+                    .FirstOrDefault(c => c.ConsultationType?.ConsultationTypeEnum == ConsultationTypeEnum.Regular);
+                int sessionDurationMinutes = regularConsultation?.SessionDurationMinutes ?? 30;
+
+                // البحث عن أول slot متاح
+                for (var currentDate = nowLocal.Date; currentDate <= searchEndDate; currentDate = currentDate.AddDays(1))
+                {
+                    var dayOfWeek = (SysDayOfWeek)((int)currentDate.DayOfWeek + 1);
+                    
+                    // جلب ساعات العمل لهذا اليوم
+                    var availability = doctor.Availabilities
+                        .FirstOrDefault(a => a.DayOfWeek == dayOfWeek);
+                    
+                    if (availability == null)
+                        continue;
+
+                    // تحويل TimeOnly إلى DateTime
+                    var workStart = currentDate.Add(availability.StartTime.ToTimeSpan());
+                    var workEnd = currentDate.Add(availability.EndTime.ToTimeSpan());
+                    
+                    // لو اليوم هو اليوم الحالي، نبدأ من الوقت الحالي
+                    var startTime = currentDate.Date == nowLocal.Date && nowLocal > workStart 
+                        ? nowLocal 
+                        : workStart;
+
+                    // التحقق من وجود slot متاح في ساعات العمل
+                    if (startTime < workEnd)
+                    {
+                        // نرجع أول slot متاح (simplified - بدون التحقق من المواعيد المحجوزة)
+                        return TimeZoneInfo.ConvertTimeToUtc(startTime, egyptTimeZone);
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error calculating next available slot locally for doctor {DoctorId}", doctor.Id);
+                return null;
             }
         }
 

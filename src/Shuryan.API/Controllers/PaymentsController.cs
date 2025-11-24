@@ -1,148 +1,207 @@
-//using System;
-//using System.Security.Claims;
-//using System.Threading.Tasks;
-//using Microsoft.AspNetCore.Authorization;
-//using Microsoft.AspNetCore.Http;
-//using Microsoft.AspNetCore.Mvc;
-//using Shuryan.Application.DTOs.Requests.Payment;
-//using Shuryan.Application.Interfaces;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Shuryan.Application.DTOs.Requests.Payment;
+using Shuryan.Application.Interfaces;
 
-//namespace Shuryan.API.Controllers
-//{
-//    [ApiController]
-//    [Route("api/[controller]")]
-//    [Authorize]
-//    public class PaymentsController : ControllerBase
-//    {
-//        private readonly IPaymentService _paymentService;
+namespace Shuryan.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class PaymentsController : ControllerBase
+    {
+        private readonly IPaymentProcessingService _paymentProcessingService;
 
-//        public PaymentsController(IPaymentService paymentService)
-//        {
-//            _paymentService = paymentService;
-//        }
+        public PaymentsController(IPaymentProcessingService paymentProcessingService)
+        {
+            _paymentProcessingService = paymentProcessingService;
+        }
 
-//        /// <summary>
-//        /// بدء عملية دفع جديدة
-//        /// </summary>
-//        [HttpPost("initiate")]
-//        [ProducesResponseType(StatusCodes.Status200OK)]
-//        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-//        [ProducesResponseType(StatusCodes.Status404NotFound)]
-//        public async Task<IActionResult> InitiatePayment([FromBody] InitiatePaymentRequest request)
-//        {
-//            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-//            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        /// <summary>
+        /// بدء عملية دفع لحجز موعد مع دكتور
+        /// </summary>
+        [HttpPost("appointments/{appointmentId}/initiate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> InitiateAppointmentPayment(
+            Guid appointmentId,
+            [FromBody] InitiateAppointmentPaymentRequest request,
+            CancellationToken cancellationToken)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var result = await _paymentProcessingService.InitiateAppointmentPaymentAsync(
+                userId,
+                appointmentId,
+                request.PaymentMethod,
+                request.PaymentType,
+                ipAddress,
+                cancellationToken);
+
+            return StatusCode(result.StatusCode ?? 500, result);
+        }
+
+        /// <summary>
+        /// بدء عملية دفع لطلب صيدلية
+        /// </summary>
+        [HttpPost("pharmacy-orders/{pharmacyOrderId}/initiate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> InitiatePharmacyOrderPayment(
+            Guid pharmacyOrderId,
+            [FromBody] InitiatePharmacyOrderPaymentRequest request,
+            CancellationToken cancellationToken)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var result = await _paymentProcessingService.InitiatePharmacyOrderPaymentAsync(
+                userId,
+                pharmacyOrderId,
+                request.PaymentMethod,
+                request.PaymentType,
+                ipAddress,
+                cancellationToken);
+
+            return StatusCode(result.StatusCode ?? 500, result);
+        }
+
+        /// <summary>
+        /// بدء عملية دفع لطلب معمل
+        /// </summary>
+        [HttpPost("lab-orders/{labOrderId}/initiate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> InitiateLabOrderPayment(
+            Guid labOrderId,
+            [FromBody] InitiateLabOrderPaymentRequest request,
+            CancellationToken cancellationToken)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var result = await _paymentProcessingService.InitiateLabOrderPaymentAsync(
+                userId,
+                labOrderId,
+                request.PaymentMethod,
+                request.PaymentType,
+                ipAddress,
+                cancellationToken);
+
+            return StatusCode(result.StatusCode ?? 500, result);
+        }
+
+        /// <summary>
+        /// Paymob Webhook - استقبال تحديثات حالة الدفع
+        /// </summary>
+        [HttpPost("webhook/paymob")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> PaymobWebhook(CancellationToken cancellationToken)
+        {
+            // Get HMAC from query string
+            var hmac = Request.Query["hmac"].ToString();
             
-//            var result = await _paymentService.InitiatePaymentAsync(userId, request, ipAddress);
-//            return StatusCode(result.StatusCode ?? 500, result);
-//        }
+            // Read webhook body
+            using var reader = new StreamReader(Request.Body);
+            var webhookJson = await reader.ReadToEndAsync(cancellationToken);
 
-//        /// <summary>
-//        /// تأكيد عملية الدفع
-//        /// </summary>
-//        [HttpPost("confirm")]
-//        [ProducesResponseType(StatusCodes.Status200OK)]
-//        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-//        [ProducesResponseType(StatusCodes.Status404NotFound)]
-//        public async Task<IActionResult> ConfirmPayment([FromBody] ConfirmPaymentRequest request)
-//        {
-//            var result = await _paymentService.ConfirmPaymentAsync(request);
-//            return StatusCode(result.StatusCode ?? 500, result);
-//        }
+            var result = await _paymentProcessingService.HandlePaymobWebhookAsync(
+                hmac,
+                webhookJson,
+                cancellationToken);
 
-//        /// <summary>
-//        /// إلغاء عملية دفع
-//        /// </summary>
-//        [HttpPost("{paymentId}/cancel")]
-//        [ProducesResponseType(StatusCodes.Status200OK)]
-//        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-//        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-//        [ProducesResponseType(StatusCodes.Status404NotFound)]
-//        public async Task<IActionResult> CancelPayment(Guid paymentId)
-//        {
-//            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-//            var result = await _paymentService.CancelPaymentAsync(paymentId, userId);
-//            return StatusCode(result.StatusCode ?? 500, result);
-//        }
+            return StatusCode(result.StatusCode ?? 500, result);
+        }
 
-//        /// <summary>
-//        /// استرجاع مبلغ (للإدارة فقط)
-//        /// </summary>
-//        [HttpPost("refund")]
-//        [Authorize(Roles = "Admin")]
-//        [ProducesResponseType(StatusCodes.Status200OK)]
-//        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-//        [ProducesResponseType(StatusCodes.Status404NotFound)]
-//        public async Task<IActionResult> RefundPayment([FromBody] RefundPaymentRequest request)
-//        {
-//            var adminUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-//            var result = await _paymentService.RefundPaymentAsync(request, adminUserId);
-//            return StatusCode(result.StatusCode ?? 500, result);
-//        }
+        /// <summary>
+        /// الحصول على تفاصيل عملية دفع
+        /// </summary>
+        [HttpGet("{paymentId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetPaymentById(
+            Guid paymentId,
+            CancellationToken cancellationToken)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _paymentProcessingService.GetPaymentByIdAsync(
+                paymentId,
+                userId,
+                cancellationToken);
 
-//        /// <summary>
-//        /// الحصول على تفاصيل عملية دفع
-//        /// </summary>
-//        [HttpGet("{paymentId}")]
-//        [ProducesResponseType(StatusCodes.Status200OK)]
-//        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-//        [ProducesResponseType(StatusCodes.Status404NotFound)]
-//        public async Task<IActionResult> GetPaymentById(Guid paymentId)
-//        {
-//            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-//            var result = await _paymentService.GetPaymentByIdAsync(paymentId, userId);
-//            return StatusCode(result.StatusCode ?? 500, result);
-//        }
+            return StatusCode(result.StatusCode ?? 500, result);
+        }
 
-//        /// <summary>
-//        /// الحصول على عمليات الدفع الخاصة بالمستخدم
-//        /// </summary>
-//        [HttpGet("my-payments")]
-//        [ProducesResponseType(StatusCodes.Status200OK)]
-//        public async Task<IActionResult> GetMyPayments([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-//        {
-//            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-//            var result = await _paymentService.GetUserPaymentsAsync(userId, pageNumber, pageSize);
-//            return StatusCode(result.StatusCode ?? 500, result);
-//        }
+        /// <summary>
+        /// إلغاء عملية دفع معلقة
+        /// </summary>
+        [HttpPost("{paymentId}/cancel")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CancelPayment(
+            Guid paymentId,
+            CancellationToken cancellationToken)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _paymentProcessingService.CancelPaymentAsync(
+                paymentId,
+                userId,
+                cancellationToken);
 
-//        /// <summary>
-//        /// الحصول على عمليات الدفع الخاصة بطلب معين
-//        /// </summary>
-//        [HttpGet("order/{orderType}/{orderId}")]
-//        [ProducesResponseType(StatusCodes.Status200OK)]
-//        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-//        public async Task<IActionResult> GetOrderPayments(string orderType, Guid orderId)
-//        {
-//            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-//            var result = await _paymentService.GetOrderPaymentsAsync(orderType, orderId, userId);
-//            return StatusCode(result.StatusCode ?? 500, result);
-//        }
+            return StatusCode(result.StatusCode ?? 500, result);
+        }
 
-//        /// <summary>
-//        /// Webhook لاستقبال ردود مزودي الدفع
-//        /// </summary>
-//        [HttpPost("callback/{provider}")]
-//        [AllowAnonymous]
-//        [ProducesResponseType(StatusCodes.Status200OK)]
-//        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-//        public async Task<IActionResult> PaymentCallback(string provider)
-//        {
-//            // Extract callback data from request
-//            var callbackData = new System.Collections.Generic.Dictionary<string, string>();
-            
-//            foreach (var key in Request.Form.Keys)
-//            {
-//                callbackData[key] = Request.Form[key].ToString();
-//            }
+        /// <summary>
+        /// اختبار يدوي للـ webhook (Development only)
+        /// </summary>
+        [HttpPost("{paymentId}/test-success")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> TestPaymentSuccess(
+            Guid paymentId,
+            CancellationToken cancellationToken)
+        {
+            var webhookJson = $$"""
+            {
+              "obj": {
+                "id": 123456789,
+                "success": true,
+                "pending": false,
+                "amount_cents": 10000,
+                "currency": "EGP",
+                "error_occured": false,
+                "has_parent_transaction": false,
+                "order": {
+                  "id": 987654321,
+                  "merchant_order_id": "{{paymentId}}"
+                },
+                "created_at": "2025-11-21T01:00:00.000000Z",
+                "transaction_processed_callback_responses": []
+              },
+              "type": "TRANSACTION"
+            }
+            """;
 
-//            foreach (var key in Request.Query.Keys)
-//            {
-//                callbackData[key] = Request.Query[key].ToString();
-//            }
+            var result = await _paymentProcessingService.HandlePaymobWebhookAsync(
+                "TEST_HMAC",
+                webhookJson,
+                cancellationToken);
 
-//            var result = await _paymentService.HandleProviderCallbackAsync(provider, callbackData);
-//            return StatusCode(result.StatusCode ?? 500, result);
-//        }
-//    }
-//}
+            return StatusCode(result.StatusCode ?? 500, result);
+        }
+    }
+}

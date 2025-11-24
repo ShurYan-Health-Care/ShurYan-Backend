@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.OpenApi.Models;
+using Shuryan.API.Services;
 using Shuryan.Application.Interfaces;
 using Shuryan.Application.Services;
 using Shuryan.Application.Services.AI;
@@ -28,6 +29,8 @@ namespace Shuryan.API.Extensions
             services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
             services.Configure<OAuthSettings>(configuration.GetSection("OAuthSettings"));
             services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
+            services.Configure<Shuryan.Core.Settings.PaymobSettings>(configuration.GetSection("Paymob"));
+            services.Configure<Shuryan.Core.Settings.FrontendSettings>(configuration.GetSection("FrontendSettings"));
 
             return services;
         }
@@ -102,14 +105,20 @@ namespace Shuryan.API.Extensions
             services.AddHttpClient<IGeminiAIService, GeminiAIService>();
             services.AddScoped<IChatService, ChatService>();
 
-            // Payment Service
+            // Payment Services
+            services.AddHttpClient<IPaymobService, PaymobService>();
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<IPaymentProcessingService, PaymentProcessingService>();
 
             // Pharmacy Profile Service
             services.AddScoped<IPharmacyProfileService, PharmacyProfileService>();
 
             // Review Services
             services.AddScoped<IDoctorReviewService, DoctorReviewService>();
+
+            // Notification Services
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<INotificationHubService, NotificationHubService>();
 
             return services;
         }
