@@ -7,6 +7,7 @@ using Shuryan.Application.DTOs.Responses.Session;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.Medical;
 using Shuryan.Core.Enums.Appointments;
+using Shuryan.Core.Enums.Notifications;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Core.Interfaces.UnitOfWork;
 
@@ -18,17 +19,20 @@ namespace Shuryan.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<SessionService> _logger;
+        private readonly INotificationService _notificationService;
 
         public SessionService(
             IAppointmentRepository appointmentRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            ILogger<SessionService> logger)
+            ILogger<SessionService> logger,
+            INotificationService notificationService)
         {
             _appointmentRepository = appointmentRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         public async Task<SessionResponse> StartSessionAsync(Guid appointmentId, Guid doctorId)
@@ -172,6 +176,36 @@ namespace Shuryan.Application.Services
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("Session ended successfully for Appointment {AppointmentId}", appointmentId);
+
+                // ==================== إرسال إشعار للمريض ====================
+
+                try
+                {
+                    var doctorName = appointment.Doctor != null 
+                        ? $"د. {appointment.Doctor.FirstName} {appointment.Doctor.LastName}"
+                        : "الدكتور";
+
+                    await _notificationService.SendNotificationAsync(
+                        userId: appointment.PatientId,
+                        type: NotificationType.AppointmentCompleted,
+                        title: "انتهت جلستك",
+                        message: $"تم إنهاء جلستك مع {doctorName} بنجاح",
+                        relatedEntityId: appointment.Id,
+                        relatedEntityType: "Appointment",
+                        priority: NotificationPriority.Normal
+                    );
+
+                    _logger.LogInformation(
+                        "Notification sent to Patient {PatientId} for completed Appointment {AppointmentId}",
+                        appointment.PatientId, appointmentId);
+                }
+                catch (Exception notifEx)
+                {
+                    // فشل الإشعار ما يمنعش إكمال العملية
+                    _logger.LogError(notifEx, 
+                        "Failed to send notification for completed Appointment {AppointmentId}", 
+                        appointmentId);
+                }
 
                 return new EndSessionResponse
                 {

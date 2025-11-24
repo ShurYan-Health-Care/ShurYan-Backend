@@ -186,6 +186,21 @@ namespace Shuryan.Infrastructure.Repositories.Doctors
 
             return doctors;
         }
+
+        public async Task<IEnumerable<Doctor>> GetVerifiedDoctorsWithDetailsForListAsync()
+        {
+            return await _dbSet
+                .Include(d => d.Clinic)
+                    .ThenInclude(c => c.Address)
+                .Include(d => d.Consultations)
+                    .ThenInclude(dc => dc.ConsultationType)
+                .Include(d => d.Availabilities.Where(a => !a.IsDeleted))
+                .Include(d => d.Overrides)
+                .Where(d => d.VerificationStatus == VerificationStatus.Verified && !d.IsDeleted)
+                .AsSplitQuery() // Avoid cartesian explosion - use multiple queries instead of one giant JOIN
+                .AsNoTracking() // Performance optimization - read-only
+                .ToListAsync();
+        }
     }
 }
 

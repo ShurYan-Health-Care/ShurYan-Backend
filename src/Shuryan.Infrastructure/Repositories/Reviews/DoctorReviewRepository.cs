@@ -111,6 +111,36 @@ namespace Shuryan.Infrastructure.Repositories.Reviews
                 .Include(r => r.Patient)
                 .FirstOrDefaultAsync(r => r.Id == reviewId && r.DoctorId == doctorId);
         }
+
+        public async Task<Dictionary<Guid, double?>> GetAverageRatingsForDoctorsAsync(IEnumerable<Guid> doctorIds)
+        {
+            var doctorIdsList = doctorIds.ToList();
+            
+            // جلب كل الـ reviews للدكاترة المطلوبين في query واحد
+            var reviews = await _dbSet
+                .Where(r => doctorIdsList.Contains(r.DoctorId))
+                .AsNoTracking()
+                .ToListAsync();
+
+            // حساب المتوسط لكل دكتور
+            var averageRatings = reviews
+                .GroupBy(r => r.DoctorId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => (double?)g.Average(r => r.AverageRating)
+                );
+
+            // إضافة الدكاترة اللي ملهمش reviews
+            foreach (var doctorId in doctorIdsList)
+            {
+                if (!averageRatings.ContainsKey(doctorId))
+                {
+                    averageRatings[doctorId] = null;
+                }
+            }
+
+            return averageRatings;
+        }
     }
 }
 
