@@ -272,11 +272,11 @@ namespace Shuryan.API.Controllers
             try
             {
                 var prescriptions = await _prescriptionService.GetPatientPrescriptionsListAsync(currentPatientId);
-                
+
                 _logger.LogInformation(
-                    "Retrieved {Count} prescriptions for patient profile: {PatientId}", 
+                    "Retrieved {Count} prescriptions for patient profile: {PatientId}",
                     prescriptions.Count(), currentPatientId);
-                
+
                 return Ok(prescriptions);
             }
             catch (ArgumentException ex)
@@ -293,96 +293,7 @@ namespace Shuryan.API.Controllers
 
         #endregion
 
-        #region Lab Orders
-
-        [HttpGet("lab-orders")]
-        [ProducesResponseType(typeof(IEnumerable<LabOrderResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<LabOrderResponse>>> GetMyLabOrders()
-        {
-            var currentPatientId = GetCurrentPatientId();
-
-            _logger.LogInformation("Get lab orders request for patient: {PatientId}", currentPatientId);
-
-            try
-            {
-                var labOrders = await _patientService.GetPatientLabOrdersAsync(currentPatientId);
-                _logger.LogInformation("Retrieved {Count} lab orders for patient: {PatientId}", labOrders.Count(), currentPatientId);
-                return Ok(labOrders);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Patient not found for lab orders: {PatientId}", currentPatientId);
-                return NotFound(new { Message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving lab orders for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving lab orders" });
-            }
-        }
-
-        [HttpGet("lab-orders/pending")]
-        [ProducesResponseType(typeof(IEnumerable<LabOrderResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<LabOrderResponse>>> GetMyPendingLabOrders()
-        {
-            var currentPatientId = GetCurrentPatientId();
-
-            _logger.LogInformation("Get pending lab orders request for patient: {PatientId}", currentPatientId);
-
-            try
-            {
-                var labOrders = await _patientService.GetPendingLabOrdersAsync(currentPatientId);
-                _logger.LogInformation("Retrieved {Count} pending lab orders for patient: {PatientId}", labOrders.Count(), currentPatientId);
-                return Ok(labOrders);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Patient not found for pending lab orders: {PatientId}", currentPatientId);
-                return NotFound(new { Message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving pending lab orders for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving pending lab orders" });
-            }
-        }
-
-        [HttpGet("lab-orders/{orderId}")]
-        [ProducesResponseType(typeof(LabOrderResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<LabOrderResponse>> GetLabOrderById(Guid orderId)
-        {
-            var currentPatientId = GetCurrentPatientId();
-
-            _logger.LogInformation("Get lab order by ID request for patient: {PatientId}, OrderId: {OrderId}", currentPatientId, orderId);
-
-            try
-            {
-                var labOrder = await _patientService.GetLabOrderByIdAsync(currentPatientId, orderId);
-                if (labOrder == null)
-                {
-                    _logger.LogWarning("Lab order not found: {OrderId} for patient: {PatientId}", orderId, currentPatientId);
-                    return NotFound(new { Message = $"Lab order with ID {orderId} not found" });
-                }
-
-                _logger.LogInformation("Lab order retrieved successfully: {OrderId} for patient: {PatientId}", orderId, currentPatientId);
-                return Ok(labOrder);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Patient not found for lab order: {PatientId}", currentPatientId);
-                return NotFound(new { Message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving lab order {OrderId} for patient: {PatientId}", orderId, currentPatientId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving lab order" });
-            }
-        }
-
-        #endregion
+        // Note: Lab Orders endpoints moved to PatientLabController
 
         #region Helper Methods
 

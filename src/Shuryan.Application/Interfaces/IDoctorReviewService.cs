@@ -32,6 +32,16 @@ namespace Shuryan.Application.Interfaces
         /// Reply to a review
         /// </summary>
         Task<DoctorReviewDetailsResponse> ReplyToReviewAsync(Guid reviewId, Guid doctorId, ReplyToReviewRequest request);
+
+        /// <summary>
+        /// Get paginated public reviews for a specific doctor (for patients to view)
+        /// </summary>
+        Task<PaginatedResponse<DoctorReviewListItemResponse>> GetPublicDoctorReviewsAsync(Guid doctorId, PaginationParams paginationParams);
+
+        /// <summary>
+        /// Get public review statistics for a specific doctor (for patients to view)
+        /// </summary>
+        Task<DoctorReviewStatisticsResponse> GetPublicReviewStatisticsAsync(Guid doctorId);
     }
 }
 

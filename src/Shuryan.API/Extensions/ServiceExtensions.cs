@@ -92,6 +92,7 @@ namespace Shuryan.API.Extensions
             services.AddScoped<ILaboratoryDocumentService, LaboratoryDocumentService>();
             services.AddScoped<ILabPrescriptionService, LabPrescriptionService>();
             services.AddScoped<ILabOrderService, LabOrderService>();
+            services.AddScoped<IPatientLabService, PatientLabService>();
 
             // Prescription Service
             services.AddScoped<IPrescriptionService, PrescriptionService>();
@@ -112,6 +113,9 @@ namespace Shuryan.API.Extensions
 
             // Pharmacy Profile Service
             services.AddScoped<IPharmacyProfileService, PharmacyProfileService>();
+
+            // Laboratory Profile Service
+            services.AddScoped<ILaboratoryProfileService, LaboratoryProfileService>();
 
             // Review Services
             services.AddScoped<IDoctorReviewService, DoctorReviewService>();

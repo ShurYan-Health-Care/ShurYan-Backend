@@ -32,7 +32,7 @@ namespace Shuryan.Application.Services
         {
             try
             {
-                _logger.LogInformation("Creating review for appointment {AppointmentId} by patient {PatientId}", 
+                _logger.LogInformation("Creating review for appointment {AppointmentId} by patient {PatientId}",
                     request.AppointmentId, patientId);
 
                 // 1. Validate appointment exists
@@ -46,7 +46,7 @@ namespace Shuryan.Application.Services
                 // 2. Validate patient owns this appointment
                 if (appointment.PatientId != patientId)
                 {
-                    _logger.LogWarning("Patient {PatientId} attempted to review appointment {AppointmentId} that doesn't belong to them", 
+                    _logger.LogWarning("Patient {PatientId} attempted to review appointment {AppointmentId} that doesn't belong to them",
                         patientId, request.AppointmentId);
                     throw new UnauthorizedAccessException("You can only review your own appointments");
                 }
@@ -54,7 +54,7 @@ namespace Shuryan.Application.Services
                 // 3. Validate appointment is completed
                 if (appointment.Status != Core.Enums.Appointments.AppointmentStatus.Completed)
                 {
-                    _logger.LogWarning("Attempted to review non-completed appointment {AppointmentId}. Status: {Status}", 
+                    _logger.LogWarning("Attempted to review non-completed appointment {AppointmentId}. Status: {Status}",
                         request.AppointmentId, appointment.Status);
                     throw new InvalidOperationException("You can only review completed appointments");
                 }
@@ -87,7 +87,7 @@ namespace Shuryan.Application.Services
                 await _unitOfWork.DoctorReviews.AddAsync(review);
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Review {ReviewId} created successfully for appointment {AppointmentId}", 
+                _logger.LogInformation("Review {ReviewId} created successfully for appointment {AppointmentId}",
                     review.Id, request.AppointmentId);
 
                 // 6. Return response
@@ -118,7 +118,7 @@ namespace Shuryan.Application.Services
         }
 
         public async Task<PaginatedResponse<DoctorReviewListItemResponse>> GetDoctorReviewsAsync(
-            Guid doctorId, 
+            Guid doctorId,
             PaginationParams paginationParams)
         {
             try
@@ -185,7 +185,7 @@ namespace Shuryan.Application.Services
             try
             {
                 var review = await _unitOfWork.DoctorReviews.GetReviewByIdWithPatientAsync(reviewId, doctorId);
-                
+
                 if (review == null)
                 {
                     _logger.LogWarning("Review {ReviewId} not found for doctor {DoctorId}", reviewId, doctorId);
@@ -219,14 +219,14 @@ namespace Shuryan.Application.Services
         }
 
         public async Task<DoctorReviewDetailsResponse> ReplyToReviewAsync(
-            Guid reviewId, 
-            Guid doctorId, 
+            Guid reviewId,
+            Guid doctorId,
             ReplyToReviewRequest request)
         {
             try
             {
                 var review = await _unitOfWork.DoctorReviews.GetReviewByIdWithPatientAsync(reviewId, doctorId);
-                
+
                 if (review == null)
                 {
                     _logger.LogWarning("Review {ReviewId} not found for doctor {DoctorId}", reviewId, doctorId);
@@ -262,6 +262,74 @@ namespace Shuryan.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error replying to review {ReviewId} for doctor {DoctorId}", reviewId, doctorId);
+                throw;
+            }
+        }
+
+        public async Task<PaginatedResponse<DoctorReviewListItemResponse>> GetPublicDoctorReviewsAsync(
+            Guid doctorId,
+            PaginationParams paginationParams)
+        {
+            try
+            {
+                _logger.LogInformation("Getting public reviews for doctor {DoctorId}, Page: {Page}, PageSize: {PageSize}",
+                    doctorId, paginationParams.PageNumber, paginationParams.PageSize);
+
+                var (reviews, totalCount) = await _unitOfWork.DoctorReviews
+                    .GetPaginatedReviewsByDoctorAsync(doctorId, paginationParams.PageNumber, paginationParams.PageSize);
+
+                var reviewItems = reviews.Select(review => new DoctorReviewListItemResponse
+                {
+                    ReviewId = review.Id,
+                    PatientId = review.IsAnonymous ? Guid.Empty : review.PatientId,
+                    PatientName = review.IsAnonymous ? "مريض مجهول" : $"{review.Patient.FirstName} {review.Patient.LastName}".Trim(),
+                    PatientProfileImage = review.IsAnonymous ? null : (review.Patient.ProfileImageUrl ?? review.Patient.ProfilePictureUrl),
+                    Rating = (int)Math.Round(review.AverageRating),
+                    Comment = review.Comment,
+                    CreatedAt = review.CreatedAt
+                }).ToList();
+
+                return new PaginatedResponse<DoctorReviewListItemResponse>
+                {
+                    Data = reviewItems,
+                    PageNumber = paginationParams.PageNumber,
+                    PageSize = paginationParams.PageSize,
+                    TotalCount = totalCount,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize),
+                    HasPreviousPage = paginationParams.PageNumber > 1,
+                    HasNextPage = paginationParams.PageNumber < (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving public reviews for doctor {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        public async Task<DoctorReviewStatisticsResponse> GetPublicReviewStatisticsAsync(Guid doctorId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting public review statistics for doctor {DoctorId}", doctorId);
+
+                var averageRating = await _unitOfWork.DoctorReviews.GetAverageRatingForDoctorAsync(doctorId);
+                var totalReviews = await _unitOfWork.DoctorReviews.GetReviewCountForDoctorAsync(doctorId);
+                var ratingDistribution = await _unitOfWork.DoctorReviews.GetRatingDistributionAsync(doctorId);
+
+                return new DoctorReviewStatisticsResponse
+                {
+                    AverageRating = Math.Round(averageRating, 1),
+                    TotalReviews = totalReviews,
+                    RatingDistribution = ratingDistribution.ToDictionary(
+                        kvp => kvp.Key.ToString(),
+                        kvp => kvp.Value
+                    )
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving public review statistics for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
