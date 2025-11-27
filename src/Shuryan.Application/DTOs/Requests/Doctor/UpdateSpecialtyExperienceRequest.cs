@@ -3,10 +3,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Shuryan.Application.DTOs.Requests.Doctor
 {
-    /// <summary>
-    /// Request DTO for updating doctor's specialty and years of experience
-    /// تحديث التخصص وسنوات الخبرة للدكتور
-    /// </summary>
     public class UpdateSpecialtyExperienceRequest
     {
         [Required(ErrorMessage = "Medical specialty is required")]

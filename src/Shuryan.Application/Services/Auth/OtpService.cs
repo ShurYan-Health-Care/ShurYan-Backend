@@ -31,13 +31,13 @@ namespace Shuryan.Application.Services.Auth
             _logger = logger;
         }
 
-        public async Task<string> GenerateAndStoreOtpAsync(Guid userId, string email, string verificationType, string? ipAddress = null)
+        public async Task<string> GenerateAndStoreOtpAsync(Guid userId, string email, VerificationTypes verificationType, string? ipAddress = null)
         {
             // Generate secure 6-digit OTP
             var otpCode = GenerateSecureOtp(_emailSettings.OtpLength);
 
             // Determine expiration based on verification type
-            var expirationMinutes = verificationType == Core.Entities.System.VerificationTypes.PasswordReset
+            var expirationMinutes = verificationType == VerificationTypes.PasswordReset
                 ? _emailSettings.PasswordResetOtpExpirationMinutes
                 : _emailSettings.VerificationOtpExpirationMinutes;
 
@@ -69,7 +69,7 @@ namespace Shuryan.Application.Services.Auth
             return otpCode;
         }
 
-        public async Task<bool> ValidateOtpAsync(string email, string otpCode, string verificationType)
+        public async Task<bool> ValidateOtpAsync(string email, string otpCode, VerificationTypes verificationType)
         {
             var verification = await _context.Set<EmailVerification>()
                 .Where(v => v.Email == email
@@ -132,7 +132,7 @@ namespace Shuryan.Application.Services.Auth
             return canResend;
         }
 
-        public async Task InvalidateAllOtpsAsync(Guid userId, string verificationType)
+        public async Task InvalidateAllOtpsAsync(Guid userId, VerificationTypes verificationType)
         {
             var existingOtps = await _context.Set<EmailVerification>()
                 .Where(v => v.UserId == userId

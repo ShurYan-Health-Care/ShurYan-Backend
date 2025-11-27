@@ -261,7 +261,8 @@ namespace Shuryan.API.Controllers
 
             try
             {
-                var result = await _authService.VerifyEmailAsync(dto);
+                var ipAddress = GetIpAddress();
+                var result = await _authService.VerifyEmailAsync(dto, ipAddress);
 
                 if (!result.IsSuccess)
                 {
@@ -367,22 +368,23 @@ namespace Shuryan.API.Controllers
             }
         }
 
-        [HttpPost("google-login")]
+        [HttpPost("google")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<object>>> GoogleLogin([FromBody] GoogleLoginRequest dto)
+        public async Task<ActionResult<ApiResponse<object>>> GoogleAuth([FromBody] GoogleLoginRequest dto)
         {
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Invalid Google login request");
+                _logger.LogWarning("Invalid Google auth request");
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
                 return BadRequest(ApiResponse<object>.Failure("Validation failed", errors, 400));
             }
 
-            _logger.LogInformation("Google login attempt");
+            _logger.LogInformation("Google auth attempt, UserType: {UserType}", dto.UserType ?? "null");
 
             try
             {
@@ -391,18 +393,22 @@ namespace Shuryan.API.Controllers
 
                 if (!result.IsSuccess)
                 {
-                    _logger.LogWarning("Google login failed: {Message}", result.Message);
+                    _logger.LogWarning("Google auth failed: {Message}, StatusCode: {StatusCode}", 
+                        result.Message, result.StatusCode);
                     return StatusCode(result.StatusCode ?? 401, result);
                 }
 
-                _logger.LogInformation("Google login successful, Status: {StatusCode}", result.StatusCode);
-                return StatusCode(result.StatusCode ?? 200, result);
+                // Success scenarios
+                var statusCode = result.StatusCode ?? 200;
+                _logger.LogInformation("Google auth successful, StatusCode: {StatusCode}", statusCode);
+                
+                return StatusCode(statusCode, result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during Google login");
+                _logger.LogError(ex, "Error during Google auth");
                 return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during Google login",
+                    "An unexpected error occurred during Google authentication",
                     new[] { ex.Message },
                     500
                 ));
@@ -620,6 +626,104 @@ namespace Shuryan.API.Controllers
                 _logger.LogError(ex, "Error during logout for user {UserId}", userId);
                 return StatusCode(500, ApiResponse<object>.Failure(
                     "An unexpected error occurred during logout",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+        #endregion
+
+        #region Account Management
+        
+        /// <summary>
+        /// [DEBUG ONLY] Delete account by email - NO AUTHENTICATION REQUIRED
+        /// ⚠️ WARNING: This endpoint is for DEBUGGING/TESTING only!
+        /// ⚠️ Remove this before production deployment!
+        /// </summary>
+        [HttpDelete("debug/delete-account-by-email")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> DebugDeleteAccountByEmail([FromBody] DeleteAccountRequest dto)
+        {
+            _logger.LogWarning("⚠️ DEBUG ENDPOINT: Delete account by email requested for: {Email}", dto.Email);
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(ApiResponse<object>.Failure("Validation failed", errors, 400));
+            }
+
+            try
+            {
+                // Call debug method that finds user by email internally
+                var result = await _authService.DebugDeleteAccountByEmailAsync(dto);
+
+                if (!result.IsSuccess)
+                {
+                    _logger.LogWarning("DEBUG: Delete account failed for {Email}: {Message}", dto.Email, result.Message);
+                    return StatusCode(result.StatusCode ?? 400, result);
+                }
+
+                _logger.LogWarning("⚠️ DEBUG: Account successfully deleted for email: {Email}", dto.Email);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DEBUG: Error during account deletion for {Email}", dto.Email);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred during account deletion",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        [Authorize]
+        [HttpDelete("delete-account")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountRequest dto)
+        {
+            var userId = GetCurrentUserId();
+
+            if (userId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized delete account attempt");
+                return Unauthorized(ApiResponse<object>.Failure("User not authenticated", statusCode: 401));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid delete account request for user: {UserId}", userId);
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(ApiResponse<object>.Failure("Validation failed", errors, 400));
+            }
+
+            _logger.LogWarning("Delete account attempt for user: {UserId}, Email: {Email}", userId, dto.Email);
+
+            try
+            {
+                var result = await _authService.DeleteAccountAsync(userId, dto);
+
+                if (!result.IsSuccess)
+                {
+                    _logger.LogWarning("Delete account failed for user {UserId}: {Message}", userId, result.Message);
+                    return StatusCode(result.StatusCode ?? 400, result);
+                }
+
+                _logger.LogWarning("Account successfully deleted for user: {UserId}, Email: {Email}", userId, dto.Email);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during account deletion for user {UserId}", userId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred during account deletion",
                     new[] { ex.Message },
                     500
                 ));

@@ -39,19 +39,11 @@ namespace Shuryan.Core.Entities.System
         public string? RequestedFromIp { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string VerificationType { get; set; } = "EmailVerification";
+        public VerificationTypes VerificationType { get; set; } = VerificationTypes.EmailVerification;
 
         // Navigation Property
         public virtual User User { get; set; } = null!;
 
         public bool IsValid => !IsUsed && DateTime.UtcNow < ExpiresAt && AttemptCount < 5;
-    }
-
-
-    public static class VerificationTypes
-    {
-        public const string EmailVerification = "EmailVerification";
-        public const string PasswordReset = "PasswordReset";
     }
 }
