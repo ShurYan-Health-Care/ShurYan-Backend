@@ -20,7 +20,7 @@ namespace Shuryan.Application.Interfaces
         #endregion
 
         #region Email Verification
-        Task<ApiResponse<bool>> VerifyEmailAsync(VerifyEmailRequest dto);
+        Task<ApiResponse<AuthResponseDto>> VerifyEmailAsync(VerifyEmailRequest dto, string? ipAddress = null);
         Task<ApiResponse<bool>> ResendVerificationOtpAsync(ResendOtpRequest dto);
         #endregion
 
@@ -45,6 +45,11 @@ namespace Shuryan.Application.Interfaces
 
         #region User Info
         Task<ApiResponse<UserInfoDto>> GetCurrentUserAsync(Guid userId);
+        #endregion
+
+        #region Account Management
+        Task<ApiResponse<bool>> DeleteAccountAsync(Guid userId, DeleteAccountRequest dto);
+        Task<ApiResponse<bool>> DebugDeleteAccountByEmailAsync(DeleteAccountRequest dto);
         #endregion
     }
 }
