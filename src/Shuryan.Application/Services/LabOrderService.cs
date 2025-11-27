@@ -339,5 +339,72 @@ namespace Shuryan.Application.Services
             }
         }
         #endregion
+
+        #region Get Orders By Prescription
+        public async Task<IEnumerable<LabOrderResponse>> GetLabOrdersByPrescriptionAsync(Guid prescriptionId)
+        {
+            try
+            {
+                var orders = await _unitOfWork.LabOrders.GetAllAsync();
+                var filteredOrders = orders.Where(o => o.LabPrescriptionId == prescriptionId);
+
+                var responses = new List<LabOrderResponse>();
+                foreach (var order in filteredOrders)
+                {
+                    var response = await GetLabOrderByIdAsync(order.Id);
+                    if (response != null)
+                    {
+                        responses.Add(response);
+                    }
+                }
+
+                _logger.LogInformation("Retrieved {Count} lab orders for prescription {PrescriptionId}", responses.Count, prescriptionId);
+                return responses;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting lab orders for prescription {PrescriptionId}", prescriptionId);
+                throw;
+            }
+        }
+        #endregion
+
+        #region Get Lab Results
+        public async Task<IEnumerable<LabResultResponse>> GetLabResultsAsync(Guid labOrderId)
+        {
+            try
+            {
+                var results = await _unitOfWork.LabResults.GetResultsByLabOrderAsync(labOrderId);
+                var responses = new List<LabResultResponse>();
+
+                foreach (var result in results)
+                {
+                    var labTest = await _unitOfWork.LabTests.GetByIdAsync(result.LabTestId);
+                    responses.Add(new LabResultResponse
+                    {
+                        Id = result.Id,
+                        LabOrderId = result.LabOrderId,
+                        LabTestId = result.LabTestId,
+                        TestName = labTest?.Name ?? string.Empty,
+                        TestCode = labTest?.Code ?? string.Empty,
+                        ResultValue = result.ResultValue,
+                        ReferenceRange = result.ReferenceRange,
+                        Unit = result.Unit,
+                        Notes = result.Notes,
+                        AttachmentUrl = result.AttachmentUrl,
+                        CreatedAt = result.CreatedAt
+                    });
+                }
+
+                _logger.LogInformation("Retrieved {Count} results for lab order {OrderId}", responses.Count, labOrderId);
+                return responses;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting results for lab order {OrderId}", labOrderId);
+                throw;
+            }
+        }
+        #endregion
     }
 }

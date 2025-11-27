@@ -37,6 +37,16 @@ namespace Shuryan.Application.Interfaces
         Task<IEnumerable<LabOrderResponse>> GetLaboratoryLabOrdersAsync(Guid laboratoryId);
 
         /// <summary>
+        /// Get lab orders by prescription ID
+        /// </summary>
+        Task<IEnumerable<LabOrderResponse>> GetLabOrdersByPrescriptionAsync(Guid prescriptionId);
+
+        /// <summary>
+        /// Get lab results for an order
+        /// </summary>
+        Task<IEnumerable<LabResultResponse>> GetLabResultsAsync(Guid labOrderId);
+
+        /// <summary>
         /// Create a new lab order
         /// </summary>
         Task<LabOrderResponse> CreateLabOrderAsync(CreateLabOrderRequest request);

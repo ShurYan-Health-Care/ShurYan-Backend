@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Shuryan.Application.DTOs.Common.Base;
+using Shuryan.Application.DTOs.Common.Pagination;
 using Shuryan.Application.DTOs.Requests.Review;
 using Shuryan.Application.DTOs.Responses.Review;
 using Shuryan.Application.Interfaces;
@@ -121,6 +122,109 @@ namespace Shuryan.API.Controllers
                 _logger.LogError(ex, "Error creating review for patient {PatientId}", currentPatientId);
                 return StatusCode(500, ApiResponse<object>.Failure(
                     "An unexpected error occurred while creating the review",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// Get all reviews for a specific doctor (public reviews from previous patients)
+        /// </summary>
+        /// <param name="doctorId">The doctor's ID</param>
+        /// <param name="paginationParams">Pagination parameters</param>
+        /// <returns>Paginated list of doctor reviews</returns>
+        [HttpGet("doctors/{doctorId}/reviews")]
+        [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<DoctorReviewListItemResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<DoctorReviewListItemResponse>>>> GetDoctorReviews(
+            Guid doctorId,
+            [FromQuery] PaginationParams paginationParams)
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to get doctor reviews - invalid token");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "Invalid or missing authentication token",
+                    statusCode: 401
+                ));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid pagination parameters for doctor reviews");
+                return BadRequest(ApiResponse<object>.Failure(
+                    "Invalid pagination parameters",
+                    statusCode: 400
+                ));
+            }
+
+            _logger.LogInformation("Patient {PatientId} requesting reviews for doctor {DoctorId}, Page: {Page}, PageSize: {PageSize}",
+                currentPatientId, doctorId, paginationParams.PageNumber, paginationParams.PageSize);
+
+            try
+            {
+                var result = await _reviewService.GetPublicDoctorReviewsAsync(doctorId, paginationParams);
+                return Ok(ApiResponse<PaginatedResponse<DoctorReviewListItemResponse>>.Success(
+                    result,
+                    "Doctor reviews retrieved successfully"
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving reviews for doctor {DoctorId} by patient {PatientId}",
+                    doctorId, currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving doctor reviews",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// Get review statistics for a specific doctor
+        /// </summary>
+        /// <param name="doctorId">The doctor's ID</param>
+        /// <returns>Doctor review statistics</returns>
+        [HttpGet("doctors/{doctorId}/reviews/statistics")]
+        [ProducesResponseType(typeof(ApiResponse<DoctorReviewStatisticsResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<DoctorReviewStatisticsResponse>>> GetDoctorReviewStatistics(Guid doctorId)
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to get doctor review statistics - invalid token");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "Invalid or missing authentication token",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Patient {PatientId} requesting review statistics for doctor {DoctorId}",
+                currentPatientId, doctorId);
+
+            try
+            {
+                var result = await _reviewService.GetPublicReviewStatisticsAsync(doctorId);
+                return Ok(ApiResponse<DoctorReviewStatisticsResponse>.Success(
+                    result,
+                    "Doctor review statistics retrieved successfully"
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving review statistics for doctor {DoctorId} by patient {PatientId}",
+                    doctorId, currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving doctor review statistics",
                     new[] { ex.Message },
                     500
                 ));
