@@ -101,7 +101,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     patient.Id,
                     patient.Email,
-                    Core.Entities.System.VerificationTypes.EmailVerification,
+                    VerificationTypes.EmailVerification,
                     ipAddress);
 
                 await _emailService.SendVerificationOtpAsync(
@@ -172,7 +172,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     doctor.Id,
                     doctor.Email,
-                    Core.Entities.System.VerificationTypes.EmailVerification,
+                    VerificationTypes.EmailVerification,
                     ipAddress);
 
                 await _emailService.SendVerificationOtpAsync(
@@ -238,7 +238,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     laboratory.Id,
                     laboratory.Email,
-                    Core.Entities.System.VerificationTypes.EmailVerification,
+                    VerificationTypes.EmailVerification,
                     ipAddress);
 
                 await _emailService.SendVerificationOtpAsync(
@@ -306,7 +306,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     pharmacy.Id,
                     pharmacy.Email,
-                    Core.Entities.System.VerificationTypes.EmailVerification,
+                    VerificationTypes.EmailVerification,
                     ipAddress);
 
                 await _emailService.SendVerificationOtpAsync(
@@ -385,7 +385,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     verifier.Id,
                     verifier.Email,
-                    Core.Entities.System.VerificationTypes.EmailVerification,
+                    VerificationTypes.EmailVerification,
                     ipAddress);
 
                 await _emailService.SendVerificationOtpAsync(
@@ -418,7 +418,7 @@ namespace Shuryan.Application.Services.Auth
 
         #region Email Verification
 
-        public async Task<ApiResponse<bool>> VerifyEmailAsync(VerifyEmailRequest dto)
+        public async Task<ApiResponse<AuthResponseDto>> VerifyEmailAsync(VerifyEmailRequest dto, string? ipAddress = null)
         {
             try
             {
@@ -426,11 +426,11 @@ namespace Shuryan.Application.Services.Auth
                 var isValid = await _otpService.ValidateOtpAsync(
                     dto.Email,
                     dto.OtpCode,
-                    Core.Entities.System.VerificationTypes.EmailVerification);
+                    VerificationTypes.EmailVerification);
 
                 if (!isValid)
                 {
-                    return ApiResponse<bool>.Failure(
+                    return ApiResponse<AuthResponseDto>.Failure(
                         "Invalid or expired OTP code",
                         new[] { "Please check your code or request a new one" },
                         400);
@@ -440,11 +440,13 @@ namespace Shuryan.Application.Services.Auth
                 var user = await _userManager.FindByEmailAsync(dto.Email);
                 if (user == null)
                 {
-                    return ApiResponse<bool>.Failure("User not found", null, 404);
+                    return ApiResponse<AuthResponseDto>.Failure("User not found", null, 404);
                 }
 
                 user.EmailConfirmed = true;
                 user.EmailVerifiedAt = DateTime.UtcNow;
+                user.LastLoginAt = DateTime.UtcNow;
+                user.LastLoginIp = ipAddress;
                 await _userManager.UpdateAsync(user);
 
                 // Send welcome email
@@ -452,14 +454,18 @@ namespace Shuryan.Application.Services.Auth
 
                 _logger.LogInformation("Email verified successfully for user: {Email}", dto.Email);
 
-                return ApiResponse<bool>.Success(
-                    true,
-                    "Email verified successfully! Welcome to Shuryan Healthcare.");
+                // Generate tokens
+                var authResponse = await GenerateAuthResponseAsync(user, ipAddress);
+
+                return ApiResponse<AuthResponseDto>.Success(
+                    authResponse,
+                    "Email verified successfully! Welcome to Shuryan Healthcare.",
+                    200);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during email verification");
-                return ApiResponse<bool>.Failure(
+                return ApiResponse<AuthResponseDto>.Failure(
                     "An error occurred during verification",
                     new[] { ex.Message },
                     500);
@@ -501,7 +507,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     user.Id,
                     user.Email,
-                    Core.Entities.System.VerificationTypes.EmailVerification);
+                    VerificationTypes.EmailVerification);
 
                 await _emailService.SendVerificationOtpAsync(
                     user.Email,
@@ -543,6 +549,15 @@ namespace Shuryan.Application.Services.Auth
                 if (user.IsDeleted)
                 {
                     return ApiResponse<AuthResponseDto>.Failure("Account deactivated", new[] { "This account has been deactivated" }, 403);
+                }
+
+                // Check email verification (except for OAuth accounts)
+                if (!user.EmailConfirmed && !user.IsOAuthAccount)
+                {
+                    return ApiResponse<AuthResponseDto>.Failure(
+                        "Email not verified",
+                        new[] { "Please verify your email before logging in. Check your inbox for the verification code." },
+                        403);
                 }
 
                 // Check lockout
@@ -592,8 +607,6 @@ namespace Shuryan.Application.Services.Auth
             }
         }
 
-        #endregion
-
         #region Google OAuth
 
         public async Task<ApiResponse<AuthResponseDto>> GoogleLoginAsync(
@@ -617,7 +630,10 @@ namespace Shuryan.Application.Services.Auth
 
                 if (user != null)
                 {
-                    // Existing user - login
+                    // ==========================================
+                    // Scenario 1: User Exists (Returning User)
+                    // ==========================================
+                    
                     if (user.IsDeleted)
                     {
                         return ApiResponse<AuthResponseDto>.Failure(
@@ -654,11 +670,45 @@ namespace Shuryan.Application.Services.Auth
                 }
                 else
                 {
-                    // New user - register
-                    var userRole = string.IsNullOrEmpty(dto.UserRole)
-                        ? UserRole.Patient
-                        : Enum.Parse<UserRole>(dto.UserRole, true);
+                    // ==========================================
+                    // New User - Check if UserType is provided
+                    // ==========================================
+                    
+                    if (string.IsNullOrEmpty(dto.UserType))
+                    {
+                        // ==========================================
+                        // Scenario 2: User Not Found, No Type Provided
+                        // Return 404 to prompt user type selection
+                        // ==========================================
+                        
+                        _logger.LogInformation("New Google user, awaiting user type selection: {Email}", googleUser.Email);
+                        
+                        return ApiResponse<AuthResponseDto>.Failure(
+                            "User not found. Please select user type to register.",
+                            new[] { "New user detected. User type selection required." },
+                            404);
+                    }
 
+                    // ==========================================
+                    // Scenario 3: New User, Type Provided
+                    // Register the user
+                    // ==========================================
+                    
+                    // Parse user type
+                    UserRole userRole;
+                    try
+                    {
+                        userRole = Enum.Parse<UserRole>(dto.UserType, true);
+                    }
+                    catch
+                    {
+                        return ApiResponse<AuthResponseDto>.Failure(
+                            "Invalid user type",
+                            new[] { "User type must be one of: Patient, Doctor, Pharmacy, Laboratory" },
+                            400);
+                    }
+
+                    // Create appropriate user entity based on role
                     User newUser = userRole switch
                     {
                         UserRole.Doctor => new Doctor
@@ -666,6 +716,36 @@ namespace Shuryan.Application.Services.Auth
                             Id = Guid.NewGuid(),
                             FirstName = googleUser.GivenName,
                             LastName = googleUser.FamilyName,
+                            Email = googleUser.Email,
+                            UserName = googleUser.Email,
+                            EmailConfirmed = true,
+                            EmailVerifiedAt = DateTime.UtcNow,
+                            IsOAuthAccount = true,
+                            OAuthProvider = "Google",
+                            OAuthProviderId = googleUser.Sub,
+                            ProfilePictureUrl = googleUser.Picture,
+                            VerificationStatus = VerificationStatus.Unverified,
+                            CreatedAt = DateTime.UtcNow
+                        },
+                        UserRole.Pharmacy => new Pharmacy
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = googleUser.Name,
+                            Email = googleUser.Email,
+                            UserName = googleUser.Email,
+                            EmailConfirmed = true,
+                            EmailVerifiedAt = DateTime.UtcNow,
+                            IsOAuthAccount = true,
+                            OAuthProvider = "Google",
+                            OAuthProviderId = googleUser.Sub,
+                            ProfilePictureUrl = googleUser.Picture,
+                            VerificationStatus = VerificationStatus.Unverified,
+                            CreatedAt = DateTime.UtcNow
+                        },
+                        UserRole.Laboratory => new Laboratory
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = googleUser.Name,
                             Email = googleUser.Email,
                             UserName = googleUser.Email,
                             EmailConfirmed = true,
@@ -709,11 +789,11 @@ namespace Shuryan.Application.Services.Auth
                     await _userManager.AddToRoleAsync(newUser, userRole.ToString());
 
                     // Send welcome email
-                    await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.FirstName);
+                    await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.FirstName ?? newUser.Email);
 
                     var authResponse = await GenerateAuthResponseAsync(newUser, ipAddress);
 
-                    _logger.LogInformation("New user registered via Google: {Email}", newUser.Email);
+                    _logger.LogInformation("New user registered via Google: {Email}, Role: {Role}", newUser.Email, userRole);
 
                     return ApiResponse<AuthResponseDto>.Success(
                         authResponse,
@@ -731,6 +811,7 @@ namespace Shuryan.Application.Services.Auth
             }
         }
 
+        #endregion
         #endregion
 
         #region Password Reset
@@ -765,7 +846,7 @@ namespace Shuryan.Application.Services.Auth
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
                     user.Id,
                     user.Email,
-                    Core.Entities.System.VerificationTypes.PasswordReset);
+                    VerificationTypes.PasswordReset);
 
                 await _emailService.SendPasswordResetOtpAsync(
                     user.Email,
@@ -797,7 +878,7 @@ namespace Shuryan.Application.Services.Auth
                 var isValid = await _otpService.ValidateOtpAsync(
                     dto.Email,
                     dto.OtpCode,
-                    Core.Entities.System.VerificationTypes.PasswordReset);
+                    VerificationTypes.PasswordReset);
 
                 if (!isValid)
                 {
@@ -1115,6 +1196,7 @@ namespace Shuryan.Application.Services.Auth
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Roles = roles,
+                Role = roles.FirstOrDefault() ?? string.Empty, // Primary role for frontend
                 ProfileImage = user is ProfileUser pUser ? (pUser.ProfileImageUrl ?? user.ProfilePictureUrl) : user.ProfilePictureUrl,
                 AdditionalInfo = new Dictionary<string, object>
                 {
@@ -1164,6 +1246,133 @@ namespace Shuryan.Application.Services.Auth
                     UserRole = role
                 };
                 await _roleManager.CreateAsync(newRole);
+            }
+        }
+
+        #endregion
+
+        #region Account Management
+
+        public async Task<ApiResponse<bool>> DeleteAccountAsync(Guid userId, DeleteAccountRequest dto)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId.ToString());
+
+                if (user == null || user.IsDeleted)
+                {
+                    return ApiResponse<bool>.Failure("User not found", null, 404);
+                }
+
+                // Verify email matches
+                if (!user.Email.Equals(dto.Email, StringComparison.OrdinalIgnoreCase))
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Email does not match",
+                        new[] { "The email you provided does not match your account email" },
+                        400);
+                }
+
+                // Password verification based on account type
+                if (!user.IsOAuthAccount)
+                {
+                    // Non-OAuth accounts MUST provide password
+                    if (string.IsNullOrEmpty(dto.Password))
+                    {
+                        return ApiResponse<bool>.Failure(
+                            "Password required",
+                            new[] { "Password is required for non-OAuth accounts" },
+                            400);
+                    }
+
+                    var passwordValid = await _userManager.CheckPasswordAsync(user, dto.Password);
+                    if (!passwordValid)
+                    {
+                        return ApiResponse<bool>.Failure(
+                            "Invalid password",
+                            new[] { "The password you provided is incorrect" },
+                            401);
+                    }
+                }
+                // OAuth accounts (Google, etc.) don't need password verification
+
+                // Verify confirmation text
+                if (!dto.ConfirmationText.Trim().Equals("DELETE", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ApiResponse<bool>.Failure(
+                        "Invalid confirmation",
+                        new[] { "You must type 'DELETE' to confirm account deletion" },
+                        400);
+                }
+
+                _logger.LogWarning("ACCOUNT DELETION: Starting permanent deletion for user {UserId}, Email: {Email}", 
+                    userId, user.Email);
+
+                // HARD DELETE - Remove all user data permanently
+                
+                // 1. Delete all refresh tokens
+                await _unitOfWork.RefreshTokens.RevokeAllUserTokensAsync(userId, "Account deleted");
+                
+                // 2. Delete the user from Identity
+                var deleteResult = await _userManager.DeleteAsync(user);
+                
+                if (!deleteResult.Succeeded)
+                {
+                    _logger.LogError("Failed to delete user {UserId}: {Errors}", 
+                        userId, 
+                        string.Join(", ", deleteResult.Errors.Select(e => e.Description)));
+                    
+                    return ApiResponse<bool>.Failure(
+                        "Account deletion failed",
+                        deleteResult.Errors.Select(e => e.Description),
+                        500);
+                }
+
+                _logger.LogWarning("ACCOUNT DELETION: Successfully deleted user {UserId}, Email: {Email}", 
+                    userId, user.Email);
+
+                return ApiResponse<bool>.Success(
+                    true,
+                    "Account permanently deleted. You can now create a new account with the same email.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during account deletion for user {UserId}", userId);
+                return ApiResponse<bool>.Failure(
+                    "An error occurred while deleting your account",
+                    new[] { ex.Message },
+                    500);
+            }
+        }
+
+        /// <summary>
+        /// [DEBUG ONLY] Delete account by email without authentication
+        /// ⚠️ WARNING: For debugging/testing only! Remove before production!
+        /// </summary>
+        public async Task<ApiResponse<bool>> DebugDeleteAccountByEmailAsync(DeleteAccountRequest dto)
+        {
+            try
+            {
+                _logger.LogWarning("⚠️ DEBUG METHOD: Delete account by email: {Email}", dto.Email);
+
+                // Find user by email
+                var user = await _userManager.FindByEmailAsync(dto.Email);
+
+                if (user == null || user.IsDeleted)
+                {
+                    return ApiResponse<bool>.Failure("User not found", null, 404);
+                }
+
+                // Call the regular delete method with user's ID
+                return await DeleteAccountAsync(user.Id, dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DEBUG: Error during account deletion by email for {Email}", dto.Email);
+                return ApiResponse<bool>.Failure(
+                    "An error occurred while deleting your account",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
