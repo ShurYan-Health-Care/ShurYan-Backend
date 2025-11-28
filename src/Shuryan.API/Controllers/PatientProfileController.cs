@@ -6,10 +6,12 @@ using Shuryan.Application.DTOs.Common.Address;
 using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Doctor;
 using Shuryan.Application.DTOs.Requests.Patient;
+using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Application.DTOs.Responses.Patient;
 using Shuryan.Application.DTOs.Responses.Pharmacy;
 using Shuryan.Application.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -23,15 +25,18 @@ namespace Shuryan.API.Controllers
     {
         private readonly IPatientService _patientService;
         private readonly IFileUploadService _fileUploadService;
+        private readonly ILabOrderService _labOrderService;
         private readonly ILogger<PatientProfileController> _logger;
 
         public PatientProfileController(
             IPatientService patientService,
             IFileUploadService fileUploadService,
+            ILabOrderService labOrderService,
             ILogger<PatientProfileController> logger)
         {
             _patientService = patientService;
             _fileUploadService = fileUploadService;
+            _labOrderService = labOrderService;
             _logger = logger;
         }
 
@@ -715,6 +720,102 @@ namespace Shuryan.API.Controllers
                     orderId, currentPatientId);
                 return StatusCode(500, ApiResponse<object>.Failure(
                     "حدث خطأ أثناء تأكيد الطلب",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        #endregion
+
+        #region Lab Orders Operations
+
+        /// <summary>
+        /// جلب طلبات التحاليل النشطة للمريض (الطلبات الجديدة وقيد التنفيذ)
+        /// GET /api/patients/me/lab-orders/active
+        /// </summary>
+        [HttpGet("lab-orders/active")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabOrderResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<LabOrderResponse>>>> GetMyActiveLabOrders()
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to get active lab orders");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get active lab orders request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var orders = await _labOrderService.GetPatientActiveLabOrdersAsync(currentPatientId);
+                
+                _logger.LogInformation("Successfully retrieved {Count} active lab orders for patient: {PatientId}", 
+                    orders.Count(), currentPatientId);
+                
+                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(
+                    orders,
+                    "تم جلب طلبات التحاليل النشطة بنجاح"
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving active lab orders for patient: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب طلبات التحاليل",
+                    new[] { ex.Message },
+                    500
+                ));
+            }
+        }
+
+        /// <summary>
+        /// جلب طلبات التحاليل المكتملة للمريض (النتائج جاهزة أو تم الاستلام)
+        /// GET /api/patients/me/lab-orders/completed
+        /// </summary>
+        [HttpGet("lab-orders/completed")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabOrderResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<LabOrderResponse>>>> GetMyCompletedLabOrders()
+        {
+            var currentPatientId = GetCurrentPatientId();
+
+            if (currentPatientId == Guid.Empty)
+            {
+                _logger.LogWarning("Unauthorized attempt to get completed lab orders");
+                return Unauthorized(ApiResponse<object>.Failure(
+                    "غير مصرح لك بالوصول",
+                    statusCode: 401
+                ));
+            }
+
+            _logger.LogInformation("Get completed lab orders request for patient: {PatientId}", currentPatientId);
+
+            try
+            {
+                var orders = await _labOrderService.GetPatientCompletedLabOrdersAsync(currentPatientId);
+                
+                _logger.LogInformation("Successfully retrieved {Count} completed lab orders for patient: {PatientId}", 
+                    orders.Count(), currentPatientId);
+                
+                return Ok(ApiResponse<IEnumerable<LabOrderResponse>>.Success(
+                    orders,
+                    "تم جلب نتائج التحاليل بنجاح"
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving completed lab orders for patient: {PatientId}", currentPatientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب نتائج التحاليل",
                     new[] { ex.Message },
                     500
                 ));

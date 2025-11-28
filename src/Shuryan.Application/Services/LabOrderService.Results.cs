@@ -88,7 +88,6 @@ namespace Shuryan.Application.Services
 
                 result.UpdatedAt = DateTime.UtcNow;
                 await _unitOfWork.SaveChangesAsync();
-
                 _logger.LogInformation("Updated lab result {ResultId}", resultId);
 
                 var response = _mapper.Map<LabResultResponse>(result);
@@ -127,12 +126,17 @@ namespace Shuryan.Application.Services
                 var statistics = new LabOrderStatistics
                 {
                     TotalOrders = orders.Count,
-                    PendingPaymentOrders = orders.Count(o => o.Status == LabOrderStatus.PendingPayment),
-                    ConfirmedOrders = orders.Count(o => o.Status == LabOrderStatus.ConfirmedByLab),
-                    SampleCollectedOrders = 0, // No SampleCollected status in enum
-                    InProgressOrders = orders.Count(o => o.Status == LabOrderStatus.InProgress),
+                    PendingPaymentOrders = orders.Count(o => o.Status == LabOrderStatus.NewRequest || 
+                                                           o.Status == LabOrderStatus.AwaitingLabReview || 
+                                                           o.Status == LabOrderStatus.AwaitingPayment),
+                    ConfirmedOrders = orders.Count(o => o.Status == LabOrderStatus.ConfirmedByLab || 
+                                                   o.Status == LabOrderStatus.Paid),
+                    SampleCollectedOrders = orders.Count(o => o.Status == LabOrderStatus.AwaitingSamples),
+                    InProgressOrders = orders.Count(o => o.Status == LabOrderStatus.InProgressAtLab || 
+                                                    o.Status == LabOrderStatus.ResultsReady),
                     CompletedOrders = orders.Count(o => o.Status == LabOrderStatus.Completed),
-                    CancelledOrders = orders.Count(o => o.Status == LabOrderStatus.CancelledByPatient || o.Status == LabOrderStatus.CancelledByLab),
+                    CancelledOrders = orders.Count(o => o.Status == LabOrderStatus.CancelledByPatient || 
+                                                   o.Status == LabOrderStatus.RejectedByLab),
                     TotalRevenue = orders.Where(o => o.Status == LabOrderStatus.Completed)
                                          .Sum(o => o.TestsTotalCost + o.SampleCollectionDeliveryCost),
                     AverageOrderValue = orders.Any()

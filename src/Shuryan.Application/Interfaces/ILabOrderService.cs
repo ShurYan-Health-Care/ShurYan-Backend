@@ -32,6 +32,16 @@ namespace Shuryan.Application.Interfaces
         Task<IEnumerable<LabOrderResponse>> GetPatientLabOrdersAsync(Guid patientId);
 
         /// <summary>
+        /// Get patient's active lab orders (NewRequest, AwaitingLabReview, ConfirmedByLab, AwaitingPayment, Paid, AwaitingSamples, InProgressAtLab, CancelledByPatient, RejectedByLab)
+        /// </summary>
+        Task<IEnumerable<LabOrderResponse>> GetPatientActiveLabOrdersAsync(Guid patientId);
+
+        /// <summary>
+        /// Get patient's completed lab orders (ResultsReady, Completed)
+        /// </summary>
+        Task<IEnumerable<LabOrderResponse>> GetPatientCompletedLabOrdersAsync(Guid patientId);
+
+        /// <summary>
         /// Get laboratory's lab orders
         /// </summary>
         Task<IEnumerable<LabOrderResponse>> GetLaboratoryLabOrdersAsync(Guid laboratoryId);
@@ -60,6 +70,11 @@ namespace Shuryan.Application.Interfaces
         /// Cancel lab order
         /// </summary>
         Task<LabOrderResponse> CancelLabOrderAsync(Guid id, string cancellationReason);
+
+        /// <summary>
+        /// Reject lab order by laboratory
+        /// </summary>
+        Task<LabOrderResponse> RejectLabOrderAsync(Guid id, string rejectionReason);
 
         /// <summary>
         /// Delete lab order (soft delete)

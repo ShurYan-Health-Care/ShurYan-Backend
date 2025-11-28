@@ -76,7 +76,7 @@ namespace Shuryan.Infrastructure.Repositories.Laboratories
                 .Include(o => o.Patient)
                 .Include(o => o.LabPrescription)
                 .Where(o => o.LaboratoryId == laboratoryId 
-                    && o.Status == LabOrderStatus.PaidPendingLabConfirmation)
+                    && o.Status == LabOrderStatus.AwaitingLabReview)
                 .OrderBy(o => o.CreatedAt)
                 .ToListAsync();
         }
@@ -89,7 +89,7 @@ namespace Shuryan.Infrastructure.Repositories.Laboratories
                 .Where(o => o.PatientId == patientId 
                     && o.Status != LabOrderStatus.Completed
                     && o.Status != LabOrderStatus.CancelledByPatient
-                    && o.Status != LabOrderStatus.CancelledByLab)
+                    && o.Status != LabOrderStatus.RejectedByLab)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
         }

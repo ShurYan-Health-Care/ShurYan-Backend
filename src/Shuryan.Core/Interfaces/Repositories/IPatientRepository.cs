@@ -18,5 +18,10 @@ namespace Shuryan.Core.Interfaces.Repositories
 			Guid doctorId, 
 			int pageNumber, 
 			int pageSize);
+		
+		/// <summary>
+		/// جلب المريض مع العنوان فقط (للبحث عن معامل/صيدليات قريبة)
+		/// </summary>
+		Task<Patient?> GetPatientWithAddressAsync(Guid patientId);
     }
 }
