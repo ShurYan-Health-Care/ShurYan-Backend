@@ -18,16 +18,18 @@ namespace Shuryan.Application.Services
                 if (order == null)
                     throw new ArgumentException($"Lab order with ID {id} not found");
 
-                if (order.Status != LabOrderStatus.PendingPayment && order.Status != LabOrderStatus.PaidPendingLabConfirmation)
-                    throw new InvalidOperationException($"Cannot confirm order with status {order.Status}");
+                // Can only confirm if in NewRequest status
+                if (order.Status != LabOrderStatus.NewRequest)
+                    throw new InvalidOperationException($"Cannot confirm order with status {order.Status}. Order must be in AwaitingLabReview status.");
 
-                order.Status = LabOrderStatus.ConfirmedByLab;
+                // Move to ConfirmedByLab first, then to AwaitingPayment
+                order.Status = LabOrderStatus.AwaitingPayment;
                 order.ConfirmedByLabAt = DateTime.UtcNow;
                 order.UpdatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Confirmed lab order {OrderId}", id);
+                _logger.LogInformation("Confirmed lab order {OrderId} and moved to AwaitingPayment", id);
 
                 return await GetLabOrderByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve confirmed lab order");
@@ -47,10 +49,13 @@ namespace Shuryan.Application.Services
                 if (order == null)
                     throw new ArgumentException($"Lab order with ID {id} not found");
 
-                if (order.Status != LabOrderStatus.ConfirmedByLab)
-                    throw new InvalidOperationException($"Cannot mark sample collected for order with status {order.Status}");
+                // Can only collect samples if order is paid
+                if (order.Status != LabOrderStatus.Paid
+                )
+                    throw new InvalidOperationException($"Cannot mark sample collected for order with status {order.Status}. Order must be Paid.");
 
-                order.Status = LabOrderStatus.InProgress;
+                order.Status = LabOrderStatus.AwaitingSamples;
+                order.SamplesCollectedAt = DateTime.UtcNow;
                 order.UpdatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.SaveChangesAsync();
@@ -75,10 +80,11 @@ namespace Shuryan.Application.Services
                 if (order == null)
                     throw new ArgumentException($"Lab order with ID {id} not found");
 
-                if (order.Status != LabOrderStatus.ConfirmedByLab && order.Status != LabOrderStatus.InProgress)
-                    throw new InvalidOperationException($"Cannot mark in progress for order with status {order.Status}");
+                // Can only start processing if samples are collected
+                if (order.Status != LabOrderStatus.AwaitingSamples && order.Status != LabOrderStatus.InProgressAtLab)
+                    throw new InvalidOperationException($"Cannot mark in progress for order with status {order.Status}. Samples must be collected first.");
 
-                order.Status = LabOrderStatus.InProgress;
+                order.Status = LabOrderStatus.InProgressAtLab;
                 order.UpdatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.SaveChangesAsync();
@@ -103,7 +109,7 @@ namespace Shuryan.Application.Services
                 if (order == null)
                     throw new ArgumentException($"Lab order with ID {id} not found");
 
-                if (order.Status != LabOrderStatus.InProgress && order.Status != LabOrderStatus.ResultsReady)
+                if (order.Status != LabOrderStatus.InProgressAtLab && order.Status != LabOrderStatus.ResultsReady)
                     throw new InvalidOperationException($"Cannot complete order with status {order.Status}");
 
                 order.Status = LabOrderStatus.Completed;
@@ -135,10 +141,12 @@ namespace Shuryan.Application.Services
                 if (order == null)
                     throw new ArgumentException($"Lab order with ID {id} not found");
 
-                if (order.Status != LabOrderStatus.PendingPayment)
-                    throw new InvalidOperationException($"Cannot mark as paid for order with status {order.Status}");
+                // Can only pay if waiting for payment
+                if (order.Status != LabOrderStatus.AwaitingPayment)
+                    throw new InvalidOperationException($"Cannot mark as paid for order with status {order.Status}. Order must be in AwaitingPayment status.");
 
-                order.Status = LabOrderStatus.PaidPendingLabConfirmation;
+                order.Status = LabOrderStatus.Paid;
+                order.PaidAt = DateTime.UtcNow;
                 order.UpdatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.SaveChangesAsync();

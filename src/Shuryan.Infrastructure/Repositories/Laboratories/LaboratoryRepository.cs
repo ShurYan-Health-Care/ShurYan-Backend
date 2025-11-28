@@ -121,6 +121,21 @@ namespace Shuryan.Infrastructure.Repositories.Laboratories
             return await _dbSet
                 .FirstOrDefaultAsync(l => l.Email == email && !l.IsDeleted);
         }
+
+        public async Task<IEnumerable<Laboratory>> GetAllActiveLaboratoriesWithDetailsAsync()
+        {
+            return await _dbSet
+                .Include(l => l.Address)
+                .Include(l => l.WorkingHours)
+                .Include(l => l.LaboratoryReviews)
+                .Where(l => !l.IsDeleted 
+                    && l.VerificationStatus == VerificationStatus.Verified
+                    && l.LaboratoryStatus == Status.Active
+                    && l.Address != null
+                    && l.Address.Latitude.HasValue
+                    && l.Address.Longitude.HasValue)
+                .ToListAsync();
+        }
     }
 }
 
