@@ -686,13 +686,14 @@ namespace Shuryan.Application.Services
 
                     case "LabOrder":
                         var labOrder = await _unitOfWork.LabOrders.GetByIdAsync(orderId);
-                        if (labOrder != null && labOrder.Status == LabOrderStatus.PendingPayment)
+                        if (labOrder != null && labOrder.Status == LabOrderStatus.AwaitingPayment)
                         {
-                            labOrder.Status = LabOrderStatus.PaidPendingLabConfirmation;
+                            labOrder.Status = LabOrderStatus.Paid;
+                            labOrder.PaidAt = DateTime.UtcNow;
                             labOrder.UpdatedAt = DateTime.UtcNow;
                             _unitOfWork.LabOrders.Update(labOrder);
                             await _unitOfWork.SaveChangesAsync(cancellationToken);
-                            _logger.LogInformation("Lab order {OrderId} confirmed after payment", orderId);
+                            _logger.LogInformation("Lab order {OrderId} marked as Paid after payment", orderId);
                         }
                         break;
                 }

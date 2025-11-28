@@ -22,6 +22,132 @@ namespace Shuryan.Application.Services
 
                 #region Laboratory Search
 
+                /// <summary>
+                /// البحث عن أقرب 3 معامل للمريض بناءً على الإحداثيات
+                /// </summary>
+                public async Task<FindNearbyLaboratoriesResponse> FindNearbyLaboratoriesAsync(FindNearbyLaboratoriesRequest request)
+                {
+                        try
+                        {
+                                _logger.LogInformation("Searching for nearby laboratories at coordinates: {Latitude}, {Longitude}", 
+                                    request.Latitude, request.Longitude);
+
+                                // جلب كل المعامل المفعلة مع تفاصيلها
+                                var laboratories = await _unitOfWork.Laboratories.GetAllActiveLaboratoriesWithDetailsAsync();
+
+                                if (!laboratories.Any())
+                                {
+                                        _logger.LogWarning("No active laboratories found in the system");
+                                        return new FindNearbyLaboratoriesResponse
+                                        {
+                                                NearbyLaboratories = new List<NearbyLaboratorySimpleResponse>(),
+                                                TotalFound = 0,
+                                                SearchRadiusKm = 0
+                                        };
+                                }
+
+                                // حساب المسافة لكل معمل
+                                var laboratoriesWithDistance = new List<(Core.Entities.Identity.Laboratory laboratory, double distance)>();
+
+                                foreach (var laboratory in laboratories)
+                                {
+                                        if (laboratory.Address?.Latitude.HasValue == true && laboratory.Address?.Longitude.HasValue == true)
+                                        {
+                                                var distance = CalculateDistance(
+                                                    request.Latitude, request.Longitude,
+                                                    laboratory.Address.Latitude.Value, laboratory.Address.Longitude.Value);
+
+                                                laboratoriesWithDistance.Add((laboratory, distance));
+                                        }
+                                }
+
+                                // ترتيب حسب المسافة وأخذ أقرب 3
+                                var nearestLaboratories = laboratoriesWithDistance
+                                    .OrderBy(x => x.distance)
+                                    .Take(3)
+                                    .ToList();
+
+                                // تحويل إلى Response DTOs - بس المعلومات المطلوبة
+                                var nearbyLaboratoryResponses = nearestLaboratories.Select(x => new NearbyLaboratorySimpleResponse
+                                {
+                                        Id = x.laboratory.Id,
+                                        Name = x.laboratory.Name,
+                                        DistanceInKm = Math.Round(x.distance, 2),
+                                        OffersHomeSampleCollection = x.laboratory.OffersHomeSampleCollection,
+                                        HomeSampleCollectionFee = x.laboratory.HomeSampleCollectionFee,
+                                        ProfileImageUrl = x.laboratory.ProfilePictureUrl,
+                                        PhoneNumber = x.laboratory.PhoneNumber ?? string.Empty
+                                }).ToList();
+
+                                var maxDistance = nearestLaboratories.Any() ? nearestLaboratories.Max(x => x.distance) : 0;
+
+                                _logger.LogInformation("Found {Count} nearby laboratories within {MaxDistance}km", 
+                                    nearbyLaboratoryResponses.Count, Math.Round(maxDistance, 2));
+
+                                return new FindNearbyLaboratoriesResponse
+                                {
+                                        NearbyLaboratories = nearbyLaboratoryResponses,
+                                        TotalFound = nearbyLaboratoryResponses.Count,
+                                        SearchRadiusKm = Math.Round(maxDistance, 2)
+                                };
+                        }
+                        catch (Exception ex)
+                        {
+                                _logger.LogError(ex, "Error finding nearby laboratories for coordinates: {Latitude}, {Longitude}", 
+                                    request.Latitude, request.Longitude);
+                                throw;
+                        }
+                }
+
+                /// <summary>
+                /// البحث عن أقرب 3 معامل للمريض بناءً على عنوانه المسجل
+                /// </summary>
+                public async Task<FindNearbyLaboratoriesResponse> FindNearbyLaboratoriesForPatientAsync(Guid patientId)
+                {
+                        try
+                        {
+                                _logger.LogInformation("Finding nearby laboratories for patient: {PatientId}", patientId);
+
+                                // جلب المريض مع العنوان
+                                var patient = await _unitOfWork.Patients.GetPatientWithAddressAsync(patientId);
+                                if (patient == null)
+                                {
+                                        _logger.LogWarning("Patient not found: {PatientId}", patientId);
+                                        throw new KeyNotFoundException($"Patient with ID {patientId} not found");
+                                }
+
+                                // التحقق من وجود عنوان مع إحداثيات
+                                if (patient.Address == null)
+                                {
+                                        _logger.LogWarning("Patient {PatientId} does not have a registered address", patientId);
+                                        throw new KeyNotFoundException("Patient does not have a registered address");
+                                }
+
+                                if (!patient.Address.Latitude.HasValue || !patient.Address.Longitude.HasValue)
+                                {
+                                        _logger.LogWarning("Patient {PatientId} address does not have coordinates", patientId);
+                                        throw new KeyNotFoundException("Patient address does not have coordinates (latitude/longitude)");
+                                }
+
+                                // استخدام عنوان المريض للبحث
+                                var request = new FindNearbyLaboratoriesRequest
+                                {
+                                        Latitude = patient.Address.Latitude.Value,
+                                        Longitude = patient.Address.Longitude.Value
+                                };
+
+                                _logger.LogInformation("Using patient address coordinates: {Latitude}, {Longitude}", 
+                                    request.Latitude, request.Longitude);
+
+                                return await FindNearbyLaboratoriesAsync(request);
+                        }
+                        catch (Exception ex)
+                        {
+                                _logger.LogError(ex, "Error finding nearby laboratories for patient: {PatientId}", patientId);
+                                throw;
+                        }
+                }
+
                 public async Task<IEnumerable<NearbyLaboratoryResponse>> GetNearbyLaboratoriesAsync(
                     Guid patientId,
                     double latitude,
@@ -259,7 +385,7 @@ namespace Shuryan.Application.Services
                                 LabPrescriptionId = request.LabPrescriptionId,
                                 LaboratoryId = request.LaboratoryId,
                                 PatientId = patientId,
-                                Status = LabOrderStatus.PendingPayment,
+                                Status = LabOrderStatus.NewRequest,
                                 SampleCollectionType = request.SampleCollectionType,
                                 TestsTotalCost = totalCost,
                                 SampleCollectionDeliveryCost = request.SampleCollectionType == SampleCollectionType.HomeSampleCollection
@@ -336,7 +462,7 @@ namespace Shuryan.Application.Services
 
                         if (order.Status == LabOrderStatus.Completed ||
                             order.Status == LabOrderStatus.CancelledByPatient ||
-                            order.Status == LabOrderStatus.CancelledByLab)
+                            order.Status == LabOrderStatus.RejectedByLab)
                                 throw new InvalidOperationException("لا يمكن إلغاء هذا الطلب");
 
                         order.Status = LabOrderStatus.CancelledByPatient;
@@ -545,14 +671,17 @@ namespace Shuryan.Application.Services
                 {
                         return status switch
                         {
-                                LabOrderStatus.PendingPayment => "في انتظار الدفع",
-                                LabOrderStatus.PaidPendingLabConfirmation => "في انتظار تأكيد المعمل",
-                                LabOrderStatus.ConfirmedByLab => "تم التأكيد",
-                                LabOrderStatus.InProgress => "قيد التنفيذ",
+                                LabOrderStatus.NewRequest => "طلب جديد",
+                                LabOrderStatus.AwaitingLabReview => "في انتظار مراجعة المعمل",
+                                LabOrderStatus.ConfirmedByLab => "تم التأكيد من المعمل",
+                                LabOrderStatus.AwaitingPayment => "في انتظار الدفع",
+                                LabOrderStatus.Paid => "تم الدفع",
+                                LabOrderStatus.AwaitingSamples => "في انتظار العينات",
+                                LabOrderStatus.InProgressAtLab => "قيد التنفيذ في المعمل",
                                 LabOrderStatus.ResultsReady => "النتائج جاهزة",
-                                LabOrderStatus.Completed => "مكتمل",
+                                LabOrderStatus.Completed => "تم الاستلام",
                                 LabOrderStatus.CancelledByPatient => "ملغي من المريض",
-                                LabOrderStatus.CancelledByLab => "ملغي من المعمل",
+                                LabOrderStatus.RejectedByLab => "مرفوض من المعمل",
                                 _ => status.ToString()
                         };
                 }

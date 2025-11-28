@@ -1018,7 +1018,9 @@ namespace Shuryan.Application.Services
                 }
 
                 var pendingLabOrders = patient.LabOrders
-                    .Where(lo => lo.Status == LabOrderStatus.PaidPendingLabConfirmation || lo.Status == LabOrderStatus.InProgress)
+                    .Where(lo => lo.Status != LabOrderStatus.Completed && 
+                                 lo.Status != LabOrderStatus.CancelledByPatient && 
+                                 lo.Status != LabOrderStatus.RejectedByLab)
                     .OrderByDescending(lo => lo.CreatedAt)
                     .ToList();
 

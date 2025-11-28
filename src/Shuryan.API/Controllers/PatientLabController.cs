@@ -26,39 +26,86 @@ namespace Shuryan.API.Controllers
                 #region Laboratory Search
 
                 /// <summary>
-                /// البحث عن معامل قريبة
+                /// البحث عن أقرب 3 معامل للمريض بناءً على عنوانه المسجل أو الإحداثيات المرسلة
+                /// يمكن تمرير إحداثيات اختيارية في الـ query parameters إذا لم يكن للمريض عنوان مسجل
                 /// GET /api/patients/me/laboratories/nearby
                 /// </summary>
                 [HttpGet("laboratories/nearby")]
-                [ProducesResponseType(typeof(ApiResponse<IEnumerable<NearbyLaboratoryResponse>>), StatusCodes.Status200OK)]
-                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-                public async Task<ActionResult<ApiResponse<IEnumerable<NearbyLaboratoryResponse>>>> GetNearbyLaboratories(
-                    [FromQuery] double latitude,
-                    [FromQuery] double longitude,
-                    [FromQuery] double radiusInKm = 10,
-                    [FromQuery] bool? offersHomeSampleCollection = null,
-                    [FromQuery] string? search = null,
-                    [FromQuery] int pageNumber = 1,
-                    [FromQuery] int pageSize = 20)
+                [ProducesResponseType(typeof(FindNearbyLaboratoriesResponse), StatusCodes.Status200OK)]
+                [ProducesResponseType(StatusCodes.Status400BadRequest)]
+                [ProducesResponseType(StatusCodes.Status404NotFound)]
+                [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+                public async Task<ActionResult<FindNearbyLaboratoriesResponse>> FindNearbyLaboratories(
+                    [FromQuery] double? latitude = null, 
+                    [FromQuery] double? longitude = null)
                 {
-                        var patientId = GetCurrentPatientId();
-                        if (patientId == Guid.Empty)
-                                return Unauthorized(ApiResponse<object>.Failure("غير مصرح", statusCode: 401));
+                        // الحصول على ID المريض من الـ JWT token
+                        var userIdClaim = User.FindFirst("sub") ?? 
+                                         User.FindFirst("id") ?? 
+                                         User.FindFirst("userId") ?? 
+                                         User.FindFirst("nameid") ??
+                                         User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                        
+                        if (userIdClaim == null)
+                        {
+                                _logger.LogWarning("No user ID claim found in JWT token. Available claims: {Claims}", 
+                                    string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}")));
+                                return BadRequest(new { Message = "Invalid patient authentication - no user ID found" });
+                        }
+
+                        if (!Guid.TryParse(userIdClaim.Value, out var patientId))
+                        {
+                                _logger.LogWarning("Invalid user ID format in JWT token: {UserId}", userIdClaim.Value);
+                                return BadRequest(new { Message = "Invalid patient authentication - invalid ID format" });
+                        }
+
+                        _logger.LogInformation("Find nearby laboratories request for patient: {PatientId}", patientId);
 
                         try
                         {
-                                var laboratories = await _patientLabService.GetNearbyLaboratoriesAsync(
-                                    patientId, latitude, longitude, radiusInKm,
-                                    offersHomeSampleCollection, search, pageNumber, pageSize);
+                                FindNearbyLaboratoriesResponse response;
 
-                                return Ok(ApiResponse<IEnumerable<NearbyLaboratoryResponse>>.Success(
-                                    laboratories, "تم جلب المعامل القريبة بنجاح"));
+                                // إذا تم تمرير إحداثيات في الـ query، استخدمها مباشرة
+                                if (latitude.HasValue && longitude.HasValue)
+                                {
+                                        _logger.LogInformation("Using provided coordinates: {Latitude}, {Longitude}", latitude.Value, longitude.Value);
+                                        
+                                        var request = new FindNearbyLaboratoriesRequest
+                                        {
+                                                Latitude = latitude.Value,
+                                                Longitude = longitude.Value
+                                        };
+                                        
+                                        response = await _patientLabService.FindNearbyLaboratoriesAsync(request);
+                                }
+                                else
+                                {
+                                        // استخدم عنوان المريض
+                                        response = await _patientLabService.FindNearbyLaboratoriesForPatientAsync(patientId);
+                                }
+                                
+                                _logger.LogInformation("Found {Count} nearby laboratories for patient {PatientId}", response.TotalFound, patientId);
+                                return Ok(response);
+                        }
+                        catch (KeyNotFoundException ex)
+                        {
+                                _logger.LogWarning(ex, "Patient or patient address not found: {PatientId}", patientId);
+                                
+                                // إذا لم يكن للمريض عنوان، اقترح استخدام query parameters
+                                if (ex.Message.Contains("address"))
+                                {
+                                        return NotFound(new { 
+                                                Message = ex.Message,
+                                                Suggestion = "You can provide coordinates as query parameters: ?latitude=30.0444&longitude=31.2357"
+                                        });
+                                }
+                                
+                                return NotFound(new { Message = ex.Message });
                         }
                         catch (Exception ex)
                         {
-                                _logger.LogError(ex, "Error getting nearby laboratories for patient {PatientId}", patientId);
-                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                                _logger.LogError(ex, "Error finding nearby laboratories for patient: {PatientId}", patientId);
+                                return StatusCode(500, new { Message = "An unexpected error occurred while finding nearby laboratories" });
                         }
                 }
 
