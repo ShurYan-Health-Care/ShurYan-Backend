@@ -34,11 +34,6 @@ namespace Shuryan.API.Controllers
                 }
 
                 #region Basic Info Operations
-
-                /// <summary>
-                /// جلب المعلومات الأساسية للمعمل
-                /// GET /api/laboratories/me/profile/basic
-                /// </summary>
                 [HttpGet("profile/basic")]
                 [ProducesResponseType(typeof(ApiResponse<LaboratoryBasicInfoResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -88,10 +83,6 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
-                /// <summary>
-                /// تحديث المعلومات الأساسية للمعمل (Partial Update)
-                /// PUT /api/laboratories/me/profile/basic
-                /// </summary>
                 [HttpPut("profile/basic")]
                 [ProducesResponseType(typeof(ApiResponse<LaboratoryBasicInfoResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -153,10 +144,6 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
-                /// <summary>
-                /// رفع صورة البروفايل للمعمل
-                /// PUT /api/laboratories/me/profile/image
-                /// </summary>
                 [HttpPut("profile/image")]
                 [Consumes("multipart/form-data")]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -242,11 +229,6 @@ namespace Shuryan.API.Controllers
                 #endregion
 
                 #region Address Operations
-
-                /// <summary>
-                /// جلب عنوان المعمل
-                /// GET /api/laboratories/me/profile/address
-                /// </summary>
                 [HttpGet("profile/address")]
                 [ProducesResponseType(typeof(ApiResponse<LaboratoryAddressResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -364,11 +346,6 @@ namespace Shuryan.API.Controllers
                 #endregion
 
                 #region Working Hours Operations
-
-                /// <summary>
-                /// جلب ساعات وأيام عمل المعمل
-                /// GET /api/laboratories/me/profile/workinghours
-                /// </summary>
                 [HttpGet("profile/workinghours")]
                 [ProducesResponseType(typeof(ApiResponse<LaboratoryWorkingHoursResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -409,10 +386,6 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
-                /// <summary>
-                /// تحديث ساعات وأيام عمل المعمل
-                /// PUT /api/laboratories/me/profile/workinghours
-                /// </summary>
                 [HttpPut("profile/workinghours")]
                 [ProducesResponseType(typeof(ApiResponse<LaboratoryWorkingHoursResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -485,11 +458,6 @@ namespace Shuryan.API.Controllers
                 #endregion
 
                 #region Home Sample Collection Operations
-
-                /// <summary>
-                /// جلب إعدادات خدمة سحب العينة من البيت
-                /// GET /api/laboratories/me/home-collection
-                /// </summary>
                 [HttpGet("home-collection")]
                 [ProducesResponseType(typeof(ApiResponse<LaboratoryHomeSampleCollectionResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -539,10 +507,6 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
-                /// <summary>
-                /// تحديث إعدادات خدمة سحب العينة من البيت
-                /// PUT /api/laboratories/me/home-collection
-                /// </summary>
                 [HttpPut("home-collection")]
                 [ProducesResponseType(typeof(ApiResponse<LaboratoryHomeSampleCollectionResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -615,11 +579,6 @@ namespace Shuryan.API.Controllers
                 #endregion
 
                 #region Lab Services Operations
-
-                /// <summary>
-                /// جلب كل الخدمات/التحاليل اللي المعمل بيقدمها
-                /// GET /api/laboratories/me/services
-                /// </summary>
                 [HttpGet("services")]
                 [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabServiceDetailResponse>>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -645,10 +604,6 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
-                /// <summary>
-                /// إضافة خدمة/تحليل جديد
-                /// POST /api/laboratories/me/services
-                /// </summary>
                 [HttpPost("services")]
                 [ProducesResponseType(typeof(ApiResponse<LabServiceDetailResponse>), StatusCodes.Status201Created)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -689,10 +644,6 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
-                /// <summary>
-                /// تحديث خدمة (السعر، الملاحظات)
-                /// PUT /api/laboratories/me/services/{serviceId}
-                /// </summary>
                 [HttpPut("services/{serviceId:guid}")]
                 [ProducesResponseType(typeof(ApiResponse<LabServiceDetailResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -732,10 +683,6 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
-                /// <summary>
-                /// حذف خدمة
-                /// DELETE /api/laboratories/me/services/{serviceId}
-                /// </summary>
                 [HttpDelete("services/{serviceId:guid}")]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -767,10 +714,6 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
-                /// <summary>
-                /// تفعيل/تعطيل خدمة
-                /// PUT /api/laboratories/me/services/{serviceId}/availability
-                /// </summary>
                 [HttpPut("services/{serviceId:guid}/availability")]
                 [ProducesResponseType(typeof(ApiResponse<LabServiceDetailResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -814,12 +757,9 @@ namespace Shuryan.API.Controllers
                 #endregion
 
                 #region Available Lab Tests
-
-                /// <summary>
-                /// جلب كل التحاليل المتاحة في النظام (للاختيار منها عند إضافة خدمة)
-                /// GET /api/laboratories/me/available-tests
-                /// </summary>
                 [HttpGet("available-tests")]
+                [AllowAnonymous] // إلغاء authorization من الـ Controller
+                [Authorize(Roles = "Doctor,Laboratory")] // تحديد الـ roles المسموحة
                 [ProducesResponseType(typeof(ApiResponse<IEnumerable<LabTestListResponse>>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
@@ -827,13 +767,6 @@ namespace Shuryan.API.Controllers
                         [FromQuery] string? search = null,
                         [FromQuery] string? category = null)
                 {
-                        var currentLaboratoryId = GetCurrentLaboratoryId();
-
-                        if (currentLaboratoryId == Guid.Empty)
-                        {
-                                return Unauthorized(ApiResponse<object>.Failure("غير مصرح لك بالوصول", statusCode: 401));
-                        }
-
                         try
                         {
                                 var tests = await _laboratoryProfileService.GetAvailableLabTestsAsync(search, category);
@@ -927,9 +860,7 @@ namespace Shuryan.API.Controllers
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-                public async Task<ActionResult<ApiResponse<LabOrderResponse>>> RespondToLabOrder(
-                        Guid orderId,
-                        [FromBody] RespondToLabOrderRequest request)
+                public async Task<ActionResult<ApiResponse<LabOrderResponse>>> RespondToLabOrder(Guid orderId, [FromBody] RespondToLabOrderRequest request)
                 {
                         var currentLaboratoryId = GetCurrentLaboratoryId();
 
@@ -960,7 +891,7 @@ namespace Shuryan.API.Controllers
                                 }
                                 else
                                 {
-                                        updatedOrder = await _labOrderService.CancelLabOrderAsync(orderId, request.RejectionReason ?? "تم الرفض من المعمل");
+                                        updatedOrder = await _labOrderService.RejectLabOrderAsync(orderId, request.RejectionReason ?? "تم الرفض من المعمل");
                                         return Ok(ApiResponse<LabOrderResponse>.Success(updatedOrder, "تم رفض الطلب"));
                                 }
                         }
@@ -1159,8 +1090,9 @@ namespace Shuryan.API.Controllers
                                 {
                                         // Today's Stats
                                         TodayOrdersCount = todayOrders.Count,
-                                        TodayPendingOrders = todayOrders.Count(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.PendingPayment ||
-                                                                                    o.Status == Core.Enums.Laboratory.LabOrderStatus.PaidPendingLabConfirmation),
+                                        TodayPendingOrders = todayOrders.Count(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.NewRequest ||
+                                                                                    o.Status == Core.Enums.Laboratory.LabOrderStatus.AwaitingLabReview ||
+                                                                                    o.Status == Core.Enums.Laboratory.LabOrderStatus.AwaitingPayment),
                                         TodayCompletedOrders = todayOrders.Count(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.Completed),
                                         TodayRevenue = todayOrders.Where(o => o.Status == Core.Enums.Laboratory.LabOrderStatus.Completed)
                                                                   .Sum(o => o.TestsTotalCost + o.SampleCollectionDeliveryCost),

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿using System;
+﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -112,6 +112,14 @@ namespace Shuryan.Infrastructure.Repositories.Patients
             var totalCount = result.FirstOrDefault()?.TotalCount ?? 0;
 
             return (patients, totalCount);
+        }
+
+        public async Task<Patient?> GetPatientWithAddressAsync(Guid patientId)
+        {
+            return await _dbSet
+                .Include(p => p.Address)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == patientId && !p.IsDeleted);
         }
     }
 }

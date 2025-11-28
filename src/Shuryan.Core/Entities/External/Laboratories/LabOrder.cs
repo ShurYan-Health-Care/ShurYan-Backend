@@ -23,13 +23,17 @@ namespace Shuryan.Core.Entities.External.Laboratories
         [ForeignKey("Patient")]
         public Guid PatientId { get; set; }
 
-        public LabOrderStatus Status { get; set; } = LabOrderStatus.PendingPayment;
+        public LabOrderStatus Status { get; set; } = LabOrderStatus.NewRequest;
         public SampleCollectionType SampleCollectionType { get; set; } = SampleCollectionType.LabVisit;
         public decimal TestsTotalCost { get; set; }
         public decimal SampleCollectionDeliveryCost { get; set; } = 0;
         public DateTime? ConfirmedByLabAt { get; set; }
+        public DateTime? PaidAt { get; set; }
+        public DateTime? SamplesCollectedAt { get; set; }
         public string? CancellationReason { get; set; }
         public DateTime? CancelledAt { get; set; }
+        public string? RejectionReason { get; set; }
+        public DateTime? RejectedAt { get; set; }
 
         // Navigation Properties
         public virtual LabPrescription LabPrescription { get; set; } = null!;

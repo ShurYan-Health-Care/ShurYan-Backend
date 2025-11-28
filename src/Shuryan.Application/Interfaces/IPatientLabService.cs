@@ -12,7 +12,17 @@ namespace Shuryan.Application.Interfaces
                 #region Laboratory Search
 
                 /// <summary>
-                /// البحث عن معامل قريبة
+                /// البحث عن أقرب 3 معامل للمريض بناءً على الإحداثيات (Simple - زي الصيدليات)
+                /// </summary>
+                Task<FindNearbyLaboratoriesResponse> FindNearbyLaboratoriesAsync(FindNearbyLaboratoriesRequest request);
+
+                /// <summary>
+                /// البحث عن أقرب 3 معامل للمريض بناءً على عنوانه المسجل
+                /// </summary>
+                Task<FindNearbyLaboratoriesResponse> FindNearbyLaboratoriesForPatientAsync(Guid patientId);
+
+                /// <summary>
+                /// البحث عن معامل قريبة (Old - مع فلاتر كثيرة)
                 /// </summary>
                 Task<IEnumerable<NearbyLaboratoryResponse>> GetNearbyLaboratoriesAsync(
                     Guid patientId,

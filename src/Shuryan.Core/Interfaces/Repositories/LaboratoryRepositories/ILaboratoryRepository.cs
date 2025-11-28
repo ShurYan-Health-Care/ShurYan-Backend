@@ -21,6 +21,11 @@ namespace Shuryan.Core.Interfaces.Repositories.LaboratoryRepositories
         Task<IEnumerable<Laboratory>> GetLaboratoriesWithHomeSampleCollectionAsync(Governorate? governorate = null);
         Task<IEnumerable<Laboratory>> GetLaboratoriesByTestsAsync(IEnumerable<Guid> testIds);
         Task<Laboratory?> GetByEmailAsync(string email);
+        
+        /// <summary>
+        /// جلب كل المعامل المفعلة مع التفاصيل (للبحث عن أقرب 3 معامل)
+        /// </summary>
+        Task<IEnumerable<Laboratory>> GetAllActiveLaboratoriesWithDetailsAsync();
     }
 }
 

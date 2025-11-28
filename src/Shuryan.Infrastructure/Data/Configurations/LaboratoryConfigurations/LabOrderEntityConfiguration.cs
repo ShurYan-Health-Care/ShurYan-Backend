@@ -25,13 +25,17 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
             builder.Property(lo => lo.LabPrescriptionId).IsRequired();
             builder.Property(lo => lo.LaboratoryId).IsRequired();
             builder.Property(lo => lo.PatientId).IsRequired();
-            builder.Property(lo => lo.Status).IsRequired().HasConversion<int>().HasDefaultValue(LabOrderStatus.PendingPayment);
+            builder.Property(lo => lo.Status).IsRequired().HasConversion<int>().HasDefaultValue(LabOrderStatus.NewRequest);
             builder.Property(lo => lo.SampleCollectionType).IsRequired().HasConversion<int>().HasDefaultValue(SampleCollectionType.LabVisit);
             builder.Property(lo => lo.TestsTotalCost).IsRequired().HasPrecision(10, 2);
             builder.Property(lo => lo.SampleCollectionDeliveryCost).IsRequired().HasPrecision(10, 2).HasDefaultValue(0);
             builder.Property(lo => lo.ConfirmedByLabAt).IsRequired(false);
+            builder.Property(lo => lo.PaidAt).IsRequired(false);
+            builder.Property(lo => lo.SamplesCollectedAt).IsRequired(false);
             builder.Property(lo => lo.CancellationReason).IsRequired(false).HasMaxLength(500);
             builder.Property(lo => lo.CancelledAt).IsRequired(false);
+            builder.Property(lo => lo.RejectionReason).IsRequired(false).HasMaxLength(500);
+            builder.Property(lo => lo.RejectedAt).IsRequired(false);
 
             // Indexes
             builder.HasIndex(lo => lo.LabPrescriptionId)
