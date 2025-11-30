@@ -9,11 +9,11 @@ using Shuryan.Infrastructure.Data;
 
 #nullable disable
 
-namespace Shuryan.Infrastructure.Data.Migrations
+namespace Shuryan.Infrastructure.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    [Migration("20251119180719_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20251129233801_fixVerifier")]
+    partial class fixVerifier
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -401,8 +401,18 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.Property<Guid>("LaboratoryId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RejectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<decimal>("SampleCollectionDeliveryCost")
                         .ValueGeneratedOnAdd()
@@ -414,6 +424,9 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(1);
+
+                    b.Property<DateTime?>("SamplesCollectedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
@@ -2458,7 +2471,6 @@ namespace Shuryan.Infrastructure.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("VerificationType")
-                        .HasMaxLength(50)
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("VerifiedAt")
@@ -2987,11 +2999,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.HasBaseType("Shuryan.Core.Entities.Identity.User");
 
                     b.Property<Guid?>("CreatedByAdminId")
-                        .IsRequired()
                         .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("CreatedByAdminId")
-                        .HasDatabaseName("IX_Verifier_CreatedByAdminId");
 
                     b.ToTable("Verifiers", (string)null);
                 });

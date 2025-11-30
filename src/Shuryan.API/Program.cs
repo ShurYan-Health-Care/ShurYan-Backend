@@ -36,20 +36,21 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
 	app.UseSwagger();
     app.UseSwaggerUI(Theme.UniversalDark);
 
     await app.SeedDatabaseAsync();
 
 	//await app.ClearDatabaseAsync();
-}
+//}
 
 app.UseHttpsRedirection();
 app.UseCors("ShuryanCorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseStaticFiles();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
