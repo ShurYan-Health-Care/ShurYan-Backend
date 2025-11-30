@@ -3,20 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Shuryan.Infrastructure.Data;
 
 #nullable disable
 
-namespace Shuryan.Infrastructure.Data.Migrations
+namespace Shuryan.Infrastructure.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    [Migration("20251128155853_UpdateLabOrderStatuses")]
-    partial class UpdateLabOrderStatuses
+    partial class ShuryanDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2999,11 +2996,7 @@ namespace Shuryan.Infrastructure.Data.Migrations
                     b.HasBaseType("Shuryan.Core.Entities.Identity.User");
 
                     b.Property<Guid?>("CreatedByAdminId")
-                        .IsRequired()
                         .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("CreatedByAdminId")
-                        .HasDatabaseName("IX_Verifier_CreatedByAdminId");
 
                     b.ToTable("Verifiers", (string)null);
                 });

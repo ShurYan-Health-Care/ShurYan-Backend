@@ -907,18 +907,19 @@ namespace Shuryan.API.Controllers
                 }
 
                 /// <summary>
-                /// تحديث حالة الطلب
-                /// PUT /api/laboratories/me/orders/{orderId}/status
+                /// بدء العمل على الطلب - نقل الحالة من "في انتظار العينات" إلى "قيد التنفيذ في المعمل"
+                /// POST /api/laboratories/me/lab-orders/{orderId}/start-work
                 /// </summary>
-                [HttpPut("orders/{orderId:guid}/status")]
+                [HttpPost("lab-orders/{orderId}/start-work")]
                 [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status200OK)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
                 [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-                public async Task<ActionResult<ApiResponse<LabOrderResponse>>> UpdateLabOrderStatus(
+                public async Task<ActionResult<ApiResponse<LabOrderResponse>>> StartLabWork(
                         Guid orderId,
-                        [FromBody] UpdateLabOrderStatusRequest request)
+                        CancellationToken cancellationToken)
                 {
                         var currentLaboratoryId = GetCurrentLaboratoryId();
 
@@ -927,35 +928,43 @@ namespace Shuryan.API.Controllers
                                 return Unauthorized(ApiResponse<object>.Failure("غير مصرح لك بالوصول", statusCode: 401));
                         }
 
-                        if (!ModelState.IsValid)
-                        {
-                                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                                return BadRequest(ApiResponse<object>.Failure("بيانات غير صحيحة", errors, 400));
-                        }
-
                         try
                         {
-                                var order = await _labOrderService.GetLabOrderByIdAsync(orderId);
-                                if (order == null || order.LaboratoryId != currentLaboratoryId)
-                                {
-                                        return NotFound(ApiResponse<object>.Failure("الطلب غير موجود", statusCode: 404));
-                                }
+                                var updatedOrder = await _labOrderService.StartLabWorkAsync(
+                                        orderId, 
+                                        currentLaboratoryId, 
+                                        cancellationToken);
 
-                                var updatedOrder = await _labOrderService.UpdateLabOrderStatusAsync(orderId, request.NewStatus, request.Reason);
-                                return Ok(ApiResponse<LabOrderResponse>.Success(updatedOrder, "تم تحديث حالة الطلب بنجاح"));
+                                return Ok(ApiResponse<LabOrderResponse>.Success(
+                                        updatedOrder, 
+                                        "تم بدء العمل على الطلب بنجاح - الحالة: قيد التنفيذ في المعمل"));
                         }
                         catch (ArgumentException ex)
                         {
+                                _logger.LogWarning(ex, "Lab order {OrderId} not found for laboratory {LaboratoryId}", 
+                                        orderId, currentLaboratoryId);
                                 return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                        }
+                        catch (UnauthorizedAccessException ex)
+                        {
+                                _logger.LogWarning(ex, "Laboratory {LaboratoryId} unauthorized to access order {OrderId}", 
+                                        currentLaboratoryId, orderId);
+                                return StatusCode(403, ApiResponse<object>.Failure(ex.Message, statusCode: 403));
                         }
                         catch (InvalidOperationException ex)
                         {
+                                _logger.LogWarning(ex, "Invalid operation for lab order {OrderId} by laboratory {LaboratoryId}", 
+                                        orderId, currentLaboratoryId);
                                 return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
                         }
                         catch (Exception ex)
                         {
-                                _logger.LogError(ex, "Error updating status for lab order {OrderId} for laboratory: {LaboratoryId}", orderId, currentLaboratoryId);
-                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ أثناء تحديث حالة الطلب", new[] { ex.Message }, 500));
+                                _logger.LogError(ex, "Error starting lab work for order {OrderId} by laboratory {LaboratoryId}", 
+                                        orderId, currentLaboratoryId);
+                                return StatusCode(500, ApiResponse<object>.Failure(
+                                        "حدث خطأ أثناء بدء العمل على الطلب", 
+                                        new[] { ex.Message }, 
+                                        500));
                         }
                 }
 

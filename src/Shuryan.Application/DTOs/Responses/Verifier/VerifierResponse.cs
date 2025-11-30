@@ -17,6 +17,6 @@ namespace Shuryan.Application.DTOs.Responses.Verifier
         public string? PhoneNumber { get; set; }
         public DateTime? BirthDate { get; set; }
         public Gender? Gender { get; set; }
-        public Guid CreatedByAdminId { get; set; }
+        //public Guid CreatedByAdminId { get; set; }
     }
 }

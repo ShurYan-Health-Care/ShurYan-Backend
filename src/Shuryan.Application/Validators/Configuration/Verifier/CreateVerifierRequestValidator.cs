@@ -45,9 +45,9 @@ namespace Shuryan.Application.Validators.Configuration.Verifier
                 .When(x => x.Gender.HasValue)
                 .WithMessage("Invalid gender");
 
-            RuleFor(x => x.CreatedByAdminId)
-                .NotEmpty()
-                .WithMessage("Created by admin ID is required");
+            //RuleFor(x => x.CreatedByAdminId)
+            //    .NotEmpty()
+            //    .WithMessage("Created by admin ID is required");
         }
     }
 }

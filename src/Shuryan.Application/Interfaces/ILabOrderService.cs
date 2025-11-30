@@ -101,6 +101,11 @@ namespace Shuryan.Application.Interfaces
         Task<LabOrderResponse> MarkInProgressAsync(Guid id);
 
         /// <summary>
+        /// [Laboratory] Start lab work - Transition from AwaitingSamples to InProgressAtLab
+        /// </summary>
+        Task<LabOrderResponse> StartLabWorkAsync(Guid orderId, Guid laboratoryId, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Complete lab order (all results ready)
         /// </summary>
         Task<LabOrderResponse> CompleteLabOrderAsync(Guid id);
