@@ -504,6 +504,12 @@ namespace Shuryan.Application.Services
                     throw new InvalidOperationException("User not found");
                 }
 
+                // Ensure all required fields have values (Paymob requirement)
+                var userEmail = !string.IsNullOrWhiteSpace(user.Email) ? user.Email : "customer@shuryan.com";
+                var userFirstName = !string.IsNullOrWhiteSpace(user.FirstName) ? user.FirstName : "Customer";
+                var userLastName = !string.IsNullOrWhiteSpace(user.LastName) ? user.LastName : "User";
+                var userPhone = !string.IsNullOrWhiteSpace(user.PhoneNumber) ? user.PhoneNumber : "01000000000";
+
                 var paymentToken = await _paymobService.GeneratePaymentKeyAsync(
                     authToken,
                     paymobOrder.Id,
@@ -688,12 +694,12 @@ namespace Shuryan.Application.Services
                         var labOrder = await _unitOfWork.LabOrders.GetByIdAsync(orderId);
                         if (labOrder != null && labOrder.Status == LabOrderStatus.AwaitingPayment)
                         {
-                            labOrder.Status = LabOrderStatus.Paid;
+                            labOrder.Status = LabOrderStatus.AwaitingSamples;
                             labOrder.PaidAt = DateTime.UtcNow;
                             labOrder.UpdatedAt = DateTime.UtcNow;
                             _unitOfWork.LabOrders.Update(labOrder);
                             await _unitOfWork.SaveChangesAsync(cancellationToken);
-                            _logger.LogInformation("Lab order {OrderId} marked as Paid after payment", orderId);
+                            _logger.LogInformation("Lab order {OrderId} marked as AwaitingSamples after successful payment", orderId);
                         }
                         break;
                 }
@@ -702,6 +708,135 @@ namespace Shuryan.Application.Services
             {
                 _logger.LogError(ex, "Error updating order status after payment for {OrderType} {OrderId}",
                     orderType, orderId);
+            }
+        }
+
+        /// <summary>
+        /// [TEST ONLY] Simulate successful payment - Updates order status directly without real payment
+        /// </summary>
+        public async Task<ApiResponse<string>> SimulatePaymentSuccessAsync(
+            Guid userId,
+            string orderType,
+            Guid orderId,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogWarning("[TEST MODE] Simulating payment success for {OrderType} {OrderId} by user {UserId}",
+                    orderType, orderId, userId);
+
+                // Verify order exists and belongs to user
+                switch (orderType)
+                {
+                    case "LabOrder":
+                        var labOrder = await _unitOfWork.LabOrders.GetByIdAsync(orderId);
+                        if (labOrder == null)
+                        {
+                            return ApiResponse<string>.Failure(
+                                "طلب المعمل غير موجود",
+                                new[] { "Lab order not found" },
+                                404);
+                        }
+
+                        if (labOrder.PatientId != userId)
+                        {
+                            return ApiResponse<string>.Failure(
+                                "غير مصرح لك بالوصول لهذا الطلب",
+                                new[] { "Unauthorized access" },
+                                403);
+                        }
+
+                        if (labOrder.Status != LabOrderStatus.AwaitingPayment)
+                        {
+                            return ApiResponse<string>.Failure(
+                                $"حالة الطلب الحالية: {labOrder.Status}. يجب أن تكون 'في انتظار الدفع'",
+                                new[] { $"Current status: {labOrder.Status}" },
+                                400);
+                        }
+
+                        // Update to AwaitingSamples
+                        labOrder.Status = LabOrderStatus.AwaitingSamples;
+                        labOrder.PaidAt = DateTime.UtcNow;
+                        labOrder.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.LabOrders.Update(labOrder);
+                        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                        _logger.LogInformation("[TEST MODE] Lab order {OrderId} updated to AwaitingSamples", orderId);
+                        return ApiResponse<string>.Success(
+                            "تم تحديث حالة الطلب بنجاح - في انتظار العينات",
+                            "تم محاكاة الدفع بنجاح (TEST MODE)");
+
+                    case "PharmacyOrder":
+                        var pharmacyOrder = await _unitOfWork.PharmacyOrders.GetByIdAsync(orderId);
+                        if (pharmacyOrder == null)
+                        {
+                            return ApiResponse<string>.Failure(
+                                "طلب الصيدلية غير موجود",
+                                new[] { "Pharmacy order not found" },
+                                404);
+                        }
+
+                        if (pharmacyOrder.PatientId != userId)
+                        {
+                            return ApiResponse<string>.Failure(
+                                "غير مصرح لك بالوصول لهذا الطلب",
+                                new[] { "Unauthorized access" },
+                                403);
+                        }
+
+                        pharmacyOrder.Status = PharmacyOrderStatus.Confirmed;
+                        pharmacyOrder.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.PharmacyOrders.Update(pharmacyOrder);
+                        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                        _logger.LogInformation("[TEST MODE] Pharmacy order {OrderId} confirmed", orderId);
+                        return ApiResponse<string>.Success(
+                            "تم تأكيد الطلب بنجاح",
+                            "تم محاكاة الدفع بنجاح (TEST MODE)");
+
+                    case "ConsultationBooking":
+                        var appointment = await _unitOfWork.Appointments.GetByIdAsync(orderId);
+                        if (appointment == null)
+                        {
+                            return ApiResponse<string>.Failure(
+                                "الموعد غير موجود",
+                                new[] { "Appointment not found" },
+                                404);
+                        }
+
+                        if (appointment.PatientId != userId)
+                        {
+                            return ApiResponse<string>.Failure(
+                                "غير مصرح لك بالوصول لهذا الموعد",
+                                new[] { "Unauthorized access" },
+                                403);
+                        }
+
+                        appointment.Status = AppointmentStatus.Confirmed;
+                        appointment.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.Appointments.Update(appointment);
+                        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                        _logger.LogInformation("[TEST MODE] Appointment {OrderId} confirmed", orderId);
+                        return ApiResponse<string>.Success(
+                            "تم تأكيد الموعد بنجاح",
+                            "تم محاكاة الدفع بنجاح (TEST MODE)");
+
+                    default:
+                        return ApiResponse<string>.Failure(
+                            "نوع الطلب غير مدعوم",
+                            new[] { "Unsupported order type" },
+                            400);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TEST MODE] Error simulating payment success for {OrderType} {OrderId}",
+                    orderType, orderId);
+                return ApiResponse<string>.Failure(
+                    "حدث خطأ أثناء محاكاة الدفع",
+                    new[] { ex.Message },
+                    500);
             }
         }
 

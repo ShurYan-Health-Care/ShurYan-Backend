@@ -66,5 +66,14 @@ namespace Shuryan.Application.Interfaces
             Guid paymentId,
             Guid userId,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// [TEST ONLY] Simulate successful payment for testing purposes
+        /// </summary>
+        Task<ApiResponse<string>> SimulatePaymentSuccessAsync(
+            Guid userId,
+            string orderType,
+            Guid orderId,
+            CancellationToken cancellationToken = default);
     }
 }
