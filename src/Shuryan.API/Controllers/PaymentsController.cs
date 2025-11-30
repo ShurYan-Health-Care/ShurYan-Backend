@@ -166,6 +166,26 @@ namespace Shuryan.API.Controllers
         }
 
         /// <summary>
+        /// [TEST ONLY] محاكاة نجاح الدفع لطلب معمل - للتجربة فقط
+        /// </summary>
+        [HttpPost("lab-orders/{labOrderId}/simulate-payment-success")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> SimulateLabOrderPaymentSuccess(
+            Guid labOrderId,
+            CancellationToken cancellationToken)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _paymentProcessingService.SimulatePaymentSuccessAsync(
+                userId,
+                "LabOrder",
+                labOrderId,
+                cancellationToken);
+
+            return StatusCode(result.StatusCode ?? 500, result);
+        }
+
+        /// <summary>
         /// اختبار يدوي للـ webhook (Development only)
         /// </summary>
         [HttpPost("{paymentId}/test-success")]

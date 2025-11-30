@@ -31,7 +31,7 @@ namespace Shuryan.Application.DTOs.Requests.Verifier
 
         public Gender? Gender { get; set; }
 
-        [Required(ErrorMessage = "Created by admin ID is required")]
-        public Guid CreatedByAdminId { get; set; }
+        //[Required(ErrorMessage = "Created by admin ID is required")]
+        //public Guid CreatedByAdminId { get; set; }
     }
 }

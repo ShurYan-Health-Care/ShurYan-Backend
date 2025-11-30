@@ -16,12 +16,12 @@ namespace Shuryan.Infrastructure.Data.Configurations.IdentityConfigurations
             // Table Mapping
             builder.ToTable("Verifiers");
 
-            // Properties
-            builder.Property(v => v.CreatedByAdminId).IsRequired();
+            //// Properties
+            //builder.Property(v => v.CreatedByAdminId).IsRequired();
 
-            // Indexes
-            builder.HasIndex(v => v.CreatedByAdminId)
-                .HasDatabaseName("IX_Verifier_CreatedByAdminId");
+            //// Indexes
+            //builder.HasIndex(v => v.CreatedByAdminId)
+            //    .HasDatabaseName("IX_Verifier_CreatedByAdminId");
 
             // Relationships - Verified Doctors
             builder.HasMany(v => v.VerifiedDoctors)
