@@ -31,6 +31,7 @@ builder.Services.AddValidation();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddSignalR();
+builder.Services.AddRateLimiterConfiguration();
 #endregion
 
 
@@ -48,6 +49,7 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 app.UseCors("ShuryanCorsPolicy");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();

@@ -8,12 +8,11 @@
 
   <ItemGroup>
     <Compile Remove="Common\**" />
+    <Compile Remove="Interfaces\Services\**" />
     <EmbeddedResource Remove="Common\**" />
+    <EmbeddedResource Remove="Interfaces\Services\**" />
     <None Remove="Common\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Interfaces\Services\" />
+    <None Remove="Interfaces\Services\**" />
   </ItemGroup>
 
   <ItemGroup>
