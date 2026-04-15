@@ -63,6 +63,11 @@ namespace Shuryan.Application.Interfaces
                 /// </summary>
                 Task<PatientLabPrescriptionResponse?> GetLabPrescriptionDetailsAsync(Guid patientId, Guid prescriptionId);
 
+                /// <summary>
+                /// جلب التحاليل المطلوبة في حجز معين
+                /// </summary>
+                Task<PatientLabPrescriptionResponse?> GetLabPrescriptionByAppointmentAsync(Guid patientId, Guid appointmentId);
+
                 #endregion
 
                 #region Lab Orders

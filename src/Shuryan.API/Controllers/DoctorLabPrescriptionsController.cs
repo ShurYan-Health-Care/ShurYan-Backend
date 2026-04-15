@@ -177,6 +177,73 @@ namespace Shuryan.API.Controllers
 
                 #endregion
 
+                #region Patient Lab Prescriptions
+
+                /// <summary>
+                /// عرض جميع التحاليل المطلوبة من مريض معين - ملخص
+                /// GET /api/doctors/me/patients/{patientId}/lab-prescriptions
+                /// </summary>
+                [HttpGet("patients/{patientId:guid}/lab-prescriptions")]
+                [ProducesResponseType(typeof(ApiResponse<IEnumerable<PatientLabPrescriptionSummaryResponse>>), StatusCodes.Status200OK)]
+                public async Task<ActionResult<ApiResponse<IEnumerable<PatientLabPrescriptionSummaryResponse>>>> GetPatientLabPrescriptions(
+                    Guid patientId)
+                {
+                        var doctorId = GetCurrentDoctorId();
+                        if (doctorId == Guid.Empty)
+                                return Unauthorized(ApiResponse<object>.Failure("غير مصرح", statusCode: 401));
+
+                        try
+                        {
+                                var summaries = await _labPrescriptionService.GetPatientLabPrescriptionSummariesAsync(
+                                    doctorId, 
+                                    patientId);
+
+                                return Ok(ApiResponse<IEnumerable<PatientLabPrescriptionSummaryResponse>>.Success(
+                                    summaries, "تم جلب التحاليل بنجاح"));
+                        }
+                        catch (Exception ex)
+                        {
+                                _logger.LogError(ex, "Error getting lab prescriptions for patient {PatientId}", patientId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                        }
+                }
+
+                /// <summary>
+                /// عرض تفاصيل تحليل معين
+                /// GET /api/doctors/me/lab-prescriptions/{prescriptionId}/details
+                /// </summary>
+                [HttpGet("lab-prescriptions/{prescriptionId:guid}/details")]
+                [ProducesResponseType(typeof(ApiResponse<LabPrescriptionDetailedResponse>), StatusCodes.Status200OK)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+                public async Task<ActionResult<ApiResponse<LabPrescriptionDetailedResponse>>> GetLabPrescriptionDetailedInfo(
+                    Guid prescriptionId)
+                {
+                        var doctorId = GetCurrentDoctorId();
+                        if (doctorId == Guid.Empty)
+                                return Unauthorized(ApiResponse<object>.Failure("غير مصرح", statusCode: 401));
+
+                        try
+                        {
+                                var prescription = await _labPrescriptionService.GetLabPrescriptionDetailedAsync(prescriptionId);
+                                if (prescription == null)
+                                        return NotFound(ApiResponse<object>.Failure("التحليل غير موجود", statusCode: 404));
+
+                                // Verify ownership
+                                if (prescription.DoctorId != doctorId)
+                                        return Forbid();
+
+                                return Ok(ApiResponse<LabPrescriptionDetailedResponse>.Success(
+                                    prescription, "تم جلب تفاصيل التحليل بنجاح"));
+                        }
+                        catch (Exception ex)
+                        {
+                                _logger.LogError(ex, "Error getting detailed prescription {PrescriptionId}", prescriptionId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                        }
+                }
+
+                #endregion
+
                 #region Helper Methods
 
                 private Guid GetCurrentDoctorId()

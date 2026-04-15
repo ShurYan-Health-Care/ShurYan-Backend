@@ -1525,14 +1525,16 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Pharmacy with ID {request.PharmacyId} not found");
                 }
 
-                var existingOrder = await _unitOfWork.Repository<PharmacyOrder>()
+                // تحقق من إذا كانت الروشتة تم إرسالها لنفس الصيدلية من قبل
+                var existingOrderToSamePharmacy = await _unitOfWork.Repository<PharmacyOrder>()
                     .GetQueryable()
                     .FirstOrDefaultAsync(po => po.PrescriptionId == prescriptionId && 
+                                              po.PharmacyId == request.PharmacyId &&
                                               po.Status != PharmacyOrderStatus.Cancelled);
 
-                if (existingOrder != null)
+                if (existingOrderToSamePharmacy != null)
                 {
-                    throw new InvalidOperationException($"Prescription {prescriptionId} has already been sent to a pharmacy");
+                    throw new InvalidOperationException($"تم إرسال هذه الروشتة مسبقاً إلى نفس الصيدلية");
                 }
 
                 var orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";

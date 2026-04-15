@@ -3,6 +3,7 @@ using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Core.Enums.Laboratory;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Shuryan.Application.Interfaces
@@ -128,6 +129,16 @@ namespace Shuryan.Application.Interfaces
         /// Update lab result
         /// </summary>
         Task<LabResultResponse> UpdateLabResultAsync(Guid resultId, UpdateLabResultRequest request);
+
+        /// <summary>
+        /// [Laboratory] Submit lab results for an order and mark as completed
+        /// </summary>
+        Task<LabOrderResponse> SubmitLabResultsAsync(Guid orderId, Guid laboratoryId, SubmitLabResultsRequest request, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// [Patient/Doctor] Get lab order results with authorization check
+        /// </summary>
+        Task<LabOrderResultsResponse> GetLabOrderResultsWithAuthAsync(Guid orderId, Guid userId, string userRole, CancellationToken cancellationToken = default);
 
         #endregion
 

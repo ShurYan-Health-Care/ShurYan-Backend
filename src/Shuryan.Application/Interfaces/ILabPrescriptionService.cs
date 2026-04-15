@@ -74,5 +74,21 @@ namespace Shuryan.Application.Interfaces
         Task<bool> RemovePrescriptionItemAsync(Guid itemId);
 
         #endregion
+
+        #region Doctor Patient Lab Prescriptions
+
+        /// <summary>
+        /// Get lab prescription summaries for a specific patient by doctor
+        /// </summary>
+        Task<IEnumerable<PatientLabPrescriptionSummaryResponse>> GetPatientLabPrescriptionSummariesAsync(
+            Guid doctorId, 
+            Guid patientId);
+
+        /// <summary>
+        /// Get detailed lab prescription information by prescription ID
+        /// </summary>
+        Task<LabPrescriptionDetailedResponse?> GetLabPrescriptionDetailedAsync(Guid prescriptionId);
+
+        #endregion
     }
 }

@@ -34,7 +34,8 @@ namespace Shuryan.Core.Entities.External.Pharmacies
         public Guid PatientId { get; set; }
         public virtual Patient Patient { get; set; } = null!;
 
-        public virtual PharmacyOrder? PharmacyOrder { get; set; }
+        // Changed from PharmacyOrder (single) to PharmacyOrders (collection) to allow multiple orders per prescription
+        public virtual ICollection<PharmacyOrder> PharmacyOrders { get; set; } = new HashSet<PharmacyOrder>();
         public virtual ICollection<PrescribedMedication> PrescribedMedications { get; set; } = new HashSet<PrescribedMedication>();
 
     }

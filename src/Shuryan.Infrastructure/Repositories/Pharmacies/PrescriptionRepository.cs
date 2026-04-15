@@ -56,7 +56,7 @@ namespace Shuryan.Infrastructure.Repositories.Pharmacies
                 .Include(p => p.PrescribedMedications)
                     .ThenInclude(pm => pm.Medication)
                 .Where(p => p.PatientId == patientId  
-                    && p.PharmacyOrder == null)
+                    && !p.PharmacyOrders.Any())  // Changed from PharmacyOrder == null to !PharmacyOrders.Any()
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
         }
