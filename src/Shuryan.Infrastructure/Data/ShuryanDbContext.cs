@@ -102,9 +102,6 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<Notification> Notifications { get; set; }
 		// Email Verification
 		public DbSet<EmailVerification> EmailVerifications { get; set; }
-		// Chat/AI Bot
-		public DbSet<Conversation> Conversations { get; set; }
-		public DbSet<ConversationMessage> ConversationMessages { get; set; }
 		// Payment
 		public DbSet<Payment> Payments { get; set; }
 		public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
