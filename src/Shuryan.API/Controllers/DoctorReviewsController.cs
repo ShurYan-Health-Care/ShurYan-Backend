@@ -70,14 +70,9 @@ namespace Shuryan.API.Controllers
                     "Reviews retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving reviews for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving reviews",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -107,14 +102,9 @@ namespace Shuryan.API.Controllers
                     "Review statistics retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving review statistics for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving review statistics",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -155,14 +145,9 @@ namespace Shuryan.API.Controllers
                     "Review details retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving review details {ReviewId} for doctor: {DoctorId}", id, currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving review details",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -209,18 +194,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Review {ReviewId} not found for doctor {DoctorId}", reviewId, currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error replying to review {ReviewId} for doctor: {DoctorId}", reviewId, currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while replying to review",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 

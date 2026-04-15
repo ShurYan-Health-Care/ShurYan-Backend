@@ -59,14 +59,9 @@ namespace Shuryan.API.Controllers
                     $"Retrieved {appointments.Count()} appointments successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving appointments",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -97,10 +92,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Appointment retrieved successfully: {AppointmentId}", appointmentId);
                 return Ok(appointment);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointment: {AppointmentId}", appointmentId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving appointment" });
+                throw;
             }
         }
 
@@ -124,10 +118,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Retrieved {Count} upcoming appointments for patient: {PatientId}", appointments.Count(), currentPatientId);
                 return Ok(appointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving upcoming appointments for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving upcoming appointments" });
+                throw;
             }
         }
 
@@ -151,10 +144,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Retrieved {Count} past appointments for patient: {PatientId}", appointments.Count(), currentPatientId);
                 return Ok(appointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving past appointments for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving past appointments" });
+                throw;
             }
         }
 
@@ -179,10 +171,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Retrieved {Count} appointments with status {Status} for patient: {PatientId}", myAppointments.Count(), status, currentPatientId);
                 return Ok(myAppointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments by status for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving appointments" });
+                throw;
             }
         }
 
@@ -213,12 +204,11 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid date range for appointments: {Message}", ex.Message);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments by date range for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, new { Message = "An error occurred while retrieving appointments" });
+                throw;
             }
         }
 
@@ -242,10 +232,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Appointments count: {Count} for patient: {PatientId}", count, currentPatientId);
                 return Ok(new { PatientId = currentPatientId, AppointmentsCount = count });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments count for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving count" });
+                throw;
             }
         }
 
@@ -280,12 +269,11 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid argument for checking availability: {Message}", ex.Message);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error checking availability for doctor: {DoctorId}", doctorId);
-                return StatusCode(500, new { Message = "An error occurred while checking availability" });
+                throw;
             }
         }
 
@@ -326,17 +314,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid argument for creating appointment: {Message}", ex.Message);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation for creating appointment: {Message}", ex.Message);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating appointment for patient: {PatientId}", request.PatientId);
-                return StatusCode(500, new { Message = "An error occurred while creating the appointment" });
+                throw;
             }
         }
 
@@ -380,17 +367,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid argument for updating appointment: {AppointmentId}", appointmentId);
-                return NotFound(new { Message = ex.Message });
+                return NotFound(new { Message = "An unexpected error occurred" });
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation for updating appointment: {AppointmentId}", appointmentId);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating appointment: {AppointmentId}", appointmentId);
-                return StatusCode(500, new { Message = "An error occurred while updating the appointment" });
+                throw;
             }
         }
 
@@ -434,17 +420,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid argument for cancelling appointment: {AppointmentId}", appointmentId);
-                return NotFound(new { Message = ex.Message });
+                return NotFound(new { Message = "An unexpected error occurred" });
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation for cancelling appointment: {AppointmentId}", appointmentId);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error cancelling appointment: {AppointmentId}", appointmentId);
-                return StatusCode(500, new { Message = "An error occurred while cancelling the appointment" });
+                throw;
             }
         }
 
@@ -488,17 +473,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid argument for rescheduling appointment: {AppointmentId}", appointmentId);
-                return NotFound(new { Message = ex.Message });
+                return NotFound(new { Message = "An unexpected error occurred" });
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation for rescheduling appointment: {AppointmentId}", appointmentId);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error rescheduling appointment: {AppointmentId}", appointmentId);
-                return StatusCode(500, new { Message = "An error occurred while rescheduling the appointment" });
+                throw;
             }
         }
 
@@ -536,10 +520,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Appointment deleted successfully: {AppointmentId}", appointmentId);
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting appointment: {AppointmentId}", appointmentId);
-                return StatusCode(500, new { Message = "An error occurred while deleting the appointment" });
+                throw;
             }
         }
 

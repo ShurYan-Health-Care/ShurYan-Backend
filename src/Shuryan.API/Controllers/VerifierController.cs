@@ -45,12 +45,11 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error starting review for doctor: {DoctorId}", doctorId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 
@@ -77,12 +76,11 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error verifying doctor: {DoctorId}", doctorId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 
@@ -101,12 +99,11 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error rejecting doctor: {DoctorId}", doctorId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 
@@ -141,14 +138,9 @@ namespace Shuryan.API.Controllers
                     "Doctors with Sent status retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving doctors with Sent status");
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving doctors",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -179,14 +171,9 @@ namespace Shuryan.API.Controllers
                     "Doctors under review retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving doctors under review");
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving doctors",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -226,14 +213,9 @@ namespace Shuryan.API.Controllers
                     "Verified doctors retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving verified doctors for verifier {VerifierId}", currentVerifierId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving doctors",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -264,14 +246,9 @@ namespace Shuryan.API.Controllers
                     "Rejected doctors retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving rejected doctors");
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving doctors",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -300,12 +277,11 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving documents for doctor: {DoctorId}", doctorId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 
@@ -327,12 +303,11 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error approving document: {DocumentId}", documentId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 
@@ -357,12 +332,11 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error rejecting document: {DocumentId}", documentId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 

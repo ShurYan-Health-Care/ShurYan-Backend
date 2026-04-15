@@ -54,12 +54,11 @@ namespace Shuryan.API.Controllers
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Failed to create patient: {Message}", ex.Message);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating patient");
-                return StatusCode(500, new { Message = "An error occurred while creating the patient" });
+                throw;
             }
         }
 
@@ -83,10 +82,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Patient deleted successfully: {PatientId}", id);
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting patient: {PatientId}", id);
-                return StatusCode(500, new { Message = "An unexpected error occurred while deleting patient" });
+                throw;
             }
         }
 
@@ -110,10 +108,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Patient restored successfully: {PatientId}", id);
                 return Ok(new { Message = "Patient restored successfully", PatientId = id });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error restoring patient: {PatientId}", id);
-                return StatusCode(500, new { Message = "An unexpected error occurred while restoring patient" });
+                throw;
             }
         }
 
@@ -141,10 +138,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Patient found with email: {Email}", email);
                 return Ok(patient);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving patient by email: {Email}", email);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving patient" });
+                throw;
             }
         }
 
@@ -161,10 +157,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Retrieved {Count} patients", patients.Count());
                 return Ok(patients);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving all patients");
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving patients" });
+                throw;
             }
         }
 
@@ -187,10 +182,9 @@ namespace Shuryan.API.Controllers
                 var result = await _patientService.GetPaginatedPatientsAsync(request);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving paginated patients");
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving patients" });
+                throw;
             }
         }
 
@@ -213,10 +207,9 @@ namespace Shuryan.API.Controllers
                 var result = await _patientService.SearchPatientsAsync(request);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error searching patients");
-                return StatusCode(500, new { Message = "An unexpected error occurred while searching patients" });
+                throw;
             }
         }
 
@@ -233,10 +226,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Retrieved {Count} patients with medical history", patients.Count());
                 return Ok(patients);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving patients with medical history");
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving patients" });
+                throw;
             }
         }
 
@@ -253,10 +245,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Email {Email} is unique: {IsUnique}", email, isUnique);
                 return Ok(new { Email = email, IsUnique = isUnique });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error checking email uniqueness: {Email}", email);
-                return StatusCode(500, new { Message = "An unexpected error occurred while checking email" });
+                throw;
             }
         }
 
@@ -273,10 +264,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Total patients count: {Count}", count);
                 return Ok(new { TotalCount = count, IncludeDeleted = includeDeleted });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving patients count");
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving count" });
+                throw;
             }
         }
 
@@ -299,10 +289,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Current patient retrieved for user: {UserId}", userId);
                 return Ok(patient);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving current patient for user: {UserId}", userId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while retrieving patient" });
+                throw;
             }
         }
 
@@ -380,17 +369,16 @@ namespace Shuryan.API.Controllers
                 if (ex.Message.Contains("address"))
                 {
                     return NotFound(new { 
-                        Message = ex.Message,
+                        Message = "Patient location not found",
                         Suggestion = "You can provide coordinates as query parameters: ?latitude=30.0444&longitude=31.2357"
                     });
                 }
                 
-                return NotFound(new { Message = ex.Message });
+                return NotFound(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error finding nearby pharmacies for patient: {PatientId}", patientId);
-                return StatusCode(500, new { Message = "An unexpected error occurred while finding nearby pharmacies" });
+                throw;
             }
         }
 
@@ -430,12 +418,11 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for prescription pharmacy responses: {PatientId}, {PrescriptionId}", 
                     patientId, prescriptionId);
-                return NotFound(new { Message = ex.Message });
+                return NotFound(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescription pharmacy responses for prescription {PrescriptionId}", prescriptionId);
-                return StatusCode(500, new { Message = "حدث خطأ أثناء جلب ردود الصيدليات" });
+                throw;
             }
         }
 
@@ -483,19 +470,17 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for send prescription: {PatientId}, {PrescriptionId}, {PharmacyId}", 
                     patientId, prescriptionId, request.PharmacyId);
-                return NotFound(new { Message = ex.Message });
+                return NotFound(new { Message = "An unexpected error occurred" });
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation for send prescription: {PatientId}, {PrescriptionId}", 
                     patientId, prescriptionId);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error sending prescription {PrescriptionId} to pharmacy {PharmacyId}", 
-                    prescriptionId, request.PharmacyId);
-                return StatusCode(500, new { Message = "حدث خطأ أثناء إرسال الروشتة" });
+                throw;
             }
         }
 
@@ -532,17 +517,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid argument for pharmacy response: {PatientId}, {OrderId}", patientId, orderId);
-                return NotFound(new { Message = ex.Message });
+                return NotFound(new { Message = "An unexpected error occurred" });
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation for pharmacy response: {PatientId}, {OrderId}", patientId, orderId);
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = "An unexpected error occurred" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting pharmacy response for order {OrderId}", orderId);
-                return StatusCode(500, new { Message = "حدث خطأ أثناء جلب رد الصيدلية" });
+                throw;
             }
         }
 

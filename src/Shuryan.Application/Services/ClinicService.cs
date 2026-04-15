@@ -86,9 +86,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved clinic info for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting clinic info for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -282,16 +281,8 @@ namespace Shuryan.Application.Services
                 return await GetClinicInfoAsync(doctorId)
                     ?? throw new InvalidOperationException("Failed to retrieve updated clinic info");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "=== ERROR: Failed to update clinic info for doctor {DoctorId} ===\nError Type: {ExceptionType}\nError Message: {Message}\nStack Trace: {StackTrace}", 
-                    doctorId, ex.GetType().Name, ex.Message, ex.StackTrace);
-                
-                if (ex.InnerException != null)
-                {
-                    _logger.LogError("Inner Exception: {InnerMessage}\nInner Stack: {InnerStack}", 
-                        ex.InnerException.Message, ex.InnerException.StackTrace);
-                }
                 throw;
             }
         }
@@ -343,9 +334,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved clinic address for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting clinic address for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -406,9 +396,8 @@ namespace Shuryan.Application.Services
                 return await GetClinicAddressAsync(doctorId)
                     ?? throw new InvalidOperationException("Failed to retrieve updated clinic address");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating clinic address for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -453,9 +442,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved {Count} clinic images for doctor {DoctorId}", images.Count, doctorId);
                 return new ClinicImagesListResponse { Images = images };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting clinic images for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -513,9 +501,8 @@ namespace Shuryan.Application.Services
                     UploadedAt = photo.CreatedAt
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error uploading clinic image for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -552,9 +539,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully deleted clinic image {ImageId} for doctor {DoctorId}", imageId, doctorId);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting clinic image {ImageId} for doctor {DoctorId}", imageId, doctorId);
                 throw;
             }
         }
@@ -595,9 +581,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully reordered clinic images for doctor {DoctorId}", doctorId);
                 return await GetClinicImagesAsync(doctorId);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error reordering clinic images for doctor {DoctorId}", doctorId);
                 throw;
             }
         }

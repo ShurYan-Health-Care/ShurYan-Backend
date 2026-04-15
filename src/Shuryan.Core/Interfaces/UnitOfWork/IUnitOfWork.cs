@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using Shuryan.Core.Interfaces.Repositories;
-using Shuryan.Core.Interfaces.Repositories.ChatRepositories;
 using Shuryan.Core.Interfaces.Repositories.ClinicRepositories;
 using Shuryan.Core.Interfaces.Repositories.LaboratoryRepositories;
 using Shuryan.Core.Interfaces.Repositories.Pharmacies;
@@ -67,10 +66,6 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
 
         // ==================== Payment Related Repositories ====================
         IPaymentRepository Payments { get; }
-
-        // ==================== Chat/AI Bot Repositories ====================
-        IConversationRepository Conversations { get; }
-        IConversationMessageRepository ConversationMessages { get; }
 
         // ==================== Generic Repository ====================
         IGenericRepository<T> Repository<T>() where T : class;

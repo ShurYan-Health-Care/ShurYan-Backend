@@ -73,18 +73,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Doctor not found: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving suggested partner for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving suggested partner",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -144,7 +139,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for partner suggestion: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
@@ -152,18 +147,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid operation for partner suggestion: {DoctorId}", currentDoctorId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Invalid request",
                     statusCode: 400
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error suggesting partner for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while suggesting partner",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -209,18 +199,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Doctor not found: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error removing suggested partner for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while removing suggested partner",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion
@@ -265,14 +250,9 @@ namespace Shuryan.API.Controllers
                     "Available pharmacies retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving available pharmacies");
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving pharmacies",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -315,14 +295,9 @@ namespace Shuryan.API.Controllers
                     "Available laboratories retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving available laboratories");
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving laboratories",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 

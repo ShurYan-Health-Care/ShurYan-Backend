@@ -1,9 +1,11 @@
 using FluentValidation;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi.Models;
 using Shuryan.API.Services;
+using System.Text.Json;
+using System.Threading.RateLimiting;
 using Shuryan.Application.Interfaces;
 using Shuryan.Application.Services;
-using Shuryan.Application.Services.AI;
 using Shuryan.Application.Services.Auth;
 using Shuryan.Application.Services.Email;
 using Shuryan.Application.Services.Token;
@@ -102,10 +104,6 @@ namespace Shuryan.API.Extensions
             services.AddScoped<IDocumentationService, DocumentationService>();
             services.AddScoped<ILabTestService, LabTestService>();
 
-            // AI Chat Services
-            services.AddHttpClient<IGeminiAIService, GeminiAIService>();
-            services.AddScoped<IChatService, ChatService>();
-
             // Payment Services
             services.AddHttpClient<IPaymobService, PaymobService>();
             services.AddScoped<IPaymentService, PaymentService>();
@@ -141,6 +139,67 @@ namespace Shuryan.API.Extensions
         public static IServiceCollection AddAutoMapperProfiles(this IServiceCollection services)
         {
             services.AddAutoMapper(typeof(Shuryan.Application.Mappers.MappingProfile));
+
+            return services;
+        }
+        #endregion
+
+        #region Configure Global Exception Handler
+        public static IServiceCollection AddGlobalExceptionHandler(this IServiceCollection services)
+        {
+            services.AddExceptionHandler<Shuryan.API.Middleware.GlobalExceptionHandler>();
+            services.AddProblemDetails();
+
+            return services;
+        }
+        #endregion
+
+        #region Configure Rate Limiting
+        public static IServiceCollection AddRateLimiterConfiguration(this IServiceCollection services)
+        {
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                {
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(1),
+                        PermitLimit = 60,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    });
+                });
+
+                options.AddPolicy("auth", context =>
+                {
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+                    {
+                        Window = TimeSpan.FromMinutes(1),
+                        PermitLimit = 10,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    });
+                });
+
+                options.OnRejected = async (context, cancellationToken) =>
+                {
+                    context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                    context.HttpContext.Response.ContentType = "application/json";
+                    var response = new
+                    {
+                        isSuccess = false,
+                        message = "Too many requests. Please slow down and try again later.",
+                        statusCode = 429,
+                        errors = Array.Empty<string>()
+                    };
+                    await context.HttpContext.Response.WriteAsync(
+                        JsonSerializer.Serialize(response), cancellationToken);
+                };
+            });
 
             return services;
         }

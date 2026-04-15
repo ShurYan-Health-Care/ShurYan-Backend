@@ -57,10 +57,9 @@ namespace Shuryan.Application.Services
                                         VerificationStatusName = laboratory.VerificationStatus.ToString()
                                 };
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error retrieving basic info for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -117,10 +116,9 @@ namespace Shuryan.Application.Services
                                         ProfileImageUrl = laboratory.ProfilePictureUrl
                                 };
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error updating basic info for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -150,10 +148,9 @@ namespace Shuryan.Application.Services
 
                                 return uploadResult.FileUrl;
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error updating profile image for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -187,10 +184,9 @@ namespace Shuryan.Application.Services
                                         Longitude = laboratory.Address.Longitude
                                 };
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error retrieving address for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -290,10 +286,9 @@ namespace Shuryan.Application.Services
                                         Longitude = address.Longitude
                                 };
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error updating address for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -342,10 +337,9 @@ namespace Shuryan.Application.Services
 
                                 return response;
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error retrieving working hours for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -377,10 +371,9 @@ namespace Shuryan.Application.Services
                                 // جلب البيانات المحدثة
                                 return await GetWorkingHoursAsync(laboratoryId);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error updating working hours for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -404,10 +397,9 @@ namespace Shuryan.Application.Services
                                         HomeSampleCollectionFee = laboratory.HomeSampleCollectionFee
                                 };
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error retrieving home sample collection settings for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -441,10 +433,9 @@ namespace Shuryan.Application.Services
                                         HomeSampleCollectionFee = laboratory.HomeSampleCollectionFee
                                 };
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error updating home sample collection settings for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -573,10 +564,9 @@ namespace Shuryan.Application.Services
 
                                 return services.Select(s => MapToLabServiceDetailResponse(s));
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error retrieving lab services for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -598,10 +588,9 @@ namespace Shuryan.Application.Services
 
                                 return MapToLabServiceDetailResponse(service);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error retrieving lab service {ServiceId} for laboratory {LaboratoryId}", serviceId, laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -643,10 +632,9 @@ namespace Shuryan.Application.Services
 
                                 return MapToLabServiceDetailResponse(newService);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error adding lab service for laboratory {LaboratoryId}", laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -685,10 +673,9 @@ namespace Shuryan.Application.Services
 
                                 return MapToLabServiceDetailResponse(service);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error updating lab service {ServiceId} for laboratory {LaboratoryId}", serviceId, laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -709,10 +696,9 @@ namespace Shuryan.Application.Services
 
                                 return true;
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error deleting lab service {ServiceId} for laboratory {LaboratoryId}", serviceId, laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -742,10 +728,9 @@ namespace Shuryan.Application.Services
 
                                 return MapToLabServiceDetailResponse(service);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error updating availability for lab service {ServiceId} for laboratory {LaboratoryId}", serviceId, laboratoryId);
-                                throw;
+                            throw;
                         }
                 }
 
@@ -799,10 +784,9 @@ namespace Shuryan.Application.Services
                                         SpecialInstructions = t.SpecialInstructions
                                 });
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error retrieving available lab tests");
-                                throw;
+                            throw;
                         }
                 }
 

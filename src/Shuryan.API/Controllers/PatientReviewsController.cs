@@ -97,7 +97,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Appointment not found for review creation by patient {PatientId}", currentPatientId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
@@ -105,7 +105,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Patient {PatientId} attempted to review appointment they don't own", currentPatientId);
                 return StatusCode(403, ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Access denied",
                     statusCode: 403
                 ));
             }
@@ -113,18 +113,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid review operation by patient {PatientId}", currentPatientId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Invalid request",
                     statusCode: 400
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating review for patient {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while creating the review",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -174,15 +169,9 @@ namespace Shuryan.API.Controllers
                     "Doctor reviews retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving reviews for doctor {DoctorId} by patient {PatientId}",
-                    doctorId, currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving doctor reviews",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -219,15 +208,9 @@ namespace Shuryan.API.Controllers
                     "Doctor review statistics retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving review statistics for doctor {DoctorId} by patient {PatientId}",
-                    doctorId, currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving doctor review statistics",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
