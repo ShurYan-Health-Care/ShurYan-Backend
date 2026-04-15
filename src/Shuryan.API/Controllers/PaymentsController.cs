@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shuryan.API.Filters;
 using Shuryan.Application.DTOs.Requests.Payment;
 using Shuryan.Application.Interfaces;
 
@@ -168,6 +169,7 @@ namespace Shuryan.API.Controllers
         /// <summary>
         /// [TEST ONLY] محاكاة نجاح الدفع لطلب معمل - للتجربة فقط
         /// </summary>
+        [DevelopmentOnly]
         [HttpPost("lab-orders/{labOrderId}/simulate-payment-success")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -188,8 +190,9 @@ namespace Shuryan.API.Controllers
         /// <summary>
         /// اختبار يدوي للـ webhook (Development only)
         /// </summary>
+        [DevelopmentOnly]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("{paymentId}/test-success")]
-        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> TestPaymentSuccess(
             Guid paymentId,

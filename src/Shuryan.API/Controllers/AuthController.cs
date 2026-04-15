@@ -57,14 +57,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Patient registered successfully: {Email}", dto.Email);
                 return StatusCode(201, result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during patient registration for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during registration",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -101,14 +96,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Doctor registered successfully: {Email}", dto.Email);
                 return StatusCode(201, result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during doctor registration for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during registration",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -145,14 +135,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Laboratory registered successfully: {Email}", dto.Email);
                 return StatusCode(201, result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during laboratory registration for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during registration",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -189,14 +174,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Pharmacy registered successfully: {Email}", dto.Email);
                 return StatusCode(201, result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during pharmacy registration for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during registration",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -234,14 +214,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Verifier registered successfully: {Email}", dto.Email);
                 return StatusCode(201, result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during verifier registration for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during registration",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion
@@ -276,14 +251,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Email verified successfully: {Email}", dto.Email);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during email verification for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during email verification",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -316,14 +286,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Verification OTP resent successfully: {Email}", dto.Email);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during resend verification OTP for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while resending verification OTP",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion
@@ -360,14 +325,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("User logged in successfully: {Email}", dto.Email);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during login for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during login",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -407,14 +367,9 @@ namespace Shuryan.API.Controllers
                 
                 return StatusCode(statusCode, result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during Google auth");
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during Google authentication",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion
@@ -449,14 +404,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Password reset OTP sent successfully: {Email}", dto.Email);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during forgot password for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during password reset request",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -488,14 +438,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Password reset successfully: {Email}", dto.Email);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during reset password for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during password reset",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -537,14 +482,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Password changed successfully for user: {UserId}", userId);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during change password for user {UserId}", userId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during password change",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion
@@ -580,14 +520,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Token refreshed successfully");
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during token refresh");
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during token refresh",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -624,14 +559,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("User logged out successfully: {UserId}", userId);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during logout for user {UserId}", userId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during logout",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion
@@ -674,14 +604,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogWarning("⚠️ DEBUG: Account successfully deleted for email: {Email}", dto.Email);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "DEBUG: Error during account deletion for {Email}", dto.Email);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during account deletion",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -724,14 +649,9 @@ namespace Shuryan.API.Controllers
                 _logger.LogWarning("Account successfully deleted for user: {UserId}, Email: {Email}", userId, dto.Email);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error during account deletion for user {UserId}", userId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred during account deletion",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion

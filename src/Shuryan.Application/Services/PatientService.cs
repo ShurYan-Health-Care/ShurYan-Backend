@@ -75,9 +75,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PatientResponse>(patient);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving patient with ID {PatientId}", id);
                 throw;
             }
         }
@@ -103,9 +102,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PatientResponse>(patient);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving patient with email {Email}", email);
                 throw;
             }
         }
@@ -150,9 +148,8 @@ namespace Shuryan.Application.Services
                 var createdPatient = await _patientRepository.GetByIdWithDetailsAsync(patient.Id);
                 return _mapper.Map<PatientResponse>(createdPatient);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating patient");
                 throw;
             }
         }
@@ -271,10 +268,9 @@ namespace Shuryan.Application.Services
             {
                 throw; // Re-throw validation exceptions
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating patient with ID {PatientId}", id);
-                throw new InvalidOperationException($"Failed to update patient: {ex.Message}", ex);
+                throw;
             }
         }
 
@@ -297,9 +293,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Permanently deleted patient with ID {PatientId}", id);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting patient with ID {PatientId}", id);
                 throw;
             }
         }
@@ -334,9 +329,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Restored patient with ID {PatientId}", id);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error restoring patient with ID {PatientId}", id);
                 throw;
             }
         }
@@ -354,9 +348,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PatientResponse>(patient);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving patient with ID {PatientId}", userId);
                 throw;
             }
         }
@@ -382,9 +375,8 @@ namespace Shuryan.Application.Services
                 var patients = query.OrderByDescending(p => p.CreatedAt).ToList();
                 return _mapper.Map<IEnumerable<PatientResponse>>(patients);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving all patients");
                 throw;
             }
         }
@@ -425,9 +417,8 @@ namespace Shuryan.Application.Services
                     HasNextPage = request.PageNumber < (int)Math.Ceiling(totalCount / (double)request.PageSize)
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving paginated patients");
                 throw;
             }
         }
@@ -518,9 +509,8 @@ namespace Shuryan.Application.Services
                     HasNextPage = request.PageNumber < (int)Math.Ceiling(totalCount / (double)request.PageSize)
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error searching patients");
                 throw;
             }
         }
@@ -535,9 +525,8 @@ namespace Shuryan.Application.Services
                 var patients = await _patientRepository.GetPatientsWithMedicalHistoryAsync();
                 return _mapper.Map<IEnumerable<PatientResponse>>(patients);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving patients with medical history");
                 throw;
             }
         }
@@ -564,9 +553,8 @@ namespace Shuryan.Application.Services
 
                 return false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error checking email uniqueness for {Email}", email);
                 throw;
             }
         }
@@ -587,9 +575,8 @@ namespace Shuryan.Application.Services
 
                 return query.Count();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting total patients count");
                 throw;
             }
         }
@@ -617,9 +604,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<MedicalHistoryItemResponse>>(medicalHistory);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving medical history for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -657,9 +643,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<MedicalHistoryItemResponse>(medicalHistoryItem);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error adding medical history item for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -705,9 +690,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<MedicalHistoryItemResponse>(medicalHistoryItem);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating medical history item for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -742,9 +726,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Deleted medical history item {ItemId} for patient {PatientId}", itemId, patientId);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting medical history item for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -772,9 +755,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<AppointmentResponse>>(appointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -802,9 +784,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<AppointmentResponse>>(upcomingAppointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving upcoming appointments for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -830,9 +811,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<AppointmentResponse>>(pastAppointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving past appointments for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -858,9 +838,8 @@ namespace Shuryan.Application.Services
 
                 return nextAppointment != null ? _mapper.Map<AppointmentResponse>(nextAppointment) : null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving next appointment for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -880,9 +859,8 @@ namespace Shuryan.Application.Services
 
                 return patient.Appointments.Count;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting appointments count for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -910,9 +888,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<PrescriptionResponse>>(prescriptions);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving prescriptions for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -936,9 +913,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<PrescriptionResponse>>(activePrescriptions);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving active prescriptions for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -967,9 +943,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PrescriptionResponse>(prescription);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving prescription {PrescriptionId} for patient {PatientId}", prescriptionId, patientId);
                 throw;
             }
         }
@@ -997,9 +972,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<LabOrderResponse>>(labOrders);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving lab orders for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1026,9 +1000,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<LabOrderResponse>>(pendingLabOrders);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving pending lab orders for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1057,9 +1030,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<LabOrderResponse>(labOrder);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving lab order {OrderId} for patient {PatientId}", orderId, patientId);
                 throw;
             }
         }
@@ -1089,9 +1061,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<AddressResponse>(patient.Address);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving address for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1198,9 +1169,8 @@ namespace Shuryan.Application.Services
                     return _mapper.Map<AddressResponse>(address);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating/creating address for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1227,9 +1197,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<AddressResponse>(address);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating address");
                 throw;
             }
         }
@@ -1266,9 +1235,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Updated profile image for patient {PatientId}", patientId);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating profile image for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1296,9 +1264,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Removed profile image for patient {PatientId}", patientId);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error removing profile image for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1376,10 +1343,8 @@ namespace Shuryan.Application.Services
                     SearchRadiusKm = Math.Round(maxDistance, 2)
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error finding nearby pharmacies for coordinates: {Latitude}, {Longitude}", 
-                    request.Latitude, request.Longitude);
                 throw;
             }
         }
@@ -1482,9 +1447,8 @@ namespace Shuryan.Application.Services
 
                 return await FindNearbyPharmaciesAsync(request);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error finding nearby pharmacies for patient: {PatientId}", patientId);
                 throw;
             }
         }
@@ -1575,10 +1539,8 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error sending prescription {PrescriptionId} to pharmacy {PharmacyId}", 
-                    prescriptionId, request.PharmacyId);
                 throw;
             }
         }
@@ -1677,9 +1639,8 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting pharmacy response for order {OrderId} and patient {PatientId}", orderId, patientId);
                 throw;
             }
         }
@@ -1822,10 +1783,8 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting pharmacy responses for prescription {PrescriptionId} and patient {PatientId}", 
-                    prescriptionId, patientId);
                 throw;
             }
         }
@@ -1868,9 +1827,8 @@ namespace Shuryan.Application.Services
                     ConfirmedAt = DateTime.UtcNow
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error confirming order {OrderId} for patient {PatientId}", orderId, patientId);
                 throw;
             }
         }

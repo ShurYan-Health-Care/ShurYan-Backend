@@ -55,16 +55,11 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor {DoctorId} not found", doctorId);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting weekly schedule for doctor {DoctorId}", doctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب الجدول الأسبوعي",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -87,16 +82,11 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor {DoctorId} not found", doctorId);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting exceptional dates for doctor {DoctorId}", doctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب المواعيد الاستثنائية",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -119,16 +109,11 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor {DoctorId} not found", doctorId);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting services for doctor {DoctorId}", doctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب الخدمات",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -172,16 +157,11 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor {DoctorId} not found", doctorId);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting booked appointments for doctor {DoctorId}", doctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب المواعيد المحجوزة",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -236,16 +216,11 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor {DoctorId} not found", doctorId);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting available time slots for doctor {DoctorId}", doctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء حساب الفترات المتاحة",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 

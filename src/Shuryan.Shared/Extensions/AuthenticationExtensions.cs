@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Shuryan.Shared.Configurations;
 
@@ -55,7 +56,9 @@ namespace Shuryan.Shared.Extensions
                 {
                     OnAuthenticationFailed = context =>
                     {
-                        Console.WriteLine($"Authentication Failed: {context.Exception.Message}");
+                        var logger = context.HttpContext.RequestServices
+                            .GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogWarning("Authentication failed: {Error}", context.Exception.Message);
                         if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
                         {
                             context.Response.Headers.Add("Token-Expired", "true");
@@ -64,18 +67,18 @@ namespace Shuryan.Shared.Extensions
                     },
                     OnChallenge = context =>
                     {
-                        Console.WriteLine($"Authentication Challenge: {context.Error}, {context.ErrorDescription}");
+                        var logger = context.HttpContext.RequestServices
+                            .GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogWarning("Authentication challenge issued: {Error} - {Description}",
+                            context.Error, context.ErrorDescription);
                         return Task.CompletedTask;
                     },
                     OnTokenValidated = context =>
                     {
-                        Console.WriteLine($"Token Validated Successfully for user: {context.Principal?.Identity?.Name}");
-                        return Task.CompletedTask;
-                    },
-                    OnMessageReceived = context =>
-                    {
-                        var token = context.Request.Headers["Authorization"].FirstOrDefault();
-                        Console.WriteLine($"Token Received: {(string.IsNullOrEmpty(token) ? "NONE" : "Present")}");
+                        var logger = context.HttpContext.RequestServices
+                            .GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogDebug("Token validated for user: {User}",
+                            context.Principal?.Identity?.Name);
                         return Task.CompletedTask;
                     }
                 };

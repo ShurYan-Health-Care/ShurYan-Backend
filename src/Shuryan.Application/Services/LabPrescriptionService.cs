@@ -65,9 +65,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} lab prescriptions", responses.Count);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting all lab prescriptions");
                 throw;
             }
         }
@@ -107,9 +106,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved lab prescription {PrescriptionId}", id);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting lab prescription {PrescriptionId}", id);
                 throw;
             }
         }
@@ -130,9 +128,8 @@ namespace Shuryan.Application.Services
 
                 return await GetLabPrescriptionByIdAsync(prescription.Id);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting lab prescription for appointment {AppointmentId}", appointmentId);
                 throw;
             }
         }
@@ -161,9 +158,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} lab prescriptions for patient {PatientId}", responses.Count, patientId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting lab prescriptions for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -188,9 +184,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} lab prescriptions for doctor {DoctorId}", responses.Count, doctorId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting lab prescriptions for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -255,9 +250,8 @@ namespace Shuryan.Application.Services
                 return await GetLabPrescriptionByIdAsync(prescription.Id)
                     ?? throw new InvalidOperationException("Failed to retrieve created lab prescription");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating lab prescription");
                 throw;
             }
         }
@@ -279,9 +273,8 @@ namespace Shuryan.Application.Services
                 return await GetLabPrescriptionByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve updated lab prescription");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating lab prescription {PrescriptionId}", id);
                 throw;
             }
         }
@@ -300,9 +293,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Deleted lab prescription {PrescriptionId}", id);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting lab prescription {PrescriptionId}", id);
                 throw;
             }
         }
@@ -322,9 +314,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} items for prescription {PrescriptionId}", responses.Count(), prescriptionId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting items for prescription {PrescriptionId}", prescriptionId);
                 throw;
             }
         }
@@ -354,9 +345,8 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<LabPrescriptionItemResponse>(item);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error adding item to prescription {PrescriptionId}", prescriptionId);
                 throw;
             }
         }
@@ -375,9 +365,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Removed prescription item {ItemId}", itemId);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error removing prescription item {ItemId}", itemId);
                 throw;
             }
         }
@@ -432,11 +421,8 @@ namespace Shuryan.Application.Services
 
                 return summaries;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, 
-                    "Error getting lab prescription summaries for doctor {DoctorId} and patient {PatientId}", 
-                    doctorId, patientId);
                 throw;
             }
         }
@@ -485,9 +471,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved detailed lab prescription {PrescriptionId}", prescriptionId);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting detailed lab prescription {PrescriptionId}", prescriptionId);
                 throw;
             }
         }

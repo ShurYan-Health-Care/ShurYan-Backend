@@ -71,9 +71,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} lab orders", responses.Count);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting all lab orders");
                 throw;
             }
         }
@@ -151,9 +150,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved lab order {OrderId}", id);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting lab order {OrderId}", id);
                 throw;
             }
         }
@@ -179,9 +177,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved lab orders for patient {PatientId}", patientId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting lab orders for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -205,9 +202,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved lab orders for laboratory {LaboratoryId}", laboratoryId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting lab orders for laboratory {LaboratoryId}", laboratoryId);
                 throw;
             }
         }
@@ -248,9 +244,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} active lab orders for patient {PatientId}", responses.Count, patientId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting active lab orders for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -283,9 +278,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} completed lab orders for patient {PatientId}", responses.Count, patientId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting completed lab orders for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -325,9 +319,8 @@ namespace Shuryan.Application.Services
                 return await GetLabOrderByIdAsync(labOrder.Id)
                     ?? throw new InvalidOperationException("Failed to retrieve created lab order");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating lab order");
                 throw;
             }
         }
@@ -351,9 +344,8 @@ namespace Shuryan.Application.Services
                 return await GetLabOrderByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve updated lab order");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating lab order status {OrderId}", id);
                 throw;
             }
         }
@@ -385,9 +377,8 @@ namespace Shuryan.Application.Services
                 return await GetLabOrderByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve cancelled lab order");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error cancelling lab order {OrderId}", id);
                 throw;
             }
         }
@@ -417,9 +408,8 @@ namespace Shuryan.Application.Services
                 return await GetLabOrderByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve rejected lab order");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error rejecting lab order {OrderId}", id);
                 throw;
             }
         }
@@ -442,9 +432,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Deleted lab order {OrderId}", id);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting lab order {OrderId}", id);
                 throw;
             }
         }
@@ -471,9 +460,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} lab orders for prescription {PrescriptionId}", responses.Count, prescriptionId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting lab orders for prescription {PrescriptionId}", prescriptionId);
                 throw;
             }
         }
@@ -509,9 +497,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} results for lab order {OrderId}", responses.Count, labOrderId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting results for lab order {OrderId}", labOrderId);
                 throw;
             }
         }

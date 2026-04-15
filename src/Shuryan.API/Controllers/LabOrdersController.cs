@@ -66,22 +66,18 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Lab order not found: {OrderId}", orderId);
-                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
             catch (UnauthorizedAccessException ex)
             {
                 _logger.LogWarning(ex, "Unauthorized access to order {OrderId} by {Role} {UserId}", 
                     orderId, userRole, userId);
                 return StatusCode(StatusCodes.Status403Forbidden, 
-                    ApiResponse<object>.Failure(ex.Message, statusCode: 403));
+                    ApiResponse<object>.Failure("Access denied", statusCode: 403));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting results for order {OrderId}", orderId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب النتائج", 
-                    new[] { ex.Message }, 
-                    500));
+                throw;
             }
         }
 

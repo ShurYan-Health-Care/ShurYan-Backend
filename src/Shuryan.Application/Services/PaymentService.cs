@@ -108,13 +108,9 @@ namespace Shuryan.Application.Services
 
                 return ApiResponse<InitiatePaymentResponse>.Success(response, response.Message);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error initiating payment for user {UserId}", userId);
-                return ApiResponse<InitiatePaymentResponse>.Failure(
-                    "حدث خطأ أثناء إنشاء عملية الدفع",
-                    new[] { ex.Message },
-                    500);
+                throw;
             }
         }
 
@@ -171,13 +167,9 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<PaymentResponse>(payment);
                 return ApiResponse<PaymentResponse>.Success(response, "تم تأكيد الدفع بنجاح");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error confirming payment {PaymentId}", request.PaymentId);
-                return ApiResponse<PaymentResponse>.Failure(
-                    "حدث خطأ أثناء تأكيد الدفع",
-                    new[] { ex.Message },
-                    500);
+                throw;
             }
         }
 
@@ -219,13 +211,9 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<PaymentResponse>(payment);
                 return ApiResponse<PaymentResponse>.Success(response, "تم إلغاء عملية الدفع");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error cancelling payment {PaymentId}", paymentId);
-                return ApiResponse<PaymentResponse>.Failure(
-                    "حدث خطأ أثناء إلغاء الدفع",
-                    new[] { ex.Message },
-                    500);
+                throw;
             }
         }
 
@@ -289,13 +277,9 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<PaymentResponse>(payment);
                 return ApiResponse<PaymentResponse>.Success(response, "تم استرجاع المبلغ بنجاح");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error refunding payment {PaymentId}", request.PaymentId);
-                return ApiResponse<PaymentResponse>.Failure(
-                    "حدث خطأ أثناء استرجاع المبلغ",
-                    new[] { ex.Message },
-                    500);
+                throw;
             }
         }
 
@@ -323,13 +307,9 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<PaymentResponse>(payment);
                 return ApiResponse<PaymentResponse>.Success(response);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting payment {PaymentId}", paymentId);
-                return ApiResponse<PaymentResponse>.Failure(
-                    "حدث خطأ أثناء جلب بيانات الدفع",
-                    new[] { ex.Message },
-                    500);
+                throw;
             }
         }
 
@@ -344,13 +324,9 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<IEnumerable<PaymentResponse>>(payments);
                 return ApiResponse<IEnumerable<PaymentResponse>>.Success(response);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting payments for user {UserId}", userId);
-                return ApiResponse<IEnumerable<PaymentResponse>>.Failure(
-                    "حدث خطأ أثناء جلب عمليات الدفع",
-                    new[] { ex.Message },
-                    500);
+                throw;
             }
         }
 
@@ -375,13 +351,9 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<IEnumerable<PaymentResponse>>(payments);
                 return ApiResponse<IEnumerable<PaymentResponse>>.Success(response);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting payments for order {OrderId}", orderId);
-                return ApiResponse<IEnumerable<PaymentResponse>>.Failure(
-                    "حدث خطأ أثناء جلب عمليات الدفع",
-                    new[] { ex.Message },
-                    500);
+                throw;
             }
         }
 
@@ -400,13 +372,9 @@ namespace Shuryan.Application.Services
                     new[] { "Not implemented" },
                     501);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error handling provider callback from {Provider}", provider);
-                return ApiResponse<PaymentResponse>.Failure(
-                    "حدث خطأ أثناء معالجة رد مزود الدفع",
-                    new[] { ex.Message },
-                    500);
+                throw;
             }
         }
 
@@ -452,9 +420,9 @@ namespace Shuryan.Application.Services
                         break;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating order status after payment for {OrderType} {OrderId}", orderType, orderId);
+                throw;
             }
         }
 

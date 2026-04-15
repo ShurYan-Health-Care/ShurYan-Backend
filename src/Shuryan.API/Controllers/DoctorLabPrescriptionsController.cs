@@ -60,12 +60,11 @@ namespace Shuryan.API.Controllers
                         }
                         catch (ArgumentException ex)
                         {
-                                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+                                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error creating lab prescription for doctor {DoctorId}", doctorId);
-                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                            throw;
                         }
                 }
 
@@ -95,10 +94,9 @@ namespace Shuryan.API.Controllers
 
                                 return Ok(ApiResponse<LabPrescriptionResponse>.Success(prescription, "تم جلب تفاصيل الروشتة"));
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error getting prescription {PrescriptionId}", prescriptionId);
-                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                            throw;
                         }
                 }
 
@@ -168,10 +166,9 @@ namespace Shuryan.API.Controllers
                                 return Ok(ApiResponse<IEnumerable<PatientLabResultsResponse>>.Success(
                                     results.OrderByDescending(r => r.ResultsDate), "تم جلب نتائج التحاليل"));
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error getting lab results for patient {PatientId}", patientId);
-                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                            throw;
                         }
                 }
 
@@ -201,10 +198,9 @@ namespace Shuryan.API.Controllers
                                 return Ok(ApiResponse<IEnumerable<PatientLabPrescriptionSummaryResponse>>.Success(
                                     summaries, "تم جلب التحاليل بنجاح"));
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error getting lab prescriptions for patient {PatientId}", patientId);
-                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                            throw;
                         }
                 }
 
@@ -235,10 +231,9 @@ namespace Shuryan.API.Controllers
                                 return Ok(ApiResponse<LabPrescriptionDetailedResponse>.Success(
                                     prescription, "تم جلب تفاصيل التحليل بنجاح"));
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                                _logger.LogError(ex, "Error getting detailed prescription {PrescriptionId}", prescriptionId);
-                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                            throw;
                         }
                 }
 

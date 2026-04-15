@@ -84,14 +84,9 @@ namespace Shuryan.API.Controllers
                     "Regular checkup pricing retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving regular checkup pricing for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving pricing",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -140,18 +135,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Doctor not found for regular checkup pricing update: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating regular checkup pricing for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while updating pricing",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -192,14 +182,9 @@ namespace Shuryan.API.Controllers
                     "Re-examination pricing retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving re-examination pricing for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving pricing",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -248,18 +233,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Doctor not found for re-examination pricing update: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating re-examination pricing for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while updating pricing",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion
@@ -293,14 +273,9 @@ namespace Shuryan.API.Controllers
                     "Weekly schedule retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving weekly schedule for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving schedule",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -349,18 +324,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Doctor not found for weekly schedule update: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating weekly schedule for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while updating schedule",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -396,14 +366,9 @@ namespace Shuryan.API.Controllers
                     "Exceptional dates retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving exceptional dates for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while retrieving exceptional dates",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -457,7 +422,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for exceptional date addition: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
@@ -465,18 +430,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid operation for exceptional date addition: {DoctorId}", currentDoctorId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Invalid request",
                     statusCode: 400
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error adding exceptional date for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while adding exceptional date",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -525,7 +485,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for exceptional date removal: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
@@ -533,18 +493,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid operation for exceptional date removal: {DoctorId}", currentDoctorId);
                 return StatusCode(403, ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Access denied",
                     statusCode: 403
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error removing exceptional date for doctor: {DoctorId}", currentDoctorId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An unexpected error occurred while removing exceptional date",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion
