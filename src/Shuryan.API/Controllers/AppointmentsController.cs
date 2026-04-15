@@ -118,7 +118,7 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Validation error while booking appointment for Patient {PatientId}", patientId);
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 400));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
             }
             catch (InvalidOperationException ex)
             {
@@ -126,16 +126,15 @@ namespace Shuryan.API.Controllers
                 if (ex.Message.Contains("booked"))
                 {
                     _logger.LogWarning(ex, "Appointment slot conflict for Patient {PatientId}", patientId);
-                    return Conflict(ApiResponse<object>.Failure("This date is already booked.", new[] { ex.Message }, 409));
+                    return Conflict(ApiResponse<object>.Failure("This date is already booked.", statusCode: 409));
                 }
 
                 _logger.LogWarning(ex, "Business logic error while booking appointment for Patient {PatientId}", patientId);
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 400));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Unexpected error while booking appointment for Patient {PatientId}", patientId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred while booking your appointment.", new[] { ex.Message }, 500));
+                throw;
             }
         }
         #endregion
@@ -188,14 +187,9 @@ namespace Shuryan.API.Controllers
                     "Appointment details retrieved successfully"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "An error occurred while retrieving appointment details",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
         #endregion
@@ -226,20 +220,19 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 400));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 409));
+                return Conflict(ApiResponse<object>.Failure("This appointment is already booked", statusCode: 409));
             }
             catch (UnauthorizedAccessException ex)
             {
-                return StatusCode(403, ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 403));
+                return StatusCode(403, ApiResponse<object>.Failure("Access denied", statusCode: 403));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error starting session for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 
@@ -267,12 +260,11 @@ namespace Shuryan.API.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return StatusCode(403, ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 403));
+                return StatusCode(403, ApiResponse<object>.Failure("Access denied", statusCode: 403));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting active session for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 
@@ -296,20 +288,19 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 400));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
             }
             catch (InvalidOperationException ex)
             {
-                return NotFound(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 404));
+                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
             }
             catch (UnauthorizedAccessException ex)
             {
-                return StatusCode(403, ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 403));
+                return StatusCode(403, ApiResponse<object>.Failure("Access denied", statusCode: 403));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error ending session for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
         #endregion
@@ -336,16 +327,15 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 400));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
             }
             catch (UnauthorizedAccessException ex)
             {
-                return StatusCode(403, ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 403));
+                return StatusCode(403, ApiResponse<object>.Failure("Access denied", statusCode: 403));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error saving documentation for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 
@@ -376,12 +366,11 @@ namespace Shuryan.API.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return StatusCode(403, ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 403));
+                return StatusCode(403, ApiResponse<object>.Failure("Access denied", statusCode: 403));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting documentation for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
         #endregion
@@ -414,12 +403,11 @@ namespace Shuryan.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ApiResponse<object>.Failure(ex.Message, new[] { ex.Message }, 400));
+                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating prescription for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
 
@@ -445,10 +433,9 @@ namespace Shuryan.API.Controllers
 
                 return Ok(ApiResponse<PrescriptionResponse>.Success(prescription, "Prescription retrieved successfully", 200));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescription for appointment {AppointmentId}", appointmentId);
-                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+                throw;
             }
         }
         #endregion

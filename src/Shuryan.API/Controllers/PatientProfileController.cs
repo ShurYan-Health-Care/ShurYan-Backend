@@ -78,14 +78,9 @@ namespace Shuryan.API.Controllers
                     "تم جلب المعلومات بنجاح"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving personal info for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب المعلومات",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -145,7 +140,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Validation error for patient: {PatientId}", currentPatientId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Invalid request",
                     statusCode: 400
                 ));
             }
@@ -154,18 +149,12 @@ namespace Shuryan.API.Controllers
                 _logger.LogError(ex, "Operation error updating personal info: {PatientId}", currentPatientId);
                 return StatusCode(500, ApiResponse<object>.Failure(
                     "حدث خطأ أثناء تحديث المعلومات",
-                    new[] { ex.Message },
-                    500
+                    statusCode: 500
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Unexpected error updating personal info: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ غير متوقع",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -218,14 +207,9 @@ namespace Shuryan.API.Controllers
                     statusCode: 404
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving address for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب العنوان",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -294,14 +278,9 @@ namespace Shuryan.API.Controllers
                     statusCode: 404
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating/creating address: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء حفظ العنوان",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -337,14 +316,9 @@ namespace Shuryan.API.Controllers
                     medicalRecord != null ? "تم جلب الملف الطبي بنجاح" : "لا يوجد ملف طبي مسجل"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving medical record for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب الملف الطبي",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -381,18 +355,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Patient not found: {PatientId}", currentPatientId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating medical record: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء تحديث الملف الطبي",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -454,9 +423,9 @@ namespace Shuryan.API.Controllers
                         await _fileUploadService.DeleteFileAsync(patient.ProfileImageUrl);
                         _logger.LogInformation("Deleted old profile image from Cloudinary for patient: {PatientId}", currentPatientId);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        _logger.LogWarning(ex, "Failed to delete old image from Cloudinary, continuing with upload");
+                        throw;
                     }
                 }
 
@@ -489,18 +458,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for profile image update: {PatientId}", currentPatientId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Invalid request",
                     statusCode: 400
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating profile image for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء تحديث الصورة الشخصية",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -553,9 +517,9 @@ namespace Shuryan.API.Controllers
                     await _fileUploadService.DeleteFileAsync(patient.ProfileImageUrl);
                     _logger.LogInformation("Deleted profile image from Cloudinary for patient: {PatientId}", currentPatientId);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    _logger.LogWarning(ex, "Failed to delete image from Cloudinary, continuing with database update");
+                    throw;
                 }
 
                 // Remove from database
@@ -575,14 +539,9 @@ namespace Shuryan.API.Controllers
                     "تم حذف الصورة الشخصية بنجاح"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error removing profile image for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء حذف الصورة الشخصية",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -633,7 +592,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for pharmacy response request: {PatientId}, {OrderId}", currentPatientId, orderId);
                 return NotFound(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Resource not found",
                     statusCode: 404
                 ));
             }
@@ -641,19 +600,13 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid operation for pharmacy response request: {PatientId}, {OrderId}", currentPatientId, orderId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    ex.Message,
+                    "Invalid request",
                     statusCode: 400
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving pharmacy response for order {OrderId} for patient: {PatientId}", 
-                    orderId, currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب رد الصيدلية",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -701,28 +654,20 @@ namespace Shuryan.API.Controllers
                     orderId, currentPatientId);
                 return NotFound(ApiResponse<object>.Failure(
                     "تعذر العثور على الطلب",
-                    new[] { ex.Message },
-                    404
+                    statusCode: 404
                 ));
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation: {Message}", ex.Message);
                 return BadRequest(ApiResponse<object>.Failure(
-                    ex.Message,
-                    new[] { ex.Message },
-                    400
+                    "Invalid request",
+                    statusCode: 400
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error confirming order {OrderId} for patient {PatientId}",
-                    orderId, currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء تأكيد الطلب",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -765,14 +710,9 @@ namespace Shuryan.API.Controllers
                     "تم جلب طلبات التحاليل النشطة بنجاح"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving active lab orders for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب طلبات التحاليل",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 
@@ -811,14 +751,9 @@ namespace Shuryan.API.Controllers
                     "تم جلب نتائج التحاليل بنجاح"
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving completed lab orders for patient: {PatientId}", currentPatientId);
-                return StatusCode(500, ApiResponse<object>.Failure(
-                    "حدث خطأ أثناء جلب نتائج التحاليل",
-                    new[] { ex.Message },
-                    500
-                ));
+                throw;
             }
         }
 

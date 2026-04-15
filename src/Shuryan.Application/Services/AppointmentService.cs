@@ -66,9 +66,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<AppointmentResponse>(appointment);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointment with ID {AppointmentId}", id);
                 throw;
             }
         }
@@ -185,9 +184,8 @@ namespace Shuryan.Application.Services
                 var createdAppointment = await _appointmentRepository.GetByIdWithDetailsAsync(appointment.Id);
                 return _mapper.Map<AppointmentResponse>(createdAppointment);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating appointment for Patient {PatientId}", request.PatientId);
                 throw;
             }
         }
@@ -250,9 +248,8 @@ namespace Shuryan.Application.Services
                 var updatedAppointment = await _appointmentRepository.GetByIdWithDetailsAsync(id);
                 return _mapper.Map<AppointmentResponse>(updatedAppointment);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating appointment {AppointmentId}", id);
                 throw;
             }
         }
@@ -281,9 +278,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Appointment {AppointmentId} deleted successfully", id);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting appointment {AppointmentId}", id);
                 throw;
             }
         }
@@ -335,9 +331,8 @@ namespace Shuryan.Application.Services
                 var cancelledAppointment = await _appointmentRepository.GetByIdWithDetailsAsync(id);
                 return _mapper.Map<AppointmentResponse>(cancelledAppointment);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error cancelling appointment {AppointmentId}", id);
                 throw;
             }
         }
@@ -401,9 +396,8 @@ namespace Shuryan.Application.Services
                 var rescheduledAppointment = await _appointmentRepository.GetByIdWithDetailsAsync(id);
                 return _mapper.Map<AppointmentResponse>(rescheduledAppointment);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error rescheduling appointment {AppointmentId}", id);
                 throw;
             }
         }
@@ -436,9 +430,8 @@ namespace Shuryan.Application.Services
                 var confirmedAppointment = await _appointmentRepository.GetByIdWithDetailsAsync(id);
                 return _mapper.Map<AppointmentResponse>(confirmedAppointment);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error confirming appointment {AppointmentId}", id);
                 throw;
             }
         }
@@ -476,9 +469,8 @@ namespace Shuryan.Application.Services
                 var completedAppointment = await _appointmentRepository.GetByIdWithDetailsAsync(id);
                 return _mapper.Map<AppointmentResponse>(completedAppointment);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error completing appointment {AppointmentId}", id);
                 throw;
             }
         }
@@ -497,9 +489,8 @@ namespace Shuryan.Application.Services
                 var appointments = await _appointmentRepository.GetByPatientIdAsync(patientId);
                 return _mapper.Map<IEnumerable<AppointmentResponse>>(appointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments for Patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -516,9 +507,8 @@ namespace Shuryan.Application.Services
                 var appointments = await _appointmentRepository.GetByDoctorIdAsync(doctorId);
                 return _mapper.Map<IEnumerable<AppointmentResponse>>(appointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments for Doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -538,9 +528,8 @@ namespace Shuryan.Application.Services
                 
                 return _mapper.Map<IEnumerable<AppointmentResponse>>(appointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving upcoming appointments for User {UserId}", userId);
                 throw;
             }
         }
@@ -560,9 +549,8 @@ namespace Shuryan.Application.Services
                 
                 return _mapper.Map<IEnumerable<AppointmentResponse>>(appointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving past appointments for User {UserId}", userId);
                 throw;
             }
         }
@@ -579,9 +567,8 @@ namespace Shuryan.Application.Services
                 var appointments = await _appointmentRepository.GetByStatusAsync(status);
                 return _mapper.Map<IEnumerable<AppointmentResponse>>(appointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments with status {Status}", status);
                 throw;
             }
         }
@@ -608,9 +595,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<AppointmentResponse>>(appointments);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments by date range");
                 throw;
             }
         }
@@ -640,9 +626,8 @@ namespace Shuryan.Application.Services
 
                 return !hasConflict;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error checking time slot availability for Doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -671,9 +656,8 @@ namespace Shuryan.Application.Services
 
                 return appointments.Count();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting appointment count for User {UserId}", userId);
                 throw;
             }
         }
@@ -714,9 +698,8 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting booked appointments for doctor {DoctorId} on date {Date}", doctorId, date);
                 throw;
             }
         }
@@ -885,9 +868,8 @@ namespace Shuryan.Application.Services
                     CreatedAt = appointment.CreatedAt
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error booking appointment for Patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -931,9 +913,8 @@ namespace Shuryan.Application.Services
 
                 return slots;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error calculating available time slots for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -1021,9 +1002,8 @@ namespace Shuryan.Application.Services
 
                 return paginatedResponse;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving appointments for Doctor {DoctorId}", doctorId);
                 throw;
             }
         }
