@@ -144,6 +144,16 @@ namespace Shuryan.API.Extensions
         }
         #endregion
 
+        #region Configure Global Exception Handler
+        public static IServiceCollection AddGlobalExceptionHandler(this IServiceCollection services)
+        {
+            services.AddExceptionHandler<Shuryan.API.Middleware.GlobalExceptionHandler>();
+            services.AddProblemDetails();
+
+            return services;
+        }
+        #endregion
+
         #region Configure Rate Limiting
         public static IServiceCollection AddRateLimiterConfiguration(this IServiceCollection services)
         {

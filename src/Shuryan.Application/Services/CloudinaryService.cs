@@ -73,9 +73,8 @@ namespace Shuryan.Application.Services
                     ContentType = file.ContentType
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error uploading profile image for user {UserId}", userId);
                 throw;
             }
         }
@@ -113,9 +112,8 @@ namespace Shuryan.Application.Services
                     ContentType = file.ContentType
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error uploading document for user {UserId}", userId);
                 throw;
             }
         }
@@ -153,9 +151,8 @@ namespace Shuryan.Application.Services
                     ContentType = file.ContentType
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error uploading video for user {UserId}", userId);
                 throw;
             }
         }
@@ -198,9 +195,8 @@ namespace Shuryan.Application.Services
                     ContentType = file.ContentType
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error uploading clinic image for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -231,9 +227,8 @@ namespace Shuryan.Application.Services
                 _logger.LogWarning("File deletion failed: {Result}", result.Result);
                 return false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting file: {FileUrl}", fileUrl);
                 throw;
             }
         }

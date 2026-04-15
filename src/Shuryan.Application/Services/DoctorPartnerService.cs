@@ -74,9 +74,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved suggested partners for doctor {DoctorId}", doctorId);
                 return new SuggestedPartnerResponse { Pharmacy = pharmacy, Laboratory = laboratory };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting suggested partners for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -163,9 +162,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully suggested partners for doctor {DoctorId}", doctorId);
                 return await GetSuggestedPartnerAsync(doctorId);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error suggesting partners for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -193,9 +191,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully removed suggested partner for doctor {DoctorId}", doctorId);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error removing suggested partner for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -238,9 +235,8 @@ namespace Shuryan.Application.Services
                     Data = paginatedPharmacies
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting available pharmacies");
                 throw;
             }
         }
@@ -280,9 +276,8 @@ namespace Shuryan.Application.Services
                     Data = paginatedLaboratories
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting available laboratories");
                 throw;
             }
         }

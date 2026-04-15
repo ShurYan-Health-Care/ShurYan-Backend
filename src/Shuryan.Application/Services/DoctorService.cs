@@ -70,9 +70,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved doctor profile {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting doctor profile {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -102,9 +101,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved personal profile for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting personal profile for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -163,9 +161,8 @@ namespace Shuryan.Application.Services
                     doctorId, doctorDocuments.Count);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting professional info for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -189,9 +186,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved specialty and experience for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting specialty and experience for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -254,9 +250,8 @@ namespace Shuryan.Application.Services
                 return await GetDoctorProfileAsync(doctorId)
                     ?? throw new InvalidOperationException("Failed to retrieve updated doctor profile");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating doctor profile {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -295,9 +290,8 @@ namespace Shuryan.Application.Services
                 return await GetDoctorProfileAsync(doctorId)
                     ?? throw new InvalidOperationException("Failed to retrieve updated doctor profile");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating personal info for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -323,9 +317,8 @@ namespace Shuryan.Application.Services
                 return await GetSpecialtyExperienceAsync(doctorId)
                     ?? throw new InvalidOperationException("Failed to retrieve updated specialty and experience");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating specialty and experience for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -364,9 +357,8 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting document {DocumentId}", documentId);
                 throw;
             }
         }
@@ -415,9 +407,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} required documents for doctor {DoctorId}", responses.Count, doctorId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting required documents for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -456,9 +447,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} research papers for doctor {DoctorId}", responses.Count, doctorId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting research papers for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -497,9 +487,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} awards/certificates for doctor {DoctorId}", responses.Count, doctorId);
                 return responses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting awards/certificates for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -586,9 +575,8 @@ namespace Shuryan.Application.Services
                         ?? throw new InvalidOperationException("Failed to retrieve created document");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error uploading/updating required document for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -643,9 +631,8 @@ namespace Shuryan.Application.Services
                 return await GetDocumentByIdAsync(document.Id)
                     ?? throw new InvalidOperationException("Failed to retrieve created award document");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error uploading award/certificate for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -700,9 +687,8 @@ namespace Shuryan.Application.Services
                 return await GetDocumentByIdAsync(document.Id)
                     ?? throw new InvalidOperationException("Failed to retrieve created research paper document");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error uploading research paper for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -767,9 +753,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved dashboard stats for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting dashboard stats for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -836,9 +821,8 @@ namespace Shuryan.Application.Services
                     Data = paginatedAppointments
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting today's appointments for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -1003,9 +987,8 @@ namespace Shuryan.Application.Services
                     Data = paginatedDoctors
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting doctors list");
                 throw;
             }
         }
@@ -1143,9 +1126,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved doctor details for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting doctor details for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -1417,10 +1399,9 @@ namespace Shuryan.Application.Services
 
                 return null; // مفيش slots متاحة في الـ 30 يوم القادمة
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error calculating next available slot for doctor {DoctorId}", doctorId);
-                return null;
+                throw;
             }
         }
 
@@ -1499,10 +1480,9 @@ namespace Shuryan.Application.Services
 
                 return null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogWarning(ex, "Error calculating next available slot locally for doctor {DoctorId}", doctor.Id);
-                return null;
+                throw;
             }
         }
 
@@ -1622,9 +1602,8 @@ namespace Shuryan.Application.Services
 
                 return patientResponses;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting patients list for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -1686,9 +1665,8 @@ namespace Shuryan.Application.Services
                     patientId, medicalHistoryItems.Count);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting medical record for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1783,9 +1761,8 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting session documentations for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1874,9 +1851,8 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1927,9 +1903,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Doctor {DoctorId} successfully submitted profile for review. Status changed to Sent", doctorId);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error submitting profile for review for doctor {DoctorId}", doctorId);
                 throw;
             }
         }

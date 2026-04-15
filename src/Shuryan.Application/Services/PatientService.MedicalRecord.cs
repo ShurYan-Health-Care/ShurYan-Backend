@@ -97,9 +97,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved medical record for patient {PatientId}", patientId);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving medical record for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -198,9 +197,8 @@ namespace Shuryan.Application.Services
                     LastUpdatedAt = DateTime.UtcNow
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating medical record for patient {PatientId}", patientId);
                 throw;
             }
         }

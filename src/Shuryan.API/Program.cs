@@ -32,6 +32,7 @@ builder.Services.AddControllers();
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddSignalR();
 builder.Services.AddRateLimiterConfiguration();
+builder.Services.AddGlobalExceptionHandler();
 #endregion
 
 
@@ -47,6 +48,7 @@ if (app.Environment.IsDevelopment())
 	await app.ClearDatabaseAsync();
 }
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseCors("ShuryanCorsPolicy");
 app.UseRateLimiter();

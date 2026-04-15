@@ -72,11 +72,8 @@ namespace Shuryan.Application.Services
                 _unitOfWork.Notifications.Update(notification);
                 await _unitOfWork.SaveChangesAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, 
-                    "Error sending notification to User {UserId}, Type: {Type}", 
-                    userId, type);
                 throw;
             }
         }
@@ -95,12 +92,9 @@ namespace Shuryan.Application.Services
                     "Real-time notification sent to User {UserId} via SignalR", 
                     userId);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, 
-                    "Error sending real-time notification to User {UserId}", 
-                    userId);
-                // لا نرمي Exception هنا لأن فشل SignalR ما يمنعش باقي العملية
+                throw;
             }
         }
     }

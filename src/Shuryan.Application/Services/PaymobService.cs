@@ -53,9 +53,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully authenticated with Paymob");
                 return result.Token;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error authenticating with Paymob");
                 throw;
             }
         }
@@ -111,9 +110,8 @@ namespace Shuryan.Application.Services
 
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating Paymob order for merchant order {MerchantOrderId}", merchantOrderId);
                 throw;
             }
         }
@@ -178,9 +176,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully generated payment key for order {OrderId}", paymobOrderId);
                 return result.Token;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error generating payment key for order {OrderId}", paymobOrderId);
                 throw;
             }
         }
@@ -235,10 +232,9 @@ namespace Shuryan.Application.Services
 
                 return isValid;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error verifying webhook HMAC");
-                return false;
+                throw;
             }
         }
 

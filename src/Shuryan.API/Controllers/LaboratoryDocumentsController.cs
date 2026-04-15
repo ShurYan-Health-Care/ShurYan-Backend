@@ -134,7 +134,7 @@
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error getting document {DocumentId}", id);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving the document", new[] { ex.Message }, 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving the document", statusCode: 500));
 //            }
 //        }
 
@@ -241,7 +241,7 @@
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error deleting document {DocumentId}", id);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while deleting the document", new[] { ex.Message }, 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while deleting the document", statusCode: 500));
 //            }
 //        }
 
@@ -318,12 +318,12 @@
 //            catch (ArgumentException ex)
 //            {
 //                _logger.LogWarning(ex, "Document not found for rejection: {DocumentId}", id);
-//                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+//                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
 //            }
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error rejecting document {DocumentId}", id);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while rejecting the document", new[] { ex.Message }, 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while rejecting the document", statusCode: 500));
 //            }
 //        }
 
@@ -344,7 +344,7 @@
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error getting pending laboratory documents");
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while getting pending documents", new[] { ex.Message }, 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while getting pending documents", statusCode: 500));
 //            }
 //        }
 //        #endregion

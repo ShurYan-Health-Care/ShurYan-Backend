@@ -45,9 +45,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PrescriptionResponse>(prescription);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescription with ID {PrescriptionId}", id);
                 throw;
             }
         }
@@ -137,9 +136,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PrescriptionResponse>(createdPrescription);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error creating prescription");
                 throw;
             }
         }
@@ -174,9 +172,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PrescriptionResponse>(updatedPrescription);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error updating prescription with ID {PrescriptionId}", id);
                 throw;
             }
         }
@@ -196,9 +193,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Prescription {PrescriptionId} deleted", id);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error deleting prescription {PrescriptionId}", id);
                 throw;
             }
         }
@@ -232,9 +228,8 @@ namespace Shuryan.Application.Services
                     HasNextPage = request.PageNumber < (int)Math.Ceiling(totalCount / (double)request.PageSize)
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting paginated prescriptions");
                 throw;
             }
         }
@@ -254,9 +249,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PrescriptionResponse>(prescription);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescription by number {PrescriptionNumber}", prescriptionNumber);
                 throw;
             }
         }
@@ -268,9 +262,8 @@ namespace Shuryan.Application.Services
                 var prescriptions = await _unitOfWork.Prescriptions.GetAllAsync();
                 return prescriptions.Count();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting total prescriptions count");
                 throw;
             }
 
@@ -296,9 +289,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<PrescriptionResponse>>(prescriptions);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -333,9 +325,8 @@ namespace Shuryan.Application.Services
                     HasNextPage = request.PageNumber < (int)Math.Ceiling(totalCount / (double)request.PageSize)
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting paginated prescriptions for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -357,9 +348,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<PrescriptionResponse>>(activePrescriptions);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting active prescriptions for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -379,9 +369,8 @@ namespace Shuryan.Application.Services
 
                 return count;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions count for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -406,9 +395,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<PrescriptionResponse>>(prescriptions);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -446,9 +434,8 @@ namespace Shuryan.Application.Services
                     HasNextPage = request.PageNumber < (int)Math.Ceiling(totalCount / (double)request.PageSize)
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting paginated prescriptions for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -468,9 +455,8 @@ namespace Shuryan.Application.Services
 
                 return count;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions count for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -496,9 +482,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<PrescriptionResponse>>(activePrescriptions);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions containing medication {MedicationId}", medicationId);
                 throw;
             }
         }
@@ -531,9 +516,8 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Prescription {PrescriptionId} marked as dispensed", prescriptionId);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error marking prescription {PrescriptionId} as dispensed", prescriptionId);
                 throw;
             }
         }
@@ -552,9 +536,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<PrescriptionResponse>>(activePrescriptions);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions by date range");
                 throw;
             }
         }
@@ -578,9 +561,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<PrescriptionResponse>>(doctorPrescriptions);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions by date range for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -604,9 +586,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<IEnumerable<PrescriptionResponse>>(patientPrescriptions);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions by date range for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -633,9 +614,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PrescriptionResponse>(prescriptionWithDetails);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescription for appointment {AppointmentId}", appointmentId);
                 throw;
             }
         }
@@ -649,9 +629,8 @@ namespace Shuryan.Application.Services
 
                 return prescription;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error checking if appointment {AppointmentId} has prescription", appointmentId);
                 throw;
             }
         }
@@ -789,9 +768,8 @@ namespace Shuryan.Application.Services
                     }
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting prescriptions with query params");
                 throw;
             }
         }
@@ -826,9 +804,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PrescriptionResponse>(prescription);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error cancelling prescription {PrescriptionId}", id);
                 throw;
             }
         }
@@ -884,9 +861,8 @@ namespace Shuryan.Application.Services
 
                 return _mapper.Map<PrescriptionResponse>(newPrescription);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error renewing prescription {PrescriptionId}", id);
                 throw;
             }
         }
@@ -966,9 +942,8 @@ namespace Shuryan.Application.Services
 
                 return currentMedications.OrderBy(m => m.EndDate);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting current medications for patient {PatientId}", patientId);
                 throw;
             }
         }
@@ -1023,11 +998,8 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex,
-                    "Error getting prescription {PrescriptionId} between patient {PatientId} and doctor {DoctorId}",
-                    prescriptionId, patientId, doctorId);
                 throw;
             }
         }
@@ -1057,11 +1029,8 @@ namespace Shuryan.Application.Services
 
                 return prescriptions;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex,
-                    "Error getting prescription list between patient {PatientId} and doctor {DoctorId}",
-                    patientId, doctorId);
                 throw;
             }
         }
@@ -1107,9 +1076,8 @@ namespace Shuryan.Application.Services
 
                 return medicationNames;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error getting medication names with search term: {SearchTerm}", searchTerm);
                 throw;
             }
         }
@@ -1162,9 +1130,8 @@ namespace Shuryan.Application.Services
             {
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error retrieving prescriptions for patient {PatientId}", patientId);
                 throw;
             }
         }

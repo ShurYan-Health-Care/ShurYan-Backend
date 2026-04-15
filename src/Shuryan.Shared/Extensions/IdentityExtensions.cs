@@ -35,9 +35,9 @@ namespace Shuryan.Shared.Extensions
                     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
 
                 // Sign-in settings
-                options.SignIn.RequireConfirmedEmail = false; // Set to true in production with email service
+                options.SignIn.RequireConfirmedEmail = true;
                 options.SignIn.RequireConfirmedPhoneNumber = false;
-                options.SignIn.RequireConfirmedAccount = false;
+                options.SignIn.RequireConfirmedAccount = true;
             })
             .AddEntityFrameworkStores<ShuryanDbContext>()
             .AddDefaultTokenProviders(); // For password reset, email confirmation, etc....
