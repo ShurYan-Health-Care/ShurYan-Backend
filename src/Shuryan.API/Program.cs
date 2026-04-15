@@ -37,15 +37,15 @@ builder.Services.AddRateLimiterConfiguration();
 
 var app = builder.Build();
 
-//if (app.Environment.IsDevelopment())
-//{
-	app.UseSwagger();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
     app.UseSwaggerUI(Theme.UniversalDark);
 
     await app.SeedDatabaseAsync();
 
-	//await app.ClearDatabaseAsync();
-//}
+	await app.ClearDatabaseAsync();
+}
 
 app.UseHttpsRedirection();
 app.UseCors("ShuryanCorsPolicy");

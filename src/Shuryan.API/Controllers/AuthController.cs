@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Shuryan.API.Filters;
 using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Auth;
 using Shuryan.Application.Interfaces;
@@ -642,6 +643,8 @@ namespace Shuryan.API.Controllers
         /// ⚠️ WARNING: This endpoint is for DEBUGGING/TESTING only!
         /// ⚠️ Remove this before production deployment!
         /// </summary>
+        [DevelopmentOnly]
+        [Authorize(Policy = "AdminOnly")]
         [HttpDelete("debug/delete-account-by-email")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
