@@ -71,10 +71,10 @@ namespace Shuryan.Infrastructure.Data.Configurations.PharmacyConfigurations
                 .HasForeignKey(po => po.PharmacyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Prescription Relationship (One-to-One, Optional)
+            // Prescription Relationship (Many-to-One, Optional) - Changed to allow multiple orders per prescription
             builder.HasOne(po => po.Prescription)
-                .WithOne(p => p.PharmacyOrder)
-                .HasForeignKey<PharmacyOrder>(po => po.PrescriptionId)
+                .WithMany(p => p.PharmacyOrders)
+                .HasForeignKey(po => po.PrescriptionId)
                 .IsRequired(false)
 				.OnDelete(DeleteBehavior.SetNull);
 

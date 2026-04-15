@@ -38,8 +38,8 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
             builder.Property(lo => lo.RejectedAt).IsRequired(false);
 
             // Indexes
+            // Removed unique index to allow multiple lab orders per prescription
             builder.HasIndex(lo => lo.LabPrescriptionId)
-                .IsUnique()
                 .HasDatabaseName("IX_LabOrder_LabPrescriptionId");
 
             builder.HasIndex(lo => lo.LaboratoryId)
@@ -57,10 +57,10 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
             builder.HasIndex(lo => new { lo.PatientId, lo.Status })
                 .HasDatabaseName("IX_LabOrder_Patient_Status");
 
-            // LabPrescription Relationship (One-to-One)
+            // LabPrescription Relationship (Many-to-One) - Changed to allow multiple orders per prescription
             builder.HasOne(lo => lo.LabPrescription)
-                .WithOne(lp => lp.LabOrder)
-                .HasForeignKey<LabOrder>(lo => lo.LabPrescriptionId)
+                .WithMany(lp => lp.LabOrders)
+                .HasForeignKey(lo => lo.LabPrescriptionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Laboratory Relationship (Many-to-One)

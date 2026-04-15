@@ -54,7 +54,9 @@ namespace Shuryan.Application.Services
                     Name = pharmacy.Name,
                     Email = pharmacy.Email,
                     PhoneNumber = pharmacy.PhoneNumber,
-                    ProfileImageUrl = pharmacy.ProfilePictureUrl
+                    ProfileImageUrl = pharmacy.ProfilePictureUrl,
+                    VerificationStatus = (int)pharmacy.VerificationStatus,
+                    VerificationStatusName = pharmacy.VerificationStatus.ToString()
                 };
             }
             catch (Exception ex)

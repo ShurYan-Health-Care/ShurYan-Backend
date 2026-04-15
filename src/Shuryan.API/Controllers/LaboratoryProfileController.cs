@@ -1062,6 +1062,77 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
+                /// <summary>
+                /// حفظ النتائج (للمعمل)
+                /// POST /api/laboratories/me/lab-orders/{orderId}/submit-results
+                /// </summary>
+                [HttpPost("lab-orders/{orderId:guid}/submit-results")]
+                [ProducesResponseType(typeof(ApiResponse<LabOrderResponse>), StatusCodes.Status200OK)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+                public async Task<ActionResult<ApiResponse<LabOrderResponse>>> SubmitLabResults(
+                        Guid orderId,
+                        [FromBody] SubmitLabResultsRequest request,
+                        CancellationToken cancellationToken = default)
+                {
+                        var currentLaboratoryId = GetCurrentLaboratoryId();
+
+                        if (currentLaboratoryId == Guid.Empty)
+                        {
+                                _logger.LogWarning("Unauthorized attempt to submit lab results");
+                                return Unauthorized(ApiResponse<object>.Failure("غير مصرح لك بالوصول", statusCode: 401));
+                        }
+
+                        if (!ModelState.IsValid)
+                        {
+                                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                                return BadRequest(ApiResponse<object>.Failure("بيانات غير صحيحة", errors, 400));
+                        }
+
+                        _logger.LogInformation("Submit lab results request for order {OrderId} by laboratory {LaboratoryId}", 
+                                orderId, currentLaboratoryId);
+
+                        try
+                        {
+                                var response = await _labOrderService.SubmitLabResultsAsync(
+                                        orderId, 
+                                        currentLaboratoryId, 
+                                        request, 
+                                        cancellationToken);
+
+                                _logger.LogInformation("Successfully submitted results for order {OrderId}", orderId);
+                                return Ok(ApiResponse<LabOrderResponse>.Success(response, "تم حفظ النتائج بنجاح"));
+                        }
+                        catch (ArgumentException ex)
+                        {
+                                _logger.LogWarning(ex, "Invalid argument while submitting results for order {OrderId}", orderId);
+                                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+                        }
+                        catch (UnauthorizedAccessException ex)
+                        {
+                                _logger.LogWarning(ex, "Unauthorized access attempt for order {OrderId} by laboratory {LaboratoryId}", 
+                                        orderId, currentLaboratoryId);
+                                return StatusCode(StatusCodes.Status403Forbidden, 
+                                        ApiResponse<object>.Failure(ex.Message, statusCode: 403));
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                                _logger.LogWarning(ex, "Invalid operation while submitting results for order {OrderId}", orderId);
+                                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+                        }
+                        catch (Exception ex)
+                        {
+                                _logger.LogError(ex, "Error submitting results for order {OrderId}", orderId);
+                                return StatusCode(500, ApiResponse<object>.Failure(
+                                        "حدث خطأ أثناء حفظ النتائج", 
+                                        new[] { ex.Message }, 
+                                        500));
+                        }
+                }
+
                 #endregion
 
                 #region Dashboard & Statistics

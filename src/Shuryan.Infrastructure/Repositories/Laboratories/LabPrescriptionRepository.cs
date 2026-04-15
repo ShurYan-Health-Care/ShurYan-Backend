@@ -21,7 +21,7 @@ namespace Shuryan.Infrastructure.Repositories.Laboratories
                 .Include(p => p.Appointment)
                 .Include(p => p.Items)
                     .ThenInclude(i => i.LabTest)
-                .Include(p => p.LabOrder)
+                .Include(p => p.LabOrders)  // Changed from LabOrder to LabOrders
                 .FirstOrDefaultAsync(p => p.Id == prescriptionId);
         }
 
@@ -55,7 +55,7 @@ namespace Shuryan.Infrastructure.Repositories.Laboratories
                 .Include(p => p.Items)
                     .ThenInclude(i => i.LabTest)
                 .Where(p => p.PatientId == patientId 
-                    && p.LabOrder == null)
+                    && !p.LabOrders.Any())  // Changed from LabOrder == null to !LabOrders.Any()
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
         }

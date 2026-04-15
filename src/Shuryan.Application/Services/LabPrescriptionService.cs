@@ -383,5 +383,115 @@ namespace Shuryan.Application.Services
         }
 
         #endregion
+
+        #region Doctor Patient Lab Prescriptions
+
+        public async Task<IEnumerable<PatientLabPrescriptionSummaryResponse>> GetPatientLabPrescriptionSummariesAsync(
+            Guid doctorId, 
+            Guid patientId)
+        {
+            try
+            {
+                var prescriptions = await _unitOfWork.LabPrescriptions.GetAllAsync();
+                var doctorPatientPrescriptions = prescriptions
+                    .Where(p => p.DoctorId == doctorId && p.PatientId == patientId)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToList();
+
+                var summaries = new List<PatientLabPrescriptionSummaryResponse>();
+
+                foreach (var prescription in doctorPatientPrescriptions)
+                {
+                    var prescriptionDetails = await _unitOfWork.LabPrescriptions.GetPrescriptionWithDetailsAsync(prescription.Id);
+                    if (prescriptionDetails == null) continue;
+
+                    // Get latest lab order for this prescription to link results
+                    var labOrder = (await _unitOfWork.LabOrders.FindAsync(o => o.LabPrescriptionId == prescription.Id))
+                        .OrderByDescending(o => o.CreatedAt)
+                        .FirstOrDefault();
+
+                    foreach (var item in prescriptionDetails.Items)
+                    {
+                        var labTest = await _unitOfWork.LabTests.GetByIdAsync(item.LabTestId);
+                        if (labTest != null)
+                        {
+                            summaries.Add(new PatientLabPrescriptionSummaryResponse
+                            {
+                                PrescriptionId = prescription.Id,
+                                TestName = labTest.Name,
+                                RequestedDate = prescription.CreatedAt,
+                                LabOrderId = labOrder?.Id
+                            });
+                        }
+                    }
+                }
+
+                _logger.LogInformation(
+                    "Retrieved {Count} lab prescription summaries for doctor {DoctorId} and patient {PatientId}", 
+                    summaries.Count, doctorId, patientId);
+
+                return summaries;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "Error getting lab prescription summaries for doctor {DoctorId} and patient {PatientId}", 
+                    doctorId, patientId);
+                throw;
+            }
+        }
+
+        public async Task<LabPrescriptionDetailedResponse?> GetLabPrescriptionDetailedAsync(Guid prescriptionId)
+        {
+            try
+            {
+                var prescription = await _unitOfWork.LabPrescriptions.GetPrescriptionWithDetailsAsync(prescriptionId);
+                if (prescription == null)
+                    return null;
+
+                var response = _mapper.Map<LabPrescriptionDetailedResponse>(prescription);
+
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(prescription.DoctorId);
+                if (doctor != null)
+                {
+                    response.DoctorName = $"د. {doctor.FirstName} {doctor.LastName}";
+                }
+
+                var patient = await _unitOfWork.Patients.GetByIdAsync(prescription.PatientId);
+                if (patient != null)
+                {
+                    response.PatientName = $"{patient.FirstName} {patient.LastName}";
+                }
+
+                var detailedItems = new List<LabPrescriptionItemDetailedResponse>();
+                foreach (var item in prescription.Items)
+                {
+                    var labTest = await _unitOfWork.LabTests.GetByIdAsync(item.LabTestId);
+                    if (labTest != null)
+                    {
+                        detailedItems.Add(new LabPrescriptionItemDetailedResponse
+                        {
+                            Id = item.Id,
+                            LabTestId = item.LabTestId,
+                            TestName = labTest.Name,
+                            TestCode = labTest.Code,
+                            DoctorNotes = item.DoctorNotes,
+                            CreatedAt = item.CreatedAt
+                        });
+                    }
+                }
+                response.Items = detailedItems;
+
+                _logger.LogInformation("Retrieved detailed lab prescription {PrescriptionId}", prescriptionId);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting detailed lab prescription {PrescriptionId}", prescriptionId);
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

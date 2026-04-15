@@ -54,6 +54,9 @@ namespace Shuryan.Application.Mappers
             #region Lab Prescription Mappings
             CreateMap<LabPrescription, LabPrescriptionResponse>();
             CreateMap<LabPrescriptionItem, LabPrescriptionItemResponse>();
+            CreateMap<LabPrescription, LabPrescriptionDetailedResponse>();
+            CreateMap<LabPrescriptionItem, LabPrescriptionItemDetailedResponse>();
+            CreateMap<LabPrescription, PatientLabPrescriptionSummaryResponse>();
             #endregion
         }
     }

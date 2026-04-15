@@ -28,6 +28,8 @@ namespace Shuryan.Core.Entities.External.Laboratories
         public virtual Doctor Doctor { get; set; } = null!;
         public virtual Patient Patient { get; set; } = null!;
         public virtual ICollection<LabPrescriptionItem> Items { get; set; } = new HashSet<LabPrescriptionItem>();
-        public virtual LabOrder? LabOrder { get; set; }
+        
+        // Changed from LabOrder (single) to LabOrders (collection) to allow multiple orders per prescription
+        public virtual ICollection<LabOrder> LabOrders { get; set; } = new HashSet<LabOrder>();
     }
 }

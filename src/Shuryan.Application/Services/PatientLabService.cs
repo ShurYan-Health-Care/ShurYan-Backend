@@ -351,6 +351,24 @@ namespace Shuryan.Application.Services
                         return await MapPrescriptionToResponse(prescription);
                 }
 
+                public async Task<PatientLabPrescriptionResponse?> GetLabPrescriptionByAppointmentAsync(Guid patientId, Guid appointmentId)
+                {
+                        // Get prescription for this appointment
+                        var prescriptions = await _unitOfWork.LabPrescriptions.GetAllAsync();
+                        var prescription = prescriptions.FirstOrDefault(p => 
+                                p.AppointmentId == appointmentId && p.PatientId == patientId);
+
+                        if (prescription == null)
+                                return null;
+
+                        // Get full details
+                        var prescriptionWithDetails = await _unitOfWork.LabPrescriptions.GetPrescriptionWithDetailsAsync(prescription.Id);
+                        if (prescriptionWithDetails == null)
+                                return null;
+
+                        return await MapPrescriptionToResponse(prescriptionWithDetails);
+                }
+
                 #endregion
 
                 #region Lab Orders
@@ -720,7 +738,9 @@ namespace Shuryan.Application.Services
                                 }
                         }
 
-                        var order = prescription.LabOrder;
+
+                        // Get the first lab order if any (for backward compatibility with UI)
+                        var order = prescription.LabOrders?.FirstOrDefault();
 
                         return new PatientLabPrescriptionResponse
                         {

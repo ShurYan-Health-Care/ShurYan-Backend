@@ -60,11 +60,10 @@ namespace Shuryan.Infrastructure.Data.Configurations.LaboratoryConfigurations
 				.HasForeignKey(lpi => lpi.LabPrescriptionId)
 				.OnDelete(DeleteBehavior.Cascade);
 
-			// Lab Order Relationship (One-to-One, Optional)
-			builder.HasOne(lp => lp.LabOrder)
+			// Lab Order Relationship (One-to-Many) - Changed to allow multiple lab orders per prescription
+			builder.HasMany(lp => lp.LabOrders)
 				.WithOne(lo => lo.LabPrescription)
-				.HasForeignKey<LabOrder>(lo => lo.LabPrescriptionId)
-				.IsRequired(false)
+				.HasForeignKey(lo => lo.LabPrescriptionId)
 				.OnDelete(DeleteBehavior.Restrict);
 		}
 	}

@@ -242,6 +242,43 @@ namespace Shuryan.API.Controllers
                         }
                 }
 
+                /// <summary>
+                /// جلب التحاليل المطلوبة في حجز معين
+                /// GET /api/patients/me/appointments/{appointmentId}/lab-prescriptions
+                /// </summary>
+                [HttpGet("appointments/{appointmentId:guid}/lab-prescriptions")]
+                [ProducesResponseType(typeof(ApiResponse<PatientLabPrescriptionResponse>), StatusCodes.Status200OK)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+                public async Task<ActionResult<ApiResponse<PatientLabPrescriptionResponse>>> GetAppointmentLabPrescription(
+                    Guid appointmentId)
+                {
+                        var patientId = GetCurrentPatientId();
+                        if (patientId == Guid.Empty)
+                                return Unauthorized(ApiResponse<object>.Failure("غير مصرح", statusCode: 401));
+
+                        try
+                        {
+                                var prescription = await _patientLabService.GetLabPrescriptionByAppointmentAsync(
+                                    patientId, 
+                                    appointmentId);
+                                
+                                if (prescription == null)
+                                        return NotFound(ApiResponse<object>.Failure("لا توجد تحاليل مطلوبة لهذا الحجز", statusCode: 404));
+
+                                return Ok(ApiResponse<PatientLabPrescriptionResponse>.Success(
+                                    prescription, "تم جلب التحاليل المطلوبة"));
+                        }
+                        catch (ArgumentException ex)
+                        {
+                                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                        }
+                        catch (Exception ex)
+                        {
+                                _logger.LogError(ex, "Error getting lab prescription for appointment {AppointmentId}", appointmentId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                        }
+                }
+
                 #endregion
 
                 #region Lab Orders

@@ -10,5 +10,7 @@ namespace Shuryan.Application.DTOs.Responses.Laboratory
                 public string? Website { get; set; }
 
                 public string? ProfileImageUrl { get; set; }
+                public int VerificationStatus { get; set; }
+                public string VerificationStatusName { get; set; } = string.Empty;
         }
 }

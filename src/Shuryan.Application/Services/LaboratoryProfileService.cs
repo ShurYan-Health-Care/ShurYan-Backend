@@ -52,7 +52,9 @@ namespace Shuryan.Application.Services
                                         PhoneNumber = laboratory.PhoneNumber,
                                         WhatsAppNumber = laboratory.WhatsAppNumber,
                                         Website = laboratory.Website,
-                                        ProfileImageUrl = laboratory.ProfilePictureUrl
+                                        ProfileImageUrl = laboratory.ProfilePictureUrl,
+                                        VerificationStatus = (int)laboratory.VerificationStatus,
+                                        VerificationStatusName = laboratory.VerificationStatus.ToString()
                                 };
                         }
                         catch (Exception ex)
