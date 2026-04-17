@@ -91,9 +91,11 @@ namespace Shuryan.Application.Services
                                         SearchRadiusKm = Math.Round(maxDistance, 2)
                                 };
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error finding nearby laboratories for coordinates: {Latitude}, {Longitude}", 
+                                    request.Latitude, request.Longitude);
+                                throw;
                         }
                 }
 
@@ -139,9 +141,10 @@ namespace Shuryan.Application.Services
 
                                 return await FindNearbyLaboratoriesAsync(request);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error finding nearby laboratories for patient: {PatientId}", patientId);
+                                throw;
                         }
                 }
 

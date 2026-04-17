@@ -77,9 +77,14 @@ namespace Shuryan.API.Controllers
                     "Clinic information retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving clinic info for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving clinic information",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -129,13 +134,18 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Doctor not found for clinic info update: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    "Resource not found",
+                    ex.Message,
                     statusCode: 404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating clinic info for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while updating clinic information",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -179,9 +189,14 @@ namespace Shuryan.API.Controllers
                     "Clinic address retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving clinic address for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving clinic address",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -230,7 +245,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Doctor not found for clinic address update: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    "Resource not found",
+                    ex.Message,
                     statusCode: 404
                 ));
             }
@@ -238,13 +253,18 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid operation for clinic address update: {DoctorId}", currentDoctorId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    "Invalid request",
+                    ex.Message,
                     statusCode: 400
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating clinic address for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while updating clinic address",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
         #endregion
@@ -279,9 +299,14 @@ namespace Shuryan.API.Controllers
                     "Clinic images retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving clinic images for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving clinic images",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -336,7 +361,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for clinic image upload: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    "Resource not found",
+                    ex.Message,
                     statusCode: 404
                 ));
             }
@@ -344,13 +369,18 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid operation for clinic image upload: {DoctorId}", currentDoctorId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    "Invalid request",
+                    ex.Message,
                     statusCode: 400
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error uploading clinic image for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while uploading clinic image",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -398,7 +428,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for clinic image deletion: {DoctorId}", currentDoctorId);
                 return NotFound(ApiResponse<object>.Failure(
-                    "Resource not found",
+                    ex.Message,
                     statusCode: 404
                 ));
             }
@@ -406,13 +436,18 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid operation for clinic image deletion: {DoctorId}", currentDoctorId);
                 return StatusCode(403, ApiResponse<object>.Failure(
-                    "Access denied",
+                    ex.Message,
                     statusCode: 403
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error deleting clinic image for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while deleting clinic image",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
         #endregion

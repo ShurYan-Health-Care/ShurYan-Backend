@@ -71,9 +71,14 @@ namespace Shuryan.API.Controllers
                     "Profile retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving doctor profile for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving the profile",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -103,9 +108,14 @@ namespace Shuryan.API.Controllers
                     "Profile retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving doctor profile for doctor: {DoctorId}", id);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving the profile",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -147,9 +157,14 @@ namespace Shuryan.API.Controllers
                     "Personal profile retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving personal profile for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving personal profile",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -192,9 +207,14 @@ namespace Shuryan.API.Controllers
                     "Professional information retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving professional info for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving professional information",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -236,9 +256,14 @@ namespace Shuryan.API.Controllers
                     "Specialty and experience retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving specialty and experience for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving specialty and experience",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -288,11 +313,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found for profile update: {DoctorId}", id);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating doctor profile for doctor: {DoctorId}", id);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while updating the profile",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -337,11 +367,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found for personal info update: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating personal info for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while updating personal information",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -386,11 +421,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found for specialty and experience update: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating specialty and experience for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while updating specialty and experience",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -431,11 +471,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found for profile image update: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating profile image for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while updating profile image",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -466,9 +511,14 @@ namespace Shuryan.API.Controllers
                     "Doctors list retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving doctors list");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving doctors list",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -500,9 +550,14 @@ namespace Shuryan.API.Controllers
                     "Doctor details retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving doctor details for doctor: {DoctorId}", doctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving doctor details",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -544,16 +599,21 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found for submit for review: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation for submit for review: {DoctorId}", currentDoctorId);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error submitting profile for review for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while submitting your profile for review",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -581,9 +641,14 @@ namespace Shuryan.API.Controllers
                 _logger.LogInformation("Retrieved {Count} specialties successfully", result.Count());
                 return Ok(ApiResponse<IEnumerable<SpecialtyResponse>>.Success(result, "Specialties retrieved successfully"));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error while retrieving specialties");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving specialities",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 

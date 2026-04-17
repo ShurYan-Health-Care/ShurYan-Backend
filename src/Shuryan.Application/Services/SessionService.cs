@@ -240,8 +240,9 @@ namespace Shuryan.Application.Services
 
                 return BuildSessionResponse(activeAppointment);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting current active session for Doctor {DoctorId}", doctorId);
                 throw;
             }
         }

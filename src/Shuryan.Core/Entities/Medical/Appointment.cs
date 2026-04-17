@@ -45,6 +45,8 @@ namespace Shuryan.Core.Entities.Medical
         public virtual ICollection<Appointment> FollowUpAppointments { get; set; } = new HashSet<Appointment>();
         public virtual ICollection<LabPrescription> LabPrescription { get; set; } = new HashSet<LabPrescription>();
 		public virtual DoctorReview? DoctorReview { get; set; }
+        public virtual TelemedicineSession? TelemedicineSession { get; set; }
 
-	}
+
+    }
 }

@@ -55,11 +55,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found for dashboard stats: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving dashboard stats for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving dashboard statistics",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -87,9 +92,14 @@ namespace Shuryan.API.Controllers
                     "Appointments retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving appointments for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving appointments",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -124,11 +134,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found for today's appointments: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving today's appointments for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving today's appointments",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 

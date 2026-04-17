@@ -418,7 +418,7 @@ namespace Shuryan.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedByAdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    CreatedByAdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -2110,8 +2110,7 @@ namespace Shuryan.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_LabOrder_LabPrescriptionId",
                 table: "LabOrders",
-                column: "LabPrescriptionId",
-                unique: true);
+                column: "LabPrescriptionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LabOrder_Patient_Status",
@@ -2433,9 +2432,7 @@ namespace Shuryan.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_PharmacyOrders_PrescriptionId",
                 table: "PharmacyOrders",
-                column: "PrescriptionId",
-                unique: true,
-                filter: "[PrescriptionId] IS NOT NULL");
+                column: "PrescriptionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PharmacyReview_PatientId",
@@ -2521,11 +2518,6 @@ namespace Shuryan.Infrastructure.Migrations
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Verifier_CreatedByAdminId",
-                table: "Verifiers",
-                column: "CreatedByAdminId");
         }
 
         /// <inheritdoc />

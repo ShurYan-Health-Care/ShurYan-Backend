@@ -61,8 +61,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} documents for laboratory {LaboratoryId}", responses.Count, laboratoryId);
                 return responses;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting documents for laboratory {LaboratoryId}", laboratoryId);
                 throw;
             }
         }
@@ -97,8 +98,9 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting document {DocumentId}", id);
                 throw;
             }
         }
@@ -126,8 +128,9 @@ namespace Shuryan.Application.Services
                 return await GetDocumentByIdAsync(document.Id)
                     ?? throw new InvalidOperationException("Failed to retrieve uploaded document");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error uploading document for laboratory {LaboratoryId}", laboratoryId);
                 throw;
             }
         }
@@ -154,9 +157,10 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Marked document {DocumentId} as deleted/rejected", id);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error deleting document {DocumentId}", id);
+                throw; // Re-throw the exception to be handled by the controller
             }
         }
 
@@ -194,8 +198,9 @@ namespace Shuryan.Application.Services
                 return await GetDocumentByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve approved document");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error approving document {DocumentId}", id);
                 throw;
             }
         }
@@ -233,8 +238,9 @@ namespace Shuryan.Application.Services
                 return await GetDocumentByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve rejected document");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error rejecting document {DocumentId}", id);
                 throw;
             }
         }
@@ -281,8 +287,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} pending documents", responses.Count);
                 return responses;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting pending documents");
                 throw;
             }
         }

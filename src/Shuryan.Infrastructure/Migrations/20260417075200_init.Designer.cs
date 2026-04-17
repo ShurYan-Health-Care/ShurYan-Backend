@@ -12,8 +12,8 @@ using Shuryan.Infrastructure.Data;
 namespace Shuryan.Infrastructure.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    [Migration("20251205124527_AllowMultiplePharmacyAndLabOrdersPerPrescription")]
-    partial class AllowMultiplePharmacyAndLabOrdersPerPrescription
+    [Migration("20260417075200_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

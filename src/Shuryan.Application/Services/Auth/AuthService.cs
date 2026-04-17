@@ -119,9 +119,13 @@ namespace Shuryan.Application.Services.Auth
                     "Registration successful! Please check your email for the verification code.",
                     201);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during patient registration");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during registration",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -185,9 +189,13 @@ namespace Shuryan.Application.Services.Auth
                     "Registration successful! Please verify your email and submit verification documents.",
                     201);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during doctor registration");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during registration",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -246,9 +254,14 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<AuthResponseDto>.Success(authResponse, "Registration successful! Please verify your email and submit verification documents.", 201);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during laboratory registration");
+                //return ApiResponse<AuthResponseDto>.Failure("An error occurred during registration", new[] { ex.Message }, 500);
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during registration",
+                    new[] { ex.InnerException?.Message ?? ex.Message },
+                    500);
             }
         }
 
@@ -312,9 +325,13 @@ namespace Shuryan.Application.Services.Auth
                     "Registration successful! Please verify your email and submit verification documents.",
                     201);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during pharmacy registration");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during registration",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -387,9 +404,13 @@ namespace Shuryan.Application.Services.Auth
                     "Verifier registration successful! Please verify your email.",
                     201);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during verifier registration");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during registration",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -441,9 +462,13 @@ namespace Shuryan.Application.Services.Auth
                     "Email verified successfully! Welcome to Shuryan Healthcare.",
                     200);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during email verification");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during verification",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -495,9 +520,13 @@ namespace Shuryan.Application.Services.Auth
                     true,
                     "Verification code sent! Please check your email.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error resending verification OTP");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -568,9 +597,13 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<AuthResponseDto>.Success(authResponse, "Login successful", 200);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during login");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during login",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -768,9 +801,13 @@ namespace Shuryan.Application.Services.Auth
                         201);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during Google OAuth");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred during Google login",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -822,9 +859,13 @@ namespace Shuryan.Application.Services.Auth
                     true,
                     "If your email exists, you'll receive a password reset code");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during forgot password");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -881,9 +922,13 @@ namespace Shuryan.Application.Services.Auth
                     true,
                     "Password reset successfully! You can now login with your new password.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during password reset");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred during password reset",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -929,9 +974,13 @@ namespace Shuryan.Application.Services.Auth
                     true,
                     "Password changed successfully");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during password change");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred while changing password",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -1015,9 +1064,13 @@ namespace Shuryan.Application.Services.Auth
                     "Token refreshed successfully",
                     200);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during token refresh");
+                return ApiResponse<AuthResponseDto>.Failure(
+                    "An error occurred while refreshing token",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -1034,9 +1087,13 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<bool>.Success(true, "Logged out successfully");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during logout");
+                return ApiResponse<bool>.Failure(
+                    "An error occurred during logout",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -1066,9 +1123,13 @@ namespace Shuryan.Application.Services.Auth
                     "User retrieved successfully",
                     200);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving user info");
+                return ApiResponse<UserInfoDto>.Failure(
+                    "An error occurred while retrieving user",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -1274,9 +1335,13 @@ namespace Shuryan.Application.Services.Auth
                     true,
                     "Account permanently deleted. You can now create a new account with the same email.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error during account deletion for user {UserId}", userId);
+                return ApiResponse<bool>.Failure(
+                    "An error occurred while deleting your account",
+                    new[] { ex.Message },
+                    500);
             }
         }
 
@@ -1301,9 +1366,13 @@ namespace Shuryan.Application.Services.Auth
                 // Call the regular delete method with user's ID
                 return await DeleteAccountAsync(user.Id, dto);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "DEBUG: Error during account deletion by email for {Email}", dto.Email);
+                return ApiResponse<bool>.Failure(
+                    "An error occurred while deleting your account",
+                    new[] { ex.Message },
+                    500);
             }
         }
 

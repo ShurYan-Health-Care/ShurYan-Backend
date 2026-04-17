@@ -75,9 +75,12 @@ namespace Shuryan.API.Controllers
                     "Unread notifications retrieved successfully", 
                     200));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving unread notifications");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving notifications", 
+                    statusCode: 500));
             }
         }
 
@@ -148,9 +151,12 @@ namespace Shuryan.API.Controllers
                     "Notifications retrieved successfully", 
                     200));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving notifications");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving notifications", 
+                    statusCode: 500));
             }
         }
 
@@ -178,9 +184,12 @@ namespace Shuryan.API.Controllers
                     "Unread count retrieved successfully", 
                     200));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving unread count");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving unread count", 
+                    statusCode: 500));
             }
         }
 
@@ -226,9 +235,12 @@ namespace Shuryan.API.Controllers
                     "Notification marked as read", 
                     200));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error marking notification as read");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while marking notification as read", 
+                    statusCode: 500));
             }
         }
 
@@ -256,9 +268,12 @@ namespace Shuryan.API.Controllers
                     "All notifications marked as read", 
                     200));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error marking all notifications as read");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while marking notifications as read", 
+                    statusCode: 500));
             }
         }
 
@@ -305,9 +320,12 @@ namespace Shuryan.API.Controllers
                     "Notification deleted successfully", 
                     200));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error deleting notification");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while deleting notification", 
+                    statusCode: 500));
             }
         }
 
@@ -348,9 +366,12 @@ namespace Shuryan.API.Controllers
                     "Test notification sent successfully",
                     200));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "=== DEBUG: Error sending test notification ===");
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    $"Error: {ex.Message}",
+                    statusCode: 500));
             }
         }
 #endif

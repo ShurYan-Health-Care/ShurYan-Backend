@@ -59,8 +59,9 @@ namespace Shuryan.Application.Services
                     VerificationStatusName = pharmacy.VerificationStatus.ToString()
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving basic info for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -100,8 +101,9 @@ namespace Shuryan.Application.Services
                     ProfileImageUrl = pharmacy.ProfilePictureUrl
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating basic info for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -132,8 +134,9 @@ namespace Shuryan.Application.Services
 
                 return uploadResult.FileUrl;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating profile image for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -245,8 +248,9 @@ namespace Shuryan.Application.Services
                     Message = "تم تحديث حالة الطلب بنجاح"
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating order {OrderId} status for pharmacy {PharmacyId}", orderId, pharmacyId);
                 throw;
             }
         }
@@ -281,8 +285,9 @@ namespace Shuryan.Application.Services
                     Longitude = pharmacy.Address.Longitude
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving address for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -384,8 +389,9 @@ namespace Shuryan.Application.Services
                     Longitude = address.Longitude
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating address for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -435,8 +441,9 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving working hours for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -469,8 +476,9 @@ namespace Shuryan.Application.Services
                 // جلب البيانات المحدثة
                 return await GetWorkingHoursAsync(pharmacyId);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating working hours for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -495,8 +503,9 @@ namespace Shuryan.Application.Services
                     DeliveryFee = pharmacy.DeliveryFee
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving delivery settings for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -525,8 +534,9 @@ namespace Shuryan.Application.Services
                     DeliveryFee = pharmacy.DeliveryFee
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating delivery settings for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -717,8 +727,9 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving pending prescriptions for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -796,8 +807,10 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving prescription details for order {OrderId}, pharmacy {PharmacyId}", 
+                    orderId, pharmacyId);
                 throw;
             }
         }
@@ -877,8 +890,9 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting pharmacy orders for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -954,8 +968,9 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error responding to order {OrderId} for pharmacy {PharmacyId}", orderId, pharmacyId);
                 throw;
             }
         }
@@ -1065,8 +1080,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully saved {Count} medication details for order {OrderId}", 
                     medications.Count, order.Id);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error saving medication details for order {OrderId}", order.Id);
                 throw;
             }
         }
@@ -1079,9 +1095,10 @@ namespace Shuryan.Application.Services
                     .GetQueryable()
                     .FirstOrDefaultAsync(m => m.BrandName.ToLower() == medicationName.ToLower());
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error finding medication by name: {MedicationName}", medicationName);
+                return null;
             }
         }
 
@@ -1124,8 +1141,9 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting statistics for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -1173,8 +1191,9 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting optimized orders for pharmacy {PharmacyId}", pharmacyId);
                 throw;
             }
         }
@@ -1248,8 +1267,10 @@ namespace Shuryan.Application.Services
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting order detail for order {OrderId}, pharmacy {PharmacyId}",
+                    orderId, pharmacyId);
                 throw;
             }
         }

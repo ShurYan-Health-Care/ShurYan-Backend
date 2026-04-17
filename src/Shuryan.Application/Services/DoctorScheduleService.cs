@@ -61,8 +61,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved weekly schedule for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting weekly schedule for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -104,8 +105,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully updated weekly schedule for doctor {DoctorId}", doctorId);
                 return await GetWeeklyScheduleAsync(doctorId);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating weekly schedule for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -145,8 +147,9 @@ namespace Shuryan.Application.Services
 
                 return new ExceptionalDatesListResponse { ExceptionalDates = exceptionalDates };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting exceptional dates for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -223,8 +226,9 @@ namespace Shuryan.Application.Services
                     IsClosed = request.IsClosed
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error adding exceptional date for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -255,8 +259,10 @@ namespace Shuryan.Application.Services
                     exceptionId, doctorId);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error removing exceptional date {ExceptionId} for doctor {DoctorId}",
+                    exceptionId, doctorId);
                 throw;
             }
         }
@@ -388,8 +394,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved weekly schedule for frontend for doctor {DoctorId}", doctorId);
                 return schedule;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting weekly schedule for frontend for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -424,8 +431,9 @@ namespace Shuryan.Application.Services
 
                 return exceptionalDates;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting exceptional dates for frontend for doctor {DoctorId}", doctorId);
                 throw;
             }
         }

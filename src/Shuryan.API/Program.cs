@@ -31,32 +31,29 @@ builder.Services.AddValidation();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddSignalR();
-builder.Services.AddRateLimiterConfiguration();
-builder.Services.AddGlobalExceptionHandler();
 #endregion
 
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
+//if (app.Environment.IsDevelopment())
+//{
+	app.UseSwagger();
     app.UseSwaggerUI(Theme.UniversalDark);
 
     await app.SeedDatabaseAsync();
 
-	await app.ClearDatabaseAsync();
-}
+	//await app.ClearDatabaseAsync();
+//}
 
-app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseCors("ShuryanCorsPolicy");
-app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<CallHub>("/hubs/call");
 
 app.Run();

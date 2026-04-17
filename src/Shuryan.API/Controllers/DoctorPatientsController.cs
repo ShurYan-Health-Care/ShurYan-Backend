@@ -65,11 +65,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving patients for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving patients",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -101,9 +106,14 @@ namespace Shuryan.API.Controllers
                     "Medical record retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving medical record for patient: {PatientId}", patientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving medical record",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -137,9 +147,14 @@ namespace Shuryan.API.Controllers
                     "Session documentations retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving session documentations for patient: {PatientId}", patientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving session documentations",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -174,9 +189,14 @@ namespace Shuryan.API.Controllers
                     "Prescriptions retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving prescriptions for patient: {PatientId}", patientId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving prescriptions",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 

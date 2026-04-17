@@ -86,11 +86,12 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid argument while getting prescriptions");
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error getting prescriptions with filters: {@Filters}", queryParams);
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving prescriptions", new[] { ex.Message }, 500));
             }
         }
 
@@ -124,9 +125,10 @@ namespace Shuryan.API.Controllers
                 _logger.LogWarning("Forbidden: User {UserId} attempted to access prescription {PrescriptionId}", GetCurrentUserId(), id);
                 return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("You are not authorized to view this prescription", statusCode: 403));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error getting prescription {PrescriptionId}", id);
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving the prescription", new[] { ex.Message }, 500));
             }
         }
 
@@ -154,9 +156,10 @@ namespace Shuryan.API.Controllers
 
                 return Ok(ApiResponse<PrescriptionResponse>.Success(prescription, "Prescription retrieved successfully"));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error getting prescription by number {PrescriptionNumber}", prescriptionNumber);
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving the prescription", new[] { ex.Message }, 500));
             }
         }
 
@@ -204,16 +207,17 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Bad request on prescription creation");
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation on prescription creation");
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error creating prescription");
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while creating the prescription", new[] { ex.Message, ex.InnerException?.Message! }, 500));
             }
         }
 
@@ -252,16 +256,17 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Prescription not found for update: {PrescriptionId}", id);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
             catch (UnauthorizedAccessException)
             {
                 _logger.LogWarning("Forbidden: User {UserId} attempted to update prescription {PrescriptionId}", GetCurrentUserId(), id);
                 return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("You are not authorized to update this prescription", statusCode: 403));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating prescription {PrescriptionId}", id);
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while updating the prescription", new[] { ex.Message }, 500));
             }
         }
 
@@ -301,11 +306,12 @@ namespace Shuryan.API.Controllers
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation while deleting prescription {PrescriptionId}", id);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error deleting prescription {PrescriptionId}", id);
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while deleting the prescription", new[] { ex.Message }, 500));
             }
         }
 
@@ -348,7 +354,7 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Prescription not found for cancellation: {PrescriptionId}", id);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
             catch (UnauthorizedAccessException)
             {
@@ -358,11 +364,12 @@ namespace Shuryan.API.Controllers
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation while cancelling prescription {PrescriptionId}", id);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error cancelling prescription {PrescriptionId}", id);
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while cancelling the prescription", new[] { ex.Message }, 500));
             }
         }
 
@@ -406,7 +413,7 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Prescription not found for renewal: {PrescriptionId}", id);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
             catch (UnauthorizedAccessException)
             {
@@ -416,11 +423,12 @@ namespace Shuryan.API.Controllers
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation while renewing prescription {PrescriptionId}", id);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error renewing prescription {PrescriptionId}", id);
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while renewing the prescription", new[] { ex.Message, ex.InnerException?.Message! }, 500));
             }
         }
 
@@ -452,12 +460,12 @@ namespace Shuryan.API.Controllers
         //    catch (ArgumentException ex)
         //    {
         //        _logger.LogWarning(ex, "Prescription not found for verification: {PrescriptionId}", id);
-        //        return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
         //    }
         //    catch (Exception ex)
         //    {
         //        _logger.LogError(ex, "Error verifying prescription {PrescriptionId}", id);
-        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while verifying the prescription", statusCode: 500));
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while verifying the prescription", new[] { ex.Message }, 500));
         //    }
         //}
 
@@ -496,17 +504,17 @@ namespace Shuryan.API.Controllers
         //    catch (ArgumentException ex)
         //    {
         //        _logger.LogWarning(ex, "Prescription not found for dispensing: {PrescriptionId}", id);
-        //        return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
         //    }
         //    catch (InvalidOperationException ex)
         //    {
         //        _logger.LogWarning(ex, "Invalid operation while dispensing prescription {PrescriptionId}", id);
-        //        return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+        //        return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
         //    }
         //    catch (Exception ex)
         //    {
         //        _logger.LogError(ex, "Error dispensing prescription {PrescriptionId}", id);
-        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while dispensing the prescription", statusCode: 500));
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while dispensing the prescription", new[] { ex.Message }, 500));
         //    }
         //}
 
@@ -545,7 +553,7 @@ namespace Shuryan.API.Controllers
         //    catch (ArgumentException ex)
         //    {
         //        _logger.LogWarning(ex, "Prescription or Pharmacy not found for sharing: {PrescriptionId}", id);
-        //        return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
         //    }
         //    catch (UnauthorizedAccessException)
         //    {
@@ -555,7 +563,7 @@ namespace Shuryan.API.Controllers
         //    catch (Exception ex)
         //    {
         //        _logger.LogError(ex, "Error sharing prescription {PrescriptionId}", id);
-        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while sharing the prescription", statusCode: 500));
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while sharing the prescription", new[] { ex.Message }, 500));
         //    }
         //}
 
@@ -584,12 +592,12 @@ namespace Shuryan.API.Controllers
         //    catch (ArgumentException ex)
         //    {
         //        _logger.LogWarning(ex, "Prescription not found for history: {PrescriptionId}", id);
-        //        return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
         //    }
         //    catch (Exception ex)
         //    {
         //        _logger.LogError(ex, "Error getting dispensing history for prescription {PrescriptionId}", id);
-        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving dispensing history", statusCode: 500));
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving dispensing history", new[] { ex.Message }, 500));
         //    }
         //}
 
@@ -646,17 +654,17 @@ namespace Shuryan.API.Controllers
         //    catch (ArgumentException ex)
         //    {
         //        _logger.LogWarning(ex, "Prescription or Pharmacy not found for delivery acceptance: {PrescriptionId}", id);
-        //        return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
         //    }
         //    catch (InvalidOperationException ex)
         //    {
         //        _logger.LogWarning(ex, "Invalid operation while accepting delivery for prescription {PrescriptionId}", id);
-        //        return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+        //        return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
         //    }
         //    catch (Exception ex)
         //    {
         //        _logger.LogError(ex, "Error accepting delivery for prescription {PrescriptionId}", id);
-        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while accepting delivery", statusCode: 500));
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while accepting delivery", new[] { ex.Message }, 500));
         //    }
         //}
 
@@ -697,16 +705,17 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Patient not found for GetCurrentMedications: {PatientId}", patientId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
             catch (UnauthorizedAccessException)
             {
                 _logger.LogWarning("Forbidden: User {UserId} attempted to get medications for patient {PatientId}", GetCurrentUserId(), patientId);
                 return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Failure("You are not authorized to view this information", statusCode: 403));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error getting current medications for patient {PatientId}", patientId);
+                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving current medications", new[] { ex.Message }, 500));
             }
         }
 
@@ -759,9 +768,14 @@ namespace Shuryan.API.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden,
                     ApiResponse<object>.Failure("You are not authorized to view this prescription", statusCode: 403));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex,
+                    "Error getting prescription {PrescriptionId} between patient {PatientId} and doctor {DoctorId}",
+                    prescriptionId, patientId, doctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving the prescription",
+                    new[] { ex.Message }, 500));
             }
         }
 
@@ -802,9 +816,14 @@ namespace Shuryan.API.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden,
                     ApiResponse<object>.Failure("You are not authorized to view these prescriptions", statusCode: 403));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex,
+                    "Error getting prescription list between patient {PatientId} and doctor {DoctorId}",
+                    patientId, doctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving the prescription list",
+                    new[] { ex.Message }, 500));
             }
         }
 
@@ -835,9 +854,12 @@ namespace Shuryan.API.Controllers
                     medications,
                     "Medication names retrieved successfully"));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error getting medication names with search: {SearchTerm}", search);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while retrieving medication names",
+                    new[] { ex.Message }, 500));
             }
         }
 
@@ -870,12 +892,12 @@ namespace Shuryan.API.Controllers
         //    catch (ArgumentException ex)
         //    {
         //        _logger.LogWarning(ex, "Prescription not found for GetStatusHistory: {PrescriptionId}", id);
-        //        return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+        //        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
         //    }
         //    catch (Exception ex)
         //    {
         //        _logger.LogError(ex, "Error getting status history for prescription {PrescriptionId}", id);
-        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving status history", statusCode: 500));
+        //        return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving status history", new[] { ex.Message }, 500));
         //    }
         //}
 
