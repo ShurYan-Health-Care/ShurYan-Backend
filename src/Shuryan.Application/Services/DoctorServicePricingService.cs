@@ -74,8 +74,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved regular checkup pricing for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting regular checkup pricing for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -136,8 +137,9 @@ namespace Shuryan.Application.Services
                 return await GetRegularCheckupAsync(doctorId)
                     ?? throw new InvalidOperationException("Failed to retrieve updated regular checkup pricing");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating regular checkup pricing for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -193,8 +195,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved re-examination pricing for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting re-examination pricing for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -255,8 +258,9 @@ namespace Shuryan.Application.Services
                 return await GetReExaminationAsync(doctorId)
                     ?? throw new InvalidOperationException("Failed to retrieve updated re-examination pricing");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating re-examination pricing for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -300,8 +304,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Successfully retrieved all services for doctor {DoctorId}", doctorId);
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting all services for doctor {DoctorId}", doctorId);
                 throw;
             }
         }

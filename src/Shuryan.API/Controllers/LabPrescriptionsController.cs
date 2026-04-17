@@ -250,12 +250,12 @@
 //            catch (ArgumentException ex) // Not found
 //            {
 //                _logger.LogWarning(ex, "Lab prescription not found for update: {PrescriptionId}", id);
-//                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+//                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
 //            }
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error updating lab prescription {PrescriptionId}", id);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while updating the prescription", statusCode: 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while updating the prescription", new[] { ex.Message }, 500));
 //            }
 //        }
 
@@ -290,7 +290,7 @@
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error deleting lab prescription {PrescriptionId}", id);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while deleting the prescription", statusCode: 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while deleting the prescription", new[] { ex.Message }, 500));
 //            }
 //        }
 
@@ -333,7 +333,7 @@
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error getting lab prescription for appointment {AppointmentId}", appointmentId);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving the prescription", statusCode: 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving the prescription", new[] { ex.Message }, 500));
 //            }
 //        }
 
@@ -367,7 +367,7 @@
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error getting lab prescriptions for patient {PatientId}", patientId);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving prescriptions", statusCode: 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving prescriptions", new[] { ex.Message }, 500));
 //            }
 //        }
 
@@ -399,7 +399,7 @@
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error getting lab prescriptions for doctor {DoctorId}", doctorId);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving prescriptions", statusCode: 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving prescriptions", new[] { ex.Message }, 500));
 //            }
 //        }
 
@@ -430,7 +430,7 @@
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error getting items for prescription {PrescriptionId}", id);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving items", statusCode: 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while retrieving items", new[] { ex.Message }, 500));
 //            }
 //        }
 
@@ -473,12 +473,12 @@
 //            catch (ArgumentException ex) // e.g., Prescription not found or Test not found
 //            {
 //                _logger.LogWarning(ex, "Bad request on adding item to prescription {PrescriptionId}", id);
-//                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+//                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
 //            }
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error adding item to prescription {PrescriptionId}", id);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while adding the item", statusCode: 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while adding the item", new[] { ex.Message }, 500));
 //            }
 //        }
 
@@ -513,7 +513,7 @@
 //            catch (Exception ex)
 //            {
 //                _logger.LogError(ex, "Error removing prescription item {ItemId}", itemId);
-//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while removing the item", statusCode: 500));
+//                return StatusCode(500, ApiResponse<object>.Failure("An error occurred while removing the item", new[] { ex.Message }, 500));
 //            }
 //        }
 

@@ -50,7 +50,7 @@ namespace Shuryan.Application.Services.Auth
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Email = email,
-                OtpCode = HashOtp(otpCode),
+                OtpCode = otpCode,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes),
                 VerificationType = verificationType,
@@ -98,7 +98,7 @@ namespace Shuryan.Application.Services.Auth
             }
 
             // Validate OTP code
-            if (verification.OtpCode != HashOtp(otpCode))
+            if (verification.OtpCode != otpCode)
             {
                 await _context.SaveChangesAsync();
                 _logger.LogWarning("Invalid OTP attempt for email {Email}", email);
@@ -152,12 +152,6 @@ namespace Shuryan.Application.Services.Auth
                     "Invalidated {Count} OTPs for user {UserId}, type {Type}",
                     existingOtps.Count, userId, verificationType);
             }
-        }
-
-        private static string HashOtp(string otp)
-        {
-            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(otp));
-            return Convert.ToBase64String(bytes);
         }
 
         public string GenerateSecureOtp(int length)

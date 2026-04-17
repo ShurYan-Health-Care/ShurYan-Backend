@@ -55,9 +55,14 @@ namespace Shuryan.API.Controllers
                     "Document retrieved successfully"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error getting document by ID: {DocumentId}", documentId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An error occurred while getting the document",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -83,11 +88,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving required documents for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving required documents",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -113,11 +123,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving research papers for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving research papers",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -143,11 +158,16 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Doctor not found: {DoctorId}", currentDoctorId);
-                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving awards/certificates for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while retrieving awards and certificates",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
         #endregion
@@ -187,16 +207,21 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Bad request on required document upload for doctor {DoctorId}", currentDoctorId);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation on required document upload for doctor {DoctorId}", currentDoctorId);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error uploading/updating required document for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while uploading/updating the required document",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -239,16 +264,21 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Bad request on award upload for doctor {DoctorId}", currentDoctorId);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation on award upload for doctor {DoctorId}", currentDoctorId);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error uploading award/certificate for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while uploading the award/certificate",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -291,16 +321,21 @@ namespace Shuryan.API.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Bad request on research paper upload for doctor {DoctorId}", currentDoctorId);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Invalid operation on research paper upload for doctor {DoctorId}", currentDoctorId);
-                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error uploading research paper for doctor: {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "An unexpected error occurred while uploading the research paper",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 

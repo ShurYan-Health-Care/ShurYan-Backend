@@ -72,9 +72,14 @@ namespace Shuryan.API.Controllers
                     "تم جلب المعلومات الأساسية بنجاح"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving basic info for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب المعلومات",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -127,7 +132,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Order or pharmacy not found for status update: {OrderId}, {PharmacyId}", orderId, currentPharmacyId);
                 return NotFound(ApiResponse<object>.Failure(
-                    "Resource not found",
+                    ex.Message,
                     statusCode: 404
                 ));
             }
@@ -135,13 +140,18 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid operation for order status update: {OrderId}, {PharmacyId}", orderId, currentPharmacyId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    "Invalid request",
+                    ex.Message,
                     statusCode: 400
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating status for order {OrderId}", orderId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث حالة الطلب",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -186,9 +196,14 @@ namespace Shuryan.API.Controllers
                     statusCode: 404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating basic info for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث المعلومات",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -264,9 +279,14 @@ namespace Shuryan.API.Controllers
                     statusCode: 404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating profile image for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث الصورة",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -314,9 +334,14 @@ namespace Shuryan.API.Controllers
                     "تم جلب العنوان بنجاح"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving address for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب العنوان",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -361,9 +386,14 @@ namespace Shuryan.API.Controllers
                     statusCode: 404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating address for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث العنوان",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -403,9 +433,14 @@ namespace Shuryan.API.Controllers
                     "تم جلب ساعات العمل بنجاح"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving working hours for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب ساعات العمل",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -450,9 +485,14 @@ namespace Shuryan.API.Controllers
                     statusCode: 404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating working hours for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث ساعات العمل",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -500,9 +540,14 @@ namespace Shuryan.API.Controllers
                     statusCode: 404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving delivery settings for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب إعدادات التوصيل",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -547,9 +592,14 @@ namespace Shuryan.API.Controllers
                     statusCode: 404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error updating delivery settings for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء تحديث إعدادات التوصيل",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -597,12 +647,18 @@ namespace Shuryan.API.Controllers
                 _logger.LogWarning(ex, "Pharmacy not found: {PharmacyId}", currentPharmacyId);
                 return NotFound(ApiResponse<object>.Failure(
                     "تعذر العثور على الصيدلية",
-                    statusCode: 404
+                    new[] { ex.Message },
+                    404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving pending prescriptions for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب الروشتات المعلقة",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -648,12 +704,19 @@ namespace Shuryan.API.Controllers
                     orderId, currentPharmacyId);
                 return NotFound(ApiResponse<object>.Failure(
                     "تعذر العثور على الروشتة أو الصيدلية",
-                    statusCode: 404
+                    new[] { ex.Message },
+                    404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving prescription details. Order: {OrderId}, Pharmacy: {PharmacyId}", 
+                    orderId, currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب تفاصيل الروشتة",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -714,9 +777,14 @@ namespace Shuryan.API.Controllers
                     statusCode: 404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving pharmacy orders for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب الطلبات",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -772,7 +840,7 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid argument for order response: {PharmacyId}, {OrderId}", currentPharmacyId, orderId);
                 return NotFound(ApiResponse<object>.Failure(
-                    "Resource not found",
+                    ex.Message,
                     statusCode: 404
                 ));
             }
@@ -780,13 +848,18 @@ namespace Shuryan.API.Controllers
             {
                 _logger.LogWarning(ex, "Invalid operation for order response: {PharmacyId}, {OrderId}", currentPharmacyId, orderId);
                 return BadRequest(ApiResponse<object>.Failure(
-                    "Invalid request",
+                    ex.Message,
                     statusCode: 400
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error processing pharmacy response for order {OrderId}", orderId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء معالجة رد الصيدلية",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -830,12 +903,18 @@ namespace Shuryan.API.Controllers
                 _logger.LogWarning(ex, "Pharmacy not found: {PharmacyId}", currentPharmacyId);
                 return NotFound(ApiResponse<object>.Failure(
                     "تعذر العثور على الصيدلية",
-                    statusCode: 404
+                    new[] { ex.Message },
+                    404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving statistics for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب الإحصائيات",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -886,12 +965,18 @@ namespace Shuryan.API.Controllers
                 _logger.LogWarning(ex, "Pharmacy not found: {PharmacyId}", currentPharmacyId);
                 return NotFound(ApiResponse<object>.Failure(
                     "تعذر العثور على الصيدلية",
-                    statusCode: 404
+                    new[] { ex.Message },
+                    404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving orders list for pharmacy: {PharmacyId}", currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب الطلبات",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 
@@ -939,12 +1024,19 @@ namespace Shuryan.API.Controllers
                     orderId, currentPharmacyId);
                 return NotFound(ApiResponse<object>.Failure(
                     "تعذر العثور على الطلب",
-                    statusCode: 404
+                    new[] { ex.Message },
+                    404
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error retrieving order detail: {OrderId}, {PharmacyId}",
+                    orderId, currentPharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ أثناء جلب تفاصيل الطلب",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 

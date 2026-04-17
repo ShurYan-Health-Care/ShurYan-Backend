@@ -58,9 +58,14 @@ namespace Shuryan.API.Controllers
                     "تم جلب الجلسة النشطة بنجاح"
                 ));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error getting active session for Doctor {DoctorId}", currentDoctorId);
+                return StatusCode(500, ApiResponse<object>.Failure(
+                    "حدث خطأ غير متوقع",
+                    new[] { ex.Message },
+                    500
+                ));
             }
         }
 

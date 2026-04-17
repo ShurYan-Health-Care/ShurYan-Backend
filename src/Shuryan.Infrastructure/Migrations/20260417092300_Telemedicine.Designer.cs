@@ -12,8 +12,8 @@ using Shuryan.Infrastructure.Data;
 namespace Shuryan.Infrastructure.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    [Migration("20251129210356_init")]
-    partial class init
+    [Migration("20260417092300_Telemedicine")]
+    partial class Telemedicine
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -446,7 +446,6 @@ namespace Shuryan.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LabPrescriptionId")
-                        .IsUnique()
                         .HasDatabaseName("IX_LabOrder_LabPrescriptionId");
 
                     b.HasIndex("LaboratoryId")
@@ -1218,9 +1217,7 @@ namespace Shuryan.Infrastructure.Migrations
                     b.HasIndex("PharmacyId")
                         .HasDatabaseName("IX_PharmacyOrder_PharmacyId");
 
-                    b.HasIndex("PrescriptionId")
-                        .IsUnique()
-                        .HasFilter("[PrescriptionId] IS NOT NULL");
+                    b.HasIndex("PrescriptionId");
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_PharmacyOrder_Status");
@@ -2086,6 +2083,96 @@ namespace Shuryan.Infrastructure.Migrations
                     b.ToTable("DoctorOverrides", null, t =>
                         {
                             t.HasCheckConstraint("CK_DoctorOverride_TimeValidation", "[StartTime] < [EndTime]");
+                        });
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.TelemedicineSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DoctorConnectionId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DoctorJoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EndReason")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PatientConnectionId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("PatientJoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RoomId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TelemedicineSession_AppointmentId");
+
+                    b.HasIndex("DoctorId")
+                        .HasDatabaseName("IX_TelemedicineSession_DoctorId");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("IX_TelemedicineSession_PatientId");
+
+                    b.HasIndex("RoomId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TelemedicineSession_RoomId");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_TelemedicineSession_Status");
+
+                    b.ToTable("TelemedicineSessions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TelemedicineSession_Duration", "[DurationSeconds] IS NULL OR [DurationSeconds] >= 0");
                         });
                 });
 
@@ -2999,11 +3086,7 @@ namespace Shuryan.Infrastructure.Migrations
                     b.HasBaseType("Shuryan.Core.Entities.Identity.User");
 
                     b.Property<Guid?>("CreatedByAdminId")
-                        .IsRequired()
                         .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("CreatedByAdminId")
-                        .HasDatabaseName("IX_Verifier_CreatedByAdminId");
 
                     b.ToTable("Verifiers", (string)null);
                 });
@@ -3182,9 +3265,10 @@ namespace Shuryan.Infrastructure.Migrations
             modelBuilder.Entity("Shuryan.Core.Entities.External.Laboratories.LabOrder", b =>
                 {
                     b.HasOne("Shuryan.Core.Entities.External.Laboratories.LabPrescription", "LabPrescription")
-                        .WithOne("LabOrder")
-                        .HasForeignKey("Shuryan.Core.Entities.External.Laboratories.LabOrder", "LabPrescriptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .WithMany("LabOrders")
+                        .HasForeignKey("LabPrescriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Shuryan.Core.Entities.Identity.Laboratory", "Laboratory")
                         .WithMany("LabOrders")
@@ -3383,8 +3467,8 @@ namespace Shuryan.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("Shuryan.Core.Entities.External.Pharmacies.Prescription", "Prescription")
-                        .WithOne("PharmacyOrder")
-                        .HasForeignKey("Shuryan.Core.Entities.External.Pharmacies.PharmacyOrder", "PrescriptionId")
+                        .WithMany("PharmacyOrders")
+                        .HasForeignKey("PrescriptionId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Patient");
@@ -3574,6 +3658,33 @@ namespace Shuryan.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Doctor");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.TelemedicineSession", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.Medical.Appointment", "Appointment")
+                        .WithOne("TelemedicineSession")
+                        .HasForeignKey("Shuryan.Core.Entities.Medical.TelemedicineSession", "AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Shuryan.Core.Entities.Identity.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Shuryan.Core.Entities.Identity.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.Shared.LaboratoryDocument", b =>
@@ -3836,7 +3947,7 @@ namespace Shuryan.Infrastructure.Migrations
                 {
                     b.Navigation("Items");
 
-                    b.Navigation("LabOrder");
+                    b.Navigation("LabOrders");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.External.Laboratories.LabTest", b =>
@@ -3872,7 +3983,7 @@ namespace Shuryan.Infrastructure.Migrations
 
             modelBuilder.Entity("Shuryan.Core.Entities.External.Pharmacies.Prescription", b =>
                 {
-                    b.Navigation("PharmacyOrder");
+                    b.Navigation("PharmacyOrders");
 
                     b.Navigation("PrescribedMedications");
                 });
@@ -3888,6 +3999,8 @@ namespace Shuryan.Infrastructure.Migrations
                     b.Navigation("LabPrescription");
 
                     b.Navigation("Prescription");
+
+                    b.Navigation("TelemedicineSession");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.Medical.Consultations.ConsultationType", b =>

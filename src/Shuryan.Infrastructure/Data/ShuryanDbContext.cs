@@ -75,8 +75,10 @@ namespace Shuryan.Infrastructure.Data
 		// Appointments
 		public DbSet<Appointment> Appointments { get; set; }
 		public DbSet<ConsultationRecord> ConsultationRecords { get; set; }
-		// Consultations
-		public DbSet<ConsultationType> ConsultationTypes { get; set; }
+        public DbSet<TelemedicineSession> TelemedicineSessions { get; set; }
+
+        // Consultations
+        public DbSet<ConsultationType> ConsultationTypes { get; set; }
 		public DbSet<DoctorConsultation> DoctorConsultations { get; set; }
 		// Schedules
 		public DbSet<DoctorAvailability> DoctorAvailability { get; set; }
@@ -102,6 +104,9 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<Notification> Notifications { get; set; }
 		// Email Verification
 		public DbSet<EmailVerification> EmailVerifications { get; set; }
+		// Chat/AI Bot
+		public DbSet<Conversation> Conversations { get; set; }
+		public DbSet<ConversationMessage> ConversationMessages { get; set; }
 		// Payment
 		public DbSet<Payment> Payments { get; set; }
 		public DbSet<PaymentTransaction> PaymentTransactions { get; set; }

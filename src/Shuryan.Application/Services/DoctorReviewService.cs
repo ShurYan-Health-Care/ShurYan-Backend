@@ -148,8 +148,9 @@ namespace Shuryan.Application.Services
                     HasNextPage = paginationParams.PageNumber < (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize)
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving paginated reviews for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -172,8 +173,9 @@ namespace Shuryan.Application.Services
                     )
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving review statistics for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -209,8 +211,9 @@ namespace Shuryan.Application.Services
                     CreatedAt = review.CreatedAt
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving review details {ReviewId} for doctor {DoctorId}", reviewId, doctorId);
                 throw;
             }
         }
@@ -256,8 +259,9 @@ namespace Shuryan.Application.Services
                     CreatedAt = review.CreatedAt
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error replying to review {ReviewId} for doctor {DoctorId}", reviewId, doctorId);
                 throw;
             }
         }
@@ -296,8 +300,9 @@ namespace Shuryan.Application.Services
                     HasNextPage = paginationParams.PageNumber < (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize)
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving public reviews for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -322,8 +327,9 @@ namespace Shuryan.Application.Services
                     )
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving public review statistics for doctor {DoctorId}", doctorId);
                 throw;
             }
         }

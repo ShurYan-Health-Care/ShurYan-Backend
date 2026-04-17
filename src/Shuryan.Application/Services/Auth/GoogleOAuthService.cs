@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -71,9 +71,10 @@ namespace Shuryan.Application.Services.Auth
                 _logger.LogError(ex, "Invalid JWT token from Google");
                 return null;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error validating Google token");
+                return null;
             }
         }
     }

@@ -95,16 +95,17 @@ namespace Shuryan.API.Controllers
                                 if (ex.Message.Contains("address"))
                                 {
                                         return NotFound(new { 
-                                                Message = "Patient location not found",
+                                                Message = ex.Message,
                                                 Suggestion = "You can provide coordinates as query parameters: ?latitude=30.0444&longitude=31.2357"
                                         });
                                 }
                                 
-                                return NotFound(new { Message = "An unexpected error occurred" });
+                                return NotFound(new { Message = ex.Message });
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error finding nearby laboratories for patient: {PatientId}", patientId);
+                                return StatusCode(500, new { Message = "An unexpected error occurred while finding nearby laboratories" });
                         }
                 }
 
@@ -132,9 +133,10 @@ namespace Shuryan.API.Controllers
 
                                 return Ok(ApiResponse<LaboratoryDetailResponse>.Success(laboratory, "تم جلب تفاصيل المعمل"));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error getting laboratory {LabId} details", labId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -153,9 +155,10 @@ namespace Shuryan.API.Controllers
                                 var services = await _patientLabService.GetLaboratoryServicesAsync(labId, category);
                                 return Ok(ApiResponse<IEnumerable<LaboratoryServiceResponse>>.Success(services, "تم جلب خدمات المعمل"));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error getting services for laboratory {LabId}", labId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -175,9 +178,10 @@ namespace Shuryan.API.Controllers
                                 var reviews = await _patientLabService.GetLaboratoryReviewsAsync(labId, pageNumber, pageSize);
                                 return Ok(ApiResponse<IEnumerable<LaboratoryReviewResponse>>.Success(reviews, "تم جلب تقييمات المعمل"));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error getting reviews for laboratory {LabId}", labId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -203,9 +207,10 @@ namespace Shuryan.API.Controllers
                                 return Ok(ApiResponse<IEnumerable<PatientLabPrescriptionResponse>>.Success(
                                     prescriptions, "تم جلب روشتات التحاليل"));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error getting lab prescriptions for patient {PatientId}", patientId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -230,9 +235,10 @@ namespace Shuryan.API.Controllers
 
                                 return Ok(ApiResponse<PatientLabPrescriptionResponse>.Success(prescription, "تم جلب تفاصيل الروشتة"));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error getting prescription {PrescriptionId}", prescriptionId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -264,11 +270,12 @@ namespace Shuryan.API.Controllers
                         }
                         catch (ArgumentException ex)
                         {
-                                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error getting lab prescription for appointment {AppointmentId}", appointmentId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -303,15 +310,16 @@ namespace Shuryan.API.Controllers
                         }
                         catch (ArgumentException ex)
                         {
-                                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
                         }
                         catch (InvalidOperationException ex)
                         {
-                                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error creating lab order for patient {PatientId}", patientId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -333,9 +341,10 @@ namespace Shuryan.API.Controllers
                                 var orders = await _patientLabService.GetPatientLabOrdersAsync(patientId, status);
                                 return Ok(ApiResponse<IEnumerable<PatientLabOrderResponse>>.Success(orders, "تم جلب الطلبات"));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error getting lab orders for patient {PatientId}", patientId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -360,9 +369,10 @@ namespace Shuryan.API.Controllers
 
                                 return Ok(ApiResponse<PatientLabOrderResponse>.Success(order, "تم جلب تفاصيل الطلب"));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error getting order {OrderId}", orderId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -394,15 +404,16 @@ namespace Shuryan.API.Controllers
                         }
                         catch (ArgumentException ex)
                         {
-                                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
                         }
                         catch (InvalidOperationException ex)
                         {
-                                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error requesting home collection for order {OrderId}", orderId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -428,15 +439,16 @@ namespace Shuryan.API.Controllers
                         }
                         catch (ArgumentException ex)
                         {
-                                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
                         }
                         catch (InvalidOperationException ex)
                         {
-                                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error cancelling order {OrderId}", orderId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -460,11 +472,12 @@ namespace Shuryan.API.Controllers
                         }
                         catch (ArgumentException ex)
                         {
-                                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error getting results for order {OrderId}", orderId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 
@@ -496,15 +509,16 @@ namespace Shuryan.API.Controllers
                         }
                         catch (ArgumentException ex)
                         {
-                                return NotFound(ApiResponse<object>.Failure("Resource not found", statusCode: 404));
+                                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
                         }
                         catch (InvalidOperationException ex)
                         {
-                                return BadRequest(ApiResponse<object>.Failure("Invalid request", statusCode: 400));
+                                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            throw;
+                                _logger.LogError(ex, "Error creating review for order {OrderId}", orderId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
                         }
                 }
 

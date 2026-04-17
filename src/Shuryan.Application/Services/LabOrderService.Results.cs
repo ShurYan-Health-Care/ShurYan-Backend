@@ -26,8 +26,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved {Count} results for lab order {OrderId}", responses.Count(), labOrderId);
                 return responses;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting results for lab order {OrderId}", labOrderId);
                 throw;
             }
         }
@@ -57,8 +58,9 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<LabResultResponse>(labResult);
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error adding result to lab order {OrderId}", labOrderId);
                 throw;
             }
         }
@@ -91,8 +93,9 @@ namespace Shuryan.Application.Services
                 var response = _mapper.Map<LabResultResponse>(result);
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating lab result {ResultId}", resultId);
                 throw;
             }
         }
@@ -393,8 +396,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Retrieved lab order statistics");
                 return statistics;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting lab order statistics");
                 throw;
             }
         }

@@ -47,8 +47,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Review started for doctor {DoctorId}", doctorId);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error starting review for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -76,8 +77,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Doctor {DoctorId} has been verified by verifier {VerifierId}", doctorId, verifierId);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error verifying doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -105,8 +107,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Doctor {DoctorId} has been rejected", doctorId);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error rejecting doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -148,8 +151,9 @@ namespace Shuryan.Application.Services
                     Data = doctorResponses
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting doctors with Sent status");
                 throw;
             }
         }
@@ -188,8 +192,9 @@ namespace Shuryan.Application.Services
                     Data = doctorResponses
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting doctors under review");
                 throw;
             }
         }
@@ -229,8 +234,9 @@ namespace Shuryan.Application.Services
                     Data = doctorResponses
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting verified doctors for verifier {VerifierId}", verifierId);
                 throw;
             }
         }
@@ -269,8 +275,9 @@ namespace Shuryan.Application.Services
                     Data = doctorResponses
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting rejected doctors");
                 throw;
             }
         }
@@ -363,8 +370,9 @@ namespace Shuryan.Application.Services
 
                 return documentResponses;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting documents for doctor {DoctorId}", doctorId);
                 throw;
             }
         }
@@ -391,8 +399,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Document {DocumentId} has been approved", documentId);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error approving document {DocumentId}", documentId);
                 throw;
             }
         }
@@ -419,8 +428,9 @@ namespace Shuryan.Application.Services
                 _logger.LogInformation("Document {DocumentId} has been rejected", documentId);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error rejecting document {DocumentId}", documentId);
                 throw;
             }
         }

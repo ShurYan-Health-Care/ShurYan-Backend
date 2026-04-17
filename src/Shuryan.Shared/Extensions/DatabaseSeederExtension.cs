@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,8 +20,10 @@ namespace Shuryan.Shared.Extensions
             {
                 await DatabaseSeeder.SeedDatabaseAsync(services);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"An error occurred while seeding the database: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 throw;
             }
         }
@@ -34,8 +36,10 @@ namespace Shuryan.Shared.Extensions
             {
                 await DatabaseSeeder.ClearDatabaseAsync(services);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"An error occurred while clearing the database: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 throw;
             }
         }

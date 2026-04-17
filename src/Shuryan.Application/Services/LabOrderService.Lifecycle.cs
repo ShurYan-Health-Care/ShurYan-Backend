@@ -72,8 +72,9 @@ namespace Shuryan.Application.Services
                 return await GetLabOrderByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve confirmed lab order");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error confirming lab order {OrderId}", id);
                 throw;
             }
         }
@@ -102,8 +103,9 @@ namespace Shuryan.Application.Services
                 return await GetLabOrderByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve updated lab order");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error marking sample collected for lab order {OrderId}", id);
                 throw;
             }
         }
@@ -130,8 +132,9 @@ namespace Shuryan.Application.Services
                 return await GetLabOrderByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve updated lab order");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error marking lab order {OrderId} as in progress", id);
                 throw;
             }
         }
@@ -157,8 +160,9 @@ namespace Shuryan.Application.Services
                 return await GetLabOrderByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve completed lab order");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error completing lab order {OrderId}", id);
                 throw;
             }
         }
@@ -218,9 +222,11 @@ namespace Shuryan.Application.Services
                 // Re-throw business logic exceptions
                 throw;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error starting lab work for order {OrderId} by laboratory {LaboratoryId}",
+                    orderId, laboratoryId);
+                throw new InvalidOperationException("حدث خطأ أثناء بدء العمل على الطلب", ex);
             }
         }
 
@@ -273,8 +279,9 @@ namespace Shuryan.Application.Services
                 return await GetLabOrderByIdAsync(id)
                     ?? throw new InvalidOperationException("Failed to retrieve paid lab order");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error marking lab order {OrderId} as paid", id);
                 throw;
             }
         }

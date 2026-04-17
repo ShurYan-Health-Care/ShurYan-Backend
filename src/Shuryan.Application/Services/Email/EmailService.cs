@@ -91,9 +91,10 @@ namespace Shuryan.Application.Services.Email
                 _logger.LogError(ex, "SMTP error sending email to {Email}: {Message}", toEmail, ex.Message);
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Unexpected error sending email to {Email}: {Message}", toEmail, ex.Message);
+                return false;
             }
         }
 

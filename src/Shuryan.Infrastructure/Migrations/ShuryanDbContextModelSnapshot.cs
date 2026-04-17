@@ -2083,6 +2083,96 @@ namespace Shuryan.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.TelemedicineSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DoctorConnectionId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DoctorJoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EndReason")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PatientConnectionId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("PatientJoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RoomId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TelemedicineSession_AppointmentId");
+
+                    b.HasIndex("DoctorId")
+                        .HasDatabaseName("IX_TelemedicineSession_DoctorId");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("IX_TelemedicineSession_PatientId");
+
+                    b.HasIndex("RoomId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TelemedicineSession_RoomId");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_TelemedicineSession_Status");
+
+                    b.ToTable("TelemedicineSessions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TelemedicineSession_Duration", "[DurationSeconds] IS NULL OR [DurationSeconds] >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Shuryan.Core.Entities.Shared.Address", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3567,6 +3657,33 @@ namespace Shuryan.Infrastructure.Migrations
                     b.Navigation("Doctor");
                 });
 
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.TelemedicineSession", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.Medical.Appointment", "Appointment")
+                        .WithOne("TelemedicineSession")
+                        .HasForeignKey("Shuryan.Core.Entities.Medical.TelemedicineSession", "AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Shuryan.Core.Entities.Identity.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Shuryan.Core.Entities.Identity.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("Shuryan.Core.Entities.Shared.LaboratoryDocument", b =>
                 {
                     b.HasOne("Shuryan.Core.Entities.Identity.Laboratory", "Laboratory")
@@ -3879,6 +3996,8 @@ namespace Shuryan.Infrastructure.Migrations
                     b.Navigation("LabPrescription");
 
                     b.Navigation("Prescription");
+
+                    b.Navigation("TelemedicineSession");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.Medical.Consultations.ConsultationType", b =>
