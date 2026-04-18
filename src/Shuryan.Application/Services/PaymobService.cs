@@ -31,8 +31,6 @@ namespace Shuryan.Application.Services
 
         public async Task<string> AuthenticateAsync(CancellationToken cancellationToken = default)
         {
-            try
-            {
                 var request = new PaymobAuthRequest { ApiKey = _settings.APIKey };
 
                 var response = await _httpClient.PostAsJsonAsync(
@@ -52,12 +50,6 @@ namespace Shuryan.Application.Services
 
                 _logger.LogInformation("Successfully authenticated with Paymob");
                 return result.Token;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error authenticating with Paymob");
-                throw;
-            }
         }
 
         public async Task<PaymobOrderResponse> CreateOrderAsync(
@@ -68,8 +60,6 @@ namespace Shuryan.Application.Services
             string itemDescription,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
                 var amountCents = (int)(amount * 100);
 
                 var request = new PaymobOrderRequest
@@ -110,12 +100,6 @@ namespace Shuryan.Application.Services
                     result.Id, merchantOrderId);
 
                 return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating Paymob order for merchant order {MerchantOrderId}", merchantOrderId);
-                throw;
-            }
         }
 
         public async Task<string> GeneratePaymentKeyAsync(
@@ -129,8 +113,6 @@ namespace Shuryan.Application.Services
             string userPhone,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
                 var amountCents = (int)(amount * 100);
 
                 var request = new PaymobPaymentKeyRequest
@@ -165,6 +147,12 @@ namespace Shuryan.Application.Services
                     request,
                     cancellationToken);
 
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogError("Paymob GeneratePaymentKey failed with {StatusCode}: {ErrorBody}", 
+                        response.StatusCode, errorBody);
+                }
                 response.EnsureSuccessStatusCode();
 
                 var result = await response.Content.ReadFromJsonAsync<PaymobPaymentKeyResponse>(cancellationToken: cancellationToken);
@@ -177,18 +165,10 @@ namespace Shuryan.Application.Services
 
                 _logger.LogInformation("Successfully generated payment key for order {OrderId}", paymobOrderId);
                 return result.Token;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating payment key for order {OrderId}", paymobOrderId);
-                throw;
-            }
         }
 
         public bool VerifyWebhookSignature(string receivedHmac, PaymobWebhookRequest webhookData)
         {
-            try
-            {
                 if (webhookData?.Obj == null)
                 {
                     _logger.LogWarning("Webhook data is null or missing transaction object");
@@ -234,12 +214,6 @@ namespace Shuryan.Application.Services
                 }
 
                 return isValid;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error verifying webhook HMAC");
-                return false;
-            }
         }
 
         public string GetIFrameUrl(string paymentToken, int iframeId)

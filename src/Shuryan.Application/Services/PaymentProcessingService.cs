@@ -14,6 +14,7 @@ using Shuryan.Core.Enums.Payment;
 using Shuryan.Core.Enums.Pharmacy;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using Shuryan.Core.Settings;
+using Shuryan.Application.Services.Email;
 
 namespace Shuryan.Application.Services
 {
@@ -26,6 +27,8 @@ namespace Shuryan.Application.Services
         private readonly PaymobSettings _paymobSettings;
         private readonly FrontendSettings _frontendSettings;
         private readonly IHostEnvironment _environment;
+        private readonly INotificationHubService _notificationHubService;
+        private readonly IEmailService _emailService;
 
         public PaymentProcessingService(
             IUnitOfWork unitOfWork,
@@ -34,7 +37,9 @@ namespace Shuryan.Application.Services
             ILogger<PaymentProcessingService> logger,
             IOptions<PaymobSettings> paymobSettings,
             IOptions<FrontendSettings> frontendSettings,
-            IHostEnvironment environment)
+            IHostEnvironment environment,
+            INotificationHubService notificationHubService,
+            IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _paymobService = paymobService;
@@ -43,6 +48,8 @@ namespace Shuryan.Application.Services
             _paymobSettings = paymobSettings.Value;
             _frontendSettings = frontendSettings.Value;
             _environment = environment;
+            _notificationHubService = notificationHubService;
+            _emailService = emailService;
         }
 
         public async Task<ApiResponse<InitiatePaymentResponse>> InitiateAppointmentPaymentAsync(
@@ -53,8 +60,6 @@ namespace Shuryan.Application.Services
             string? ipAddress = null,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
                 // Validate appointment exists and belongs to user
                 var appointment = await _unitOfWork.Appointments.GetByIdAsync(appointmentId);
                 if (appointment == null)
@@ -100,16 +105,6 @@ namespace Shuryan.Application.Services
                     itemDescription,
                     ipAddress,
                     cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error initiating appointment payment for user {UserId}, appointment {AppointmentId}",
-                    userId, appointmentId);
-                return ApiResponse<InitiatePaymentResponse>.Failure(
-                    "حدث خطأ أثناء بدء عملية الدفع",
-                    new[] { ex.Message },
-                    500);
-            }
         }
 
         public async Task<ApiResponse<InitiatePaymentResponse>> InitiatePharmacyOrderPaymentAsync(
@@ -120,8 +115,6 @@ namespace Shuryan.Application.Services
             string? ipAddress = null,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
                 var order = await _unitOfWork.PharmacyOrders.GetByIdAsync(pharmacyOrderId);
                 if (order == null)
                 {
@@ -166,16 +159,6 @@ namespace Shuryan.Application.Services
                     itemDescription,
                     ipAddress,
                     cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error initiating pharmacy order payment for user {UserId}, order {OrderId}",
-                    userId, pharmacyOrderId);
-                return ApiResponse<InitiatePaymentResponse>.Failure(
-                    "حدث خطأ أثناء بدء عملية الدفع",
-                    new[] { ex.Message },
-                    500);
-            }
         }
 
         public async Task<ApiResponse<InitiatePaymentResponse>> InitiateLabOrderPaymentAsync(
@@ -186,8 +169,6 @@ namespace Shuryan.Application.Services
             string? ipAddress = null,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
                 var order = await _unitOfWork.LabOrders.GetByIdAsync(labOrderId);
                 if (order == null)
                 {
@@ -232,16 +213,6 @@ namespace Shuryan.Application.Services
                     itemDescription,
                     ipAddress,
                     cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error initiating lab order payment for user {UserId}, order {OrderId}",
-                    userId, labOrderId);
-                return ApiResponse<InitiatePaymentResponse>.Failure(
-                    "حدث خطأ أثناء بدء عملية الدفع",
-                    new[] { ex.Message },
-                    500);
-            }
         }
 
         public async Task<ApiResponse<PaymentResponse>> HandlePaymobWebhookAsync(
@@ -249,8 +220,6 @@ namespace Shuryan.Application.Services
             string webhookJson,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
                 // Parse webhook data
                 var webhookData = JsonSerializer.Deserialize<PaymobWebhookRequest>(webhookJson);
                 if (webhookData?.Obj == null)
@@ -261,21 +230,21 @@ namespace Shuryan.Application.Services
                         400);
                 }
 
-                // Verify HMAC signature (skip in Development for testing)
-                if (!_environment.IsDevelopment())
+                // Verify HMAC signature
+                if (!_paymobService.VerifyWebhookSignature(hmac, webhookData))
                 {
-                    if (!_paymobService.VerifyWebhookSignature(hmac, webhookData))
+                    if (_environment.IsDevelopment())
                     {
-                        _logger.LogWarning("Invalid HMAC signature received from Paymob webhook");
+                        _logger.LogWarning("HMAC verification FAILED in Development - proceeding anyway for testing. Received HMAC: {Hmac}", hmac);
+                    }
+                    else
+                    {
+                        _logger.LogError("HMAC verification failed - rejecting webhook. Received HMAC: {Hmac}", hmac);
                         return ApiResponse<PaymentResponse>.Failure(
                             "توقيع Webhook غير صحيح",
                             new[] { "Invalid HMAC signature" },
                             401);
                     }
-                }
-                else
-                {
-                    _logger.LogInformation("HMAC verification skipped in Development mode");
                 }
 
                 var transactionData = webhookData.Obj;
@@ -317,15 +286,6 @@ namespace Shuryan.Application.Services
 
                 var response = _mapper.Map<PaymentResponse>(payment);
                 return ApiResponse<PaymentResponse>.Success(response, "تم معالجة Webhook بنجاح");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling Paymob webhook");
-                return ApiResponse<PaymentResponse>.Failure(
-                    "حدث خطأ أثناء معالجة Webhook",
-                    new[] { ex.Message },
-                    500);
-            }
         }
 
         public async Task<ApiResponse<PaymentResponse>> GetPaymentByIdAsync(
@@ -333,8 +293,6 @@ namespace Shuryan.Application.Services
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
                 var payment = await _unitOfWork.Payments.GetPaymentWithTransactionsAsync(paymentId);
                 if (payment == null)
                 {
@@ -354,15 +312,6 @@ namespace Shuryan.Application.Services
 
                 var response = _mapper.Map<PaymentResponse>(payment);
                 return ApiResponse<PaymentResponse>.Success(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting payment {PaymentId}", paymentId);
-                return ApiResponse<PaymentResponse>.Failure(
-                    "حدث خطأ أثناء جلب بيانات الدفع",
-                    new[] { ex.Message },
-                    500);
-            }
         }
 
         public async Task<ApiResponse<PaymentResponse>> CancelPaymentAsync(
@@ -370,8 +319,6 @@ namespace Shuryan.Application.Services
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
                 var payment = await _unitOfWork.Payments.GetPaymentWithTransactionsAsync(paymentId);
                 if (payment == null)
                 {
@@ -405,15 +352,6 @@ namespace Shuryan.Application.Services
 
                 var response = _mapper.Map<PaymentResponse>(payment);
                 return ApiResponse<PaymentResponse>.Success(response, "تم إلغاء عملية الدفع");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error cancelling payment {PaymentId}", paymentId);
-                return ApiResponse<PaymentResponse>.Failure(
-                    "حدث خطأ أثناء إلغاء الدفع",
-                    new[] { ex.Message },
-                    500);
-            }
         }
 
         #region Private Helper Methods
@@ -430,6 +368,25 @@ namespace Shuryan.Application.Services
             string? ipAddress,
             CancellationToken cancellationToken)
         {
+            // Idempotency check: prevent duplicate payments for the same order
+            var idempotencyKey = $"{userId}_{orderType}_{orderId}";
+            var existingPayments = await _unitOfWork.Payments.GetPaymentsByOrderAsync(orderType, orderId);
+            var activePayment = existingPayments.FirstOrDefault(p =>
+                p.UserId == userId &&
+                (p.Status == PaymentStatus.Pending || p.Status == PaymentStatus.Processing));
+
+            if (activePayment != null)
+            {
+                _logger.LogInformation(
+                    "Idempotency: Found existing active payment {PaymentId} for order {OrderType}/{OrderId}. Re-generating payment URL.",
+                    activePayment.Id, orderType, orderId);
+
+                // Cancel the old pending payment and create a fresh one
+                activePayment.Status = PaymentStatus.Cancelled;
+                _unitOfWork.Payments.Update(activePayment);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+
             // Create payment record
             var payment = new Payment
             {
@@ -478,8 +435,6 @@ namespace Shuryan.Application.Services
             }
 
             // Handle Paymob payment
-            try
-            {
                 // Step 1: Authenticate
                 var authToken = await _paymobService.AuthenticateAsync(cancellationToken);
 
@@ -515,10 +470,10 @@ namespace Shuryan.Application.Services
                     paymobOrder.Id,
                     amount,
                     integrationId,
-                    user.Email,
-                    user.FirstName,
-                    user.LastName,
-                    user.PhoneNumber,
+                    userEmail,
+                    userFirstName,
+                    userLastName,
+                    userPhone,
                     cancellationToken);
 
                 // Update payment with Paymob order ID
@@ -543,23 +498,6 @@ namespace Shuryan.Application.Services
                 };
 
                 return ApiResponse<InitiatePaymentResponse>.Success(successResponse, successResponse.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating Paymob payment for {PaymentId}", payment.Id);
-                
-                // Mark payment as failed
-                payment.Status = PaymentStatus.Failed;
-                payment.FailedAt = DateTime.UtcNow;
-                payment.FailureReason = ex.Message;
-                _unitOfWork.Payments.Update(payment);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                return ApiResponse<InitiatePaymentResponse>.Failure(
-                    "حدث خطأ أثناء إنشاء عملية الدفع",
-                    new[] { ex.Message },
-                    500);
-            }
         }
 
         private async Task CompletePaymentAsync(
@@ -601,6 +539,106 @@ namespace Shuryan.Application.Services
 
             _logger.LogInformation("Payment completed: {PaymentId}, Transaction: {TransactionId}",
                 payment.Id, transactionData.Id);
+
+            // Send real-time notification to patient
+            try
+            {
+                await _notificationHubService.SendNotificationToUserAsync(
+                    payment.UserId,
+                    "تم الدفع بنجاح",
+                    "تمت عملية الدفع بنجاح وتم تأكيد طلبك",
+                    new { paymentId = payment.Id, status = "Completed", orderType = payment.OrderType, orderId = payment.OrderId });
+
+                // Send Email Invoice
+                var user = await _unitOfWork.Repository<Core.Entities.Identity.User>().GetByIdAsync(payment.UserId);
+                if (user != null && !string.IsNullOrWhiteSpace(user.Email))
+                {
+                    var invoiceHtml = $@"<div dir=""rtl""
+                style=""background-color: #f8fafc; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; line-height: 1.6;"">
+                <div
+                        style=""max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"">
+
+                        <div style=""background-color: #0f766e; padding: 30px; text-align: center;"">
+                                <h1 style=""color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 1px;"">شريان <span
+                                                style=""font-weight: 300; font-size: 18px;"">| Shuryan</span></h1>
+                                <p style=""color: #ccfbf1; margin-top: 10px; font-size: 14px;"">فاتورة دفع إلكتروني معتمدة
+                                </p>
+                        </div>
+
+                        <div style=""padding: 30px;"">
+                                <h2
+                                        style=""color: #0f766e; font-size: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;"">
+                                        أهلاً {user.FirstName}،</h2>
+                                <p style=""font-size: 16px; color: #475569;"">شكراً لك. لقد تم استلام مدفوعاتك بنجاح،
+                                        وإليك تفاصيل المعاملة المالية:</p>
+
+                                <div
+                                        style=""background-color: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 20px; margin: 25px 0; text-align: center;"">
+                                        <span
+                                                style=""display: block; color: #0f766e; font-size: 14px; margin-bottom: 5px;"">إجمالي
+                                                المبلغ المدفوع</span>
+                                        <strong style=""font-size: 32px; color: #0d9488;"">{payment.Amount} <span
+                                                        style=""font-size: 18px;"">جنيه</span></strong>
+                                </div>
+
+                                <div style=""margin-top: 30px;"">
+                                        <div
+                                                style=""display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;"">
+                                                <span style=""color: #64748b; font-weight: 600;"">رقم العملية:</span>
+                                                <span
+                                                        style=""color: #1e293b; font-family: monospace;"">#{payment.Id.ToString().Substring(0,8).ToUpper()}</span>
+                                        </div>
+                                        <div
+                                                style=""display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;"">
+                                                <span style=""color: #64748b; font-weight: 600;"">نوع الخدمة:</span>
+                                                <span
+                                                        style=""color: #1e293b;"">{GetOrderTypeName(payment.OrderType)}</span>
+                                        </div>
+                                        <div
+                                                style=""display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;"">
+                                                <span style=""color: #64748b; font-weight: 600;"">طريقة الدفع:</span>
+                                                <span style=""color: #1e293b;"">بطاقة ائتمان (Paymob)</span>
+                                        </div>
+                                        <div style=""display: flex; justify-content: space-between; padding: 12px 0;"">
+                                                <span style=""color: #64748b; font-weight: 600;"">تاريخ المعاملة:</span>
+                                                <span style=""color: #1e293b;"">{payment.CompletedAt?.ToString("yyyy/MM/dd | HH:mm")}</span>
+                                        </div>
+                                </div>
+
+                                <div style=""margin-top: 40px; text-align: center;"">
+                                        <a href=""https://shuryan.com/""
+                                                style=""background-color: #0f766e; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block;"">الرجوع للمنصة</a>
+                                </div>
+                        </div>
+
+                        <div
+                                style=""background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #f1f5f9;"">
+                                <p style=""color: #94a3b8; font-size: 12px; margin: 0;"">تم إرسال هذا البريد تلقائياً من
+                                        نظام شريان الطبي.</p>
+                                <p style=""color: #94a3b8; font-size: 12px; margin-top: 5px;"">&copy; 2026 Shuryan
+                                        Platform. جميع الحقوق محفوظة.</p>
+                        </div>
+                </div>
+        </div>";
+
+                    await _emailService.SendEmailAsync(user.Email, "فاتورة شريان - تأكيد الدفع بنجاح", invoiceHtml);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send PaymentCompleted notification or invoice for payment {PaymentId}", payment.Id);
+            }
+        }
+
+        private string GetOrderTypeName(string orderType)
+        {
+            return orderType switch
+            {
+                "ConsultationBooking" => "حجز كشف عيادة",
+                "PharmacyOrder" => "طلب صيدلية",
+                "LabOrder" => "طلب معمل",
+                _ => "خدمات شريان"
+            };
         }
 
         private async Task FailPaymentAsync(
@@ -634,6 +672,20 @@ namespace Shuryan.Application.Services
 
             _logger.LogWarning("Payment failed: {PaymentId}, Reason: {Reason}",
                 payment.Id, payment.FailureReason);
+
+            // Send real-time notification to patient
+            try
+            {
+                await _notificationHubService.SendNotificationToUserAsync(
+                    payment.UserId,
+                    "فشل الدفع",
+                    "فشل الدفع، يرجى المحاولة مرة أخرى",
+                    new { paymentId = payment.Id, status = "Failed", reason = payment.FailureReason });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send PaymentFailed SignalR notification for payment {PaymentId}", payment.Id);
+            }
         }
 
         private async Task UpdatePaymentToProcessingAsync(
@@ -660,8 +712,6 @@ namespace Shuryan.Application.Services
             Guid orderId,
             CancellationToken cancellationToken)
         {
-            try
-            {
                 switch (orderType)
                 {
                     case "ConsultationBooking":
@@ -680,7 +730,9 @@ namespace Shuryan.Application.Services
 
                     case "PharmacyOrder":
                         var pharmacyOrder = await _unitOfWork.PharmacyOrders.GetByIdAsync(orderId);
-                        if (pharmacyOrder != null && pharmacyOrder.Status == PharmacyOrderStatus.PendingPayment)
+                        if (pharmacyOrder != null && 
+                           (pharmacyOrder.Status == PharmacyOrderStatus.PendingPayment || 
+                            pharmacyOrder.Status == PharmacyOrderStatus.WaitingForPatientConfirmation))
                         {
                             pharmacyOrder.Status = PharmacyOrderStatus.Confirmed;
                             pharmacyOrder.UpdatedAt = DateTime.UtcNow;
@@ -692,7 +744,9 @@ namespace Shuryan.Application.Services
 
                     case "LabOrder":
                         var labOrder = await _unitOfWork.LabOrders.GetByIdAsync(orderId);
-                        if (labOrder != null && labOrder.Status == LabOrderStatus.AwaitingPayment)
+                        if (labOrder != null && 
+                           (labOrder.Status == LabOrderStatus.AwaitingPayment || 
+                            labOrder.Status == LabOrderStatus.ConfirmedByLab))
                         {
                             labOrder.Status = LabOrderStatus.AwaitingSamples;
                             labOrder.PaidAt = DateTime.UtcNow;
@@ -703,14 +757,9 @@ namespace Shuryan.Application.Services
                         }
                         break;
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating order status after payment for {OrderType} {OrderId}",
-                    orderType, orderId);
-            }
         }
 
+#if DEBUG
         /// <summary>
         /// [TEST ONLY] Simulate successful payment - Updates order status directly without real payment
         /// </summary>
@@ -720,8 +769,6 @@ namespace Shuryan.Application.Services
             Guid orderId,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
                 _logger.LogWarning("[TEST MODE] Simulating payment success for {OrderType} {OrderId} by user {UserId}",
                     orderType, orderId, userId);
 
@@ -828,17 +875,8 @@ namespace Shuryan.Application.Services
                             new[] { "Unsupported order type" },
                             400);
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[TEST MODE] Error simulating payment success for {OrderType} {OrderId}",
-                    orderType, orderId);
-                return ApiResponse<string>.Failure(
-                    "حدث خطأ أثناء محاكاة الدفع",
-                    new[] { ex.Message },
-                    500);
-            }
         }
+#endif
 
         #endregion
     }
