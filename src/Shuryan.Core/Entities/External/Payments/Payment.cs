@@ -40,7 +40,6 @@ namespace Shuryan.Core.Entities.External.Payments
         [MaxLength(200)]
         public string? ProviderTransactionId { get; set; }
 
-        [MaxLength(500)]
         public string? ProviderResponse { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
@@ -56,6 +55,13 @@ namespace Shuryan.Core.Entities.External.Payments
 
         [MaxLength(100)]
         public string? IpAddress { get; set; }
+
+        /// <summary>
+        /// Client-generated key to prevent duplicate payment creation from network retries.
+        /// If a payment with the same IdempotencyKey already exists, the existing payment is returned.
+        /// </summary>
+        [MaxLength(100)]
+        public string? IdempotencyKey { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

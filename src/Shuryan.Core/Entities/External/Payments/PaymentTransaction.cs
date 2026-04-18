@@ -26,7 +26,6 @@ namespace Shuryan.Core.Entities.External.Payments
         [MaxLength(200)]
         public string? ProviderTransactionId { get; set; }
 
-        [MaxLength(1000)]
         public string? ProviderResponse { get; set; }
 
         [MaxLength(500)]
