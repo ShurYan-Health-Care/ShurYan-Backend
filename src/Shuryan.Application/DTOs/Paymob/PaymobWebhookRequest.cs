@@ -71,7 +71,7 @@ namespace Shuryan.Application.DTOs.Paymob
         public object? TerminalId { get; set; }
 
         [JsonPropertyName("merchant_commission")]
-        public int MerchantCommission { get; set; }
+        public decimal MerchantCommission { get; set; }
 
         [JsonPropertyName("installment")]
         public object? Installment { get; set; }
@@ -113,7 +113,7 @@ namespace Shuryan.Application.DTOs.Paymob
         public bool IsCaptured { get; set; }
 
         [JsonPropertyName("captured_amount")]
-        public int CapturedAmount { get; set; }
+        public decimal CapturedAmount { get; set; }
 
         [JsonPropertyName("merchant_staff_tag")]
         public object? MerchantStaffTag { get; set; }
@@ -272,7 +272,7 @@ namespace Shuryan.Application.DTOs.Paymob
         public DateTime CreatedAt { get; set; }
 
         [JsonPropertyName("amount")]
-        public int Amount { get; set; }
+        public decimal Amount { get; set; }
 
         [JsonPropertyName("currency")]
         public string Currency { get; set; } = string.Empty;

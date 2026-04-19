@@ -23,23 +23,18 @@ namespace Shuryan.Core.Entities.External.Payments
         [Required]
         public PaymentStatus Status { get; set; }
 
-        [MaxLength(200)]
         public string? ProviderTransactionId { get; set; }
 
-        [MaxLength(1000)]
         public string? ProviderResponse { get; set; }
 
-        [MaxLength(500)]
         public string? ErrorMessage { get; set; }
 
-        [MaxLength(50)]
         public string? ErrorCode { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? ProcessedAt { get; set; }
 
-        [MaxLength(1000)]
         public string? Metadata { get; set; }
 
         // Navigation Property
