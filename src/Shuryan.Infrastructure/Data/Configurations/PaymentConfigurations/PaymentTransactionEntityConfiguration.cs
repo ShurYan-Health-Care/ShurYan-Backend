@@ -27,17 +27,13 @@ namespace Shuryan.Infrastructure.Data.Configurations.PaymentConfigurations
             builder.Property(t => t.ProviderTransactionId)
                 .HasMaxLength(200);
 
-            builder.Property(t => t.ProviderResponse)
-                .HasMaxLength(1000);
+            builder.Property(t => t.ProviderResponse);
 
-            builder.Property(t => t.ErrorMessage)
-                .HasMaxLength(500);
+            builder.Property(t => t.ErrorMessage);
 
-            builder.Property(t => t.ErrorCode)
-                .HasMaxLength(50);
+            builder.Property(t => t.ErrorCode);
 
-            builder.Property(t => t.Metadata)
-                .HasMaxLength(1000);
+            builder.Property(t => t.Metadata);
 
             builder.Property(t => t.CreatedAt)
                 .IsRequired()

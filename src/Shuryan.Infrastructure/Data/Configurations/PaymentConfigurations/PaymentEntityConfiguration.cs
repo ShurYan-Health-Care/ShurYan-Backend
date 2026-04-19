@@ -37,10 +37,9 @@ namespace Shuryan.Infrastructure.Data.Configurations.PaymentConfigurations
                 .HasConversion<int>();
 
             builder.Property(p => p.ProviderTransactionId)
-                .HasMaxLength(200);
+                .HasMaxLength(400);
 
-            builder.Property(p => p.ProviderResponse)
-                .HasMaxLength(500);
+            builder.Property(p => p.ProviderResponse);
 
             builder.Property(p => p.RefundedAmount)
                 .HasColumnType("decimal(18,2)");
@@ -48,14 +47,11 @@ namespace Shuryan.Infrastructure.Data.Configurations.PaymentConfigurations
             builder.Property(p => p.RefundReason)
                 .HasMaxLength(500);
 
-            builder.Property(p => p.Notes)
-                .HasMaxLength(1000);
+            builder.Property(p => p.Notes);
 
-            builder.Property(p => p.IpAddress)
-                .HasMaxLength(100);
+            builder.Property(p => p.IpAddress);
 
-            builder.Property(p => p.FailureReason)
-                .HasMaxLength(500);
+            builder.Property(p => p.FailureReason);
 
             builder.Property(p => p.CreatedAt)
                 .IsRequired()

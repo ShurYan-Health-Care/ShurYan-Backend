@@ -28,25 +28,25 @@ namespace Shuryan.Infrastructure.Seeders
             await MedicationSeed.SeedAsync(context);
 
             // 2. Seed Users (Identity)
-            await VerifierSeed.SeedAsync(context);
-            await PatientSeed.SeedAsync(context);
-            await DoctorSeed.SeedAsync(context);
-            await LaboratorySeed.SeedAsync(context);
-            await PharmacySeed.SeedAsync(context);
+            //await VerifierSeed.SeedAsync(context);
+            //await PatientSeed.SeedAsync(context);
+            //await DoctorSeed.SeedAsync(context);
+            //await LaboratorySeed.SeedAsync(context);
+            //await PharmacySeed.SeedAsync(context);
 
             // 3. Seed Related Entities
-            await DoctorAvailabilitySeed.SeedAsync(context);
+            //await DoctorAvailabilitySeed.SeedAsync(context);
             await DoctorConsultationSeed.SeedAsync(context);
-            await ClinicSeed.SeedAsync(context);
+            //await ClinicSeed.SeedAsync(context);
             await LabServiceSeed.SeedAsync(context);
 
             // 4. Seed Transactional Data
-            await AppointmentSeed.SeedAsync(context);
-            await PrescriptionSeed.SeedAsync(context);
-            await LabPrescriptionSeed.SeedAsync(context);
+            //await AppointmentSeed.SeedAsync(context);
+            //await PrescriptionSeed.SeedAsync(context);
+            //await LabPrescriptionSeed.SeedAsync(context);
 
             // 5. Seed Reviews (depends on completed appointments)
-            await ReviewSeed.SeedAsync(context);
+            //await ReviewSeed.SeedAsync(context);
 
             Console.WriteLine("Database seeding completed successfully!");
         }
