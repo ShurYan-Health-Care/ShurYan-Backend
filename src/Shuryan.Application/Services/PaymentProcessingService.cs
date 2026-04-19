@@ -78,6 +78,15 @@ namespace Shuryan.Application.Services
                         403);
                 }
 
+                // Block payment for cancelled appointments (e.g. expired by PaymentExpiryJob)
+                if (appointment.Status == AppointmentStatus.Cancelled)
+                {
+                    return ApiResponse<InitiatePaymentResponse>.Failure(
+                        "هذا الموعد ملغي ولا يمكن الدفع له. يرجى حجز موعد جديد",
+                        new[] { "Appointment is cancelled" },
+                        400);
+                }
+
                 // Check if already paid
                 var existingPayment = await _unitOfWork.Payments
                     .GetPaymentsByOrderAsync("ConsultationBooking", appointmentId);
@@ -268,6 +277,16 @@ namespace Shuryan.Application.Services
                         "عملية الدفع غير موجودة",
                         new[] { "Payment not found" },
                         404);
+                }
+
+                // Guard: ignore webhook if payment was already cancelled/expired
+                if (payment.Status == PaymentStatus.Cancelled)
+                {
+                    _logger.LogWarning("Webhook received for cancelled/expired payment {PaymentId} - ignoring", paymentId);
+                    return ApiResponse<PaymentResponse>.Failure(
+                        "انتهت صلاحية هذه العملية",
+                        new[] { "Payment already cancelled or expired" },
+                        400);
                 }
 
                 // Update payment based on transaction status

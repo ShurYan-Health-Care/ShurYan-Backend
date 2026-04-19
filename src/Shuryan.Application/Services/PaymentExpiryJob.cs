@@ -21,7 +21,8 @@ namespace Shuryan.Application.Services
         private readonly ILogger<PaymentExpiryJob> _logger;
 
         // Payment is considered expired if it has been Pending for more than this duration
-        private static readonly TimeSpan ExpiryThreshold = TimeSpan.FromHours(1);
+        //private static readonly TimeSpan ExpiryThreshold = TimeSpan.FromHours(1);
+        private static readonly TimeSpan ExpiryThreshold = TimeSpan.FromMinutes(1);
 
         public PaymentExpiryJob(
             IUnitOfWork unitOfWork,
@@ -39,14 +40,9 @@ namespace Shuryan.Application.Services
 
             try
             {
-                var cutoffTime = DateTime.UtcNow.Subtract(ExpiryThreshold);
-
-                // Get all pending payments older than the threshold
-                var pendingPayments = await _unitOfWork.Payments
-                    .GetPaymentsByStatusAsync(PaymentStatus.Pending, pageNumber: 1, pageSize: 100);
-
-                var stalePayments = pendingPayments
-                    .Where(p => p.CreatedAt < cutoffTime)
+                // Get all pending/processing payments older than the threshold (single DB query)
+                var stalePayments = (await _unitOfWork.Payments
+                    .GetStalePaymentsAsync(ExpiryThreshold))
                     .ToList();
 
                 if (!stalePayments.Any())
@@ -132,12 +128,14 @@ namespace Shuryan.Application.Services
             {
                 case "ConsultationBooking":
                     var appointment = await _unitOfWork.Appointments.GetByIdAsync(orderId);
-                    if (appointment != null && appointment.Status == AppointmentStatus.Confirmed)
+                    if (appointment != null && appointment.Status == AppointmentStatus.PendingPayment)
                     {
-                        appointment.Status = AppointmentStatus.PendingPayment;
+                        appointment.Status = AppointmentStatus.Cancelled;
+                        appointment.CancellationReason = "Payment expired - slot released";
+                        appointment.CancelledAt = DateTime.UtcNow;
                         appointment.UpdatedAt = DateTime.UtcNow;
                         _unitOfWork.Appointments.Update(appointment);
-                        _logger.LogInformation("Appointment {AppointmentId} reverted to PendingPayment after payment expiry", orderId);
+                        _logger.LogInformation("Appointment {AppointmentId} cancelled after payment expiry - slot released", orderId);
                     }
                     break;
 

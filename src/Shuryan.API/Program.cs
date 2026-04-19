@@ -90,6 +90,6 @@ if (app.Environment.IsDevelopment())
 RecurringJob.AddOrUpdate<IPaymentExpiryJob>(
     "expire-pending-payments",
     job => job.ExpirePendingPaymentsAsync(),
-    "*/10 * * * *"); // Every 30 minutes
+    "*/1 * * * *"); // Every 30 minutes
 
 app.Run();
