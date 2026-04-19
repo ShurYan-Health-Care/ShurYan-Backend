@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Shuryan.Application.DTOs.Requests.Payment;
 using Shuryan.Application.Interfaces;
 
@@ -22,6 +23,7 @@ namespace Shuryan.API.Controllers
         /// بدء عملية دفع لحجز موعد مع دكتور
         /// </summary>
         [HttpPost("appointments/{appointmentId}/initiate")]
+        [EnableRateLimiting("payment")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -49,6 +51,7 @@ namespace Shuryan.API.Controllers
         /// بدء عملية دفع لطلب صيدلية
         /// </summary>
         [HttpPost("pharmacy-orders/{pharmacyOrderId}/initiate")]
+        [EnableRateLimiting("payment")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -76,6 +79,7 @@ namespace Shuryan.API.Controllers
         /// بدء عملية دفع لطلب معمل
         /// </summary>
         [HttpPost("lab-orders/{labOrderId}/initiate")]
+        [EnableRateLimiting("payment")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -104,24 +108,36 @@ namespace Shuryan.API.Controllers
         /// </summary>
         [HttpPost("webhook/paymob")]
         [AllowAnonymous]
+        [EnableRateLimiting("webhook")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> PaymobWebhook(CancellationToken cancellationToken)
         {
-            // Get HMAC from query string
-            var hmac = Request.Query["hmac"].ToString();
-            
-            // Read webhook body
-            using var reader = new StreamReader(Request.Body);
-            var webhookJson = await reader.ReadToEndAsync(cancellationToken);
+            var webhookJson = string.Empty;
+            try
+            {
+                // Get HMAC from query string
+                var hmac = Request.Query["hmac"].ToString();
+                
+                // Read webhook body
+                using var reader = new StreamReader(Request.Body);
+                webhookJson = await reader.ReadToEndAsync(cancellationToken);
 
-            var result = await _paymentProcessingService.HandlePaymobWebhookAsync(
-                hmac,
-                webhookJson,
-                cancellationToken);
+                var result = await _paymentProcessingService.HandlePaymobWebhookAsync(
+                    hmac,
+                    webhookJson,
+                    cancellationToken);
 
-            return StatusCode(result.StatusCode ?? 500, result);
+                // Always return 200 to Paymob to prevent retries
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the error but ALWAYS return 200 to Paymob
+                // Returning non-200 causes Paymob to keep retrying the webhook
+                return Ok(new { status = "received", error = ex.Message });
+            }
         }
 
         /// <summary>
@@ -165,63 +181,6 @@ namespace Shuryan.API.Controllers
             return StatusCode(result.StatusCode ?? 500, result);
         }
 
-        /// <summary>
-        /// [TEST ONLY] محاكاة نجاح الدفع لطلب معمل - للتجربة فقط
-        /// </summary>
-        [HttpPost("lab-orders/{labOrderId}/simulate-payment-success")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> SimulateLabOrderPaymentSuccess(
-            Guid labOrderId,
-            CancellationToken cancellationToken)
-        {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var result = await _paymentProcessingService.SimulatePaymentSuccessAsync(
-                userId,
-                "LabOrder",
-                labOrderId,
-                cancellationToken);
 
-            return StatusCode(result.StatusCode ?? 500, result);
-        }
-
-        /// <summary>
-        /// اختبار يدوي للـ webhook (Development only)
-        /// </summary>
-        [HttpPost("{paymentId}/test-success")]
-        [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> TestPaymentSuccess(
-            Guid paymentId,
-            CancellationToken cancellationToken)
-        {
-            var webhookJson = $$"""
-            {
-              "obj": {
-                "id": 123456789,
-                "success": true,
-                "pending": false,
-                "amount_cents": 10000,
-                "currency": "EGP",
-                "error_occured": false,
-                "has_parent_transaction": false,
-                "order": {
-                  "id": 987654321,
-                  "merchant_order_id": "{{paymentId}}"
-                },
-                "created_at": "2025-11-21T01:00:00.000000Z",
-                "transaction_processed_callback_responses": []
-              },
-              "type": "TRANSACTION"
-            }
-            """;
-
-            var result = await _paymentProcessingService.HandlePaymobWebhookAsync(
-                "TEST_HMAC",
-                webhookJson,
-                cancellationToken);
-
-            return StatusCode(result.StatusCode ?? 500, result);
-        }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Shuryan.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Shuryan.Infrastructure.Data;
 namespace Shuryan.Infrastructure.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    partial class ShuryanDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260418190919_RemoveProviderResponseMaxLength")]
+    partial class RemoveProviderResponseMaxLength
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -816,16 +819,19 @@ namespace Shuryan.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("FailureReason")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("IdempotencyKey")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IpAddress")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
@@ -842,11 +848,12 @@ namespace Shuryan.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ProviderResponse")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("ProviderTransactionId")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("RefundReason")
                         .HasMaxLength(500)
@@ -912,7 +919,8 @@ namespace Shuryan.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ProviderResponse")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("ProviderTransactionId")
                         .HasMaxLength(200)

@@ -48,6 +48,11 @@ namespace Shuryan.Application.DTOs.Responses.Appointment
         public decimal TotalAmount { get; set; }
 
         /// <summary>
+        /// معرف عملية الدفع — يستخدمه الفرونت لبدء الدفع عبر Paymob
+        /// </summary>
+        public Guid PaymentId { get; set; }
+
+        /// <summary>
         /// وقت الإنشاء
         /// </summary>
         public DateTime CreatedAt { get; set; }

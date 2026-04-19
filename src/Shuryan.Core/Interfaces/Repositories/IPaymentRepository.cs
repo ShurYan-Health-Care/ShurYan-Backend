@@ -14,6 +14,7 @@ namespace Shuryan.Core.Interfaces.Repositories
         Task<Payment?> GetPaymentByProviderTransactionIdAsync(string providerTransactionId);
         Task<IEnumerable<Payment>> GetPaymentsByStatusAsync(PaymentStatus status, int pageNumber = 1, int pageSize = 10);
         Task<IEnumerable<Payment>> GetPendingPaymentsAsync(int pageNumber = 1, int pageSize = 10);
+        Task<IEnumerable<Payment>> GetStalePaymentsAsync(TimeSpan olderThan, int pageSize = 100);
         Task<decimal> GetTotalRevenueAsync(DateTime? startDate = null, DateTime? endDate = null);
         Task<int> GetPaymentCountByStatusAsync(PaymentStatus status);
     }
