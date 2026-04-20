@@ -67,6 +67,7 @@ namespace Shuryan.Application.Interfaces
             Guid userId,
             CancellationToken cancellationToken = default);
 
+#if DEBUG
         /// <summary>
         /// [TEST ONLY] Simulate successful payment for testing purposes
         /// </summary>
@@ -75,5 +76,6 @@ namespace Shuryan.Application.Interfaces
             string orderType,
             Guid orderId,
             CancellationToken cancellationToken = default);
+#endif
     }
 }

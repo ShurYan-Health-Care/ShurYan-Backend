@@ -67,6 +67,18 @@ namespace Shuryan.Infrastructure.Repositories.Payments
             return await GetPaymentsByStatusAsync(PaymentStatus.Pending, pageNumber, pageSize);
         }
 
+        public async Task<IEnumerable<Payment>> GetStalePaymentsAsync(TimeSpan olderThan, int pageSize = 100)
+        {
+            var cutoffTime = DateTime.UtcNow.Subtract(olderThan);
+            return await _context.Set<Payment>()
+                .Where(p => 
+                    (p.Status == PaymentStatus.Pending || 
+                     p.Status == PaymentStatus.Processing)
+                    && p.CreatedAt < cutoffTime)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
         public async Task<decimal> GetTotalRevenueAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
             var query = _context.Set<Payment>()

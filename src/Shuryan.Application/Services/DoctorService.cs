@@ -760,7 +760,7 @@ namespace Shuryan.Application.Services
                     MonthlyRevenue = monthlyRevenue,
                     PendingAppointments = pendingAppointments,
                     CancelledAppointments = cancelledAppointments,
-                    AverageRating = averageRating,
+                    AverageRating = Math.Round(averageRating, 1),
                     TotalReviews = totalReviews
                 };
 

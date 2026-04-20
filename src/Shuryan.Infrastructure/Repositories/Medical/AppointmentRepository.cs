@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Shuryan.Core.Entities.External.Payments;
 using Shuryan.Core.Entities.Medical;
 using Shuryan.Core.Enums.Appointments;
+using Shuryan.Core.Enums.Payment;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Infrastructure.Data;
 
@@ -40,10 +42,18 @@ namespace Shuryan.Infrastructure.Repositories.Medical
 
         public async Task<IEnumerable<Appointment>> GetByDoctorIdAsync(Guid doctorId)
         {
+            var paymentsSet = _context.Set<Payment>();
             return await _dbSet
                 .Include(a => a.Patient)
                 .Include(a => a.ConsultationRecord)
-                .Where(a => a.DoctorId == doctorId)
+                .Where(a => a.DoctorId == doctorId && (
+                    (a.Status != AppointmentStatus.PendingPayment && a.Status != AppointmentStatus.Cancelled)
+                    ||
+                    (a.Status == AppointmentStatus.Cancelled &&
+                     paymentsSet.Any(p => p.OrderType == "ConsultationBooking"
+                                      && p.OrderId == a.Id
+                                      && p.Status == PaymentStatus.Completed))
+                ))
                 .OrderByDescending(a => a.ScheduledStartTime)
                 .ToListAsync();
         }
@@ -52,12 +62,21 @@ namespace Shuryan.Infrastructure.Repositories.Medical
         {
             var startOfDay = date.Date;
             var endOfDay = startOfDay.AddDays(1);
+            var paymentsSet = _context.Set<Payment>();
 
             return await _dbSet
                 .Include(a => a.Patient)
                 .Where(a => a.DoctorId == doctorId
                     && a.ScheduledStartTime >= startOfDay
-                    && a.ScheduledStartTime < endOfDay)
+                    && a.ScheduledStartTime < endOfDay
+                    && (
+                        (a.Status != AppointmentStatus.PendingPayment && a.Status != AppointmentStatus.Cancelled)
+                        ||
+                        (a.Status == AppointmentStatus.Cancelled &&
+                         paymentsSet.Any(p => p.OrderType == "ConsultationBooking"
+                                          && p.OrderId == a.Id
+                                          && p.Status == PaymentStatus.Completed))
+                    ))
                 .OrderBy(a => a.ScheduledStartTime)
                 .ToListAsync();
         }
@@ -95,6 +114,7 @@ namespace Shuryan.Infrastructure.Repositories.Medical
             else
                 query = query.Include(a => a.Doctor).Include(a => a.VideoSession).Where(a => a.PatientId == userId);
 
+            // Upcoming = future + Confirmed/CheckedIn only (no PendingPayment, no expired cancellations)
             return await query
                 .Where(a => a.ScheduledEndTime >= now
                     && (a.Status == AppointmentStatus.Confirmed || a.Status == AppointmentStatus.CheckedIn || a.Status == AppointmentStatus.InProgress))
@@ -105,6 +125,7 @@ namespace Shuryan.Infrastructure.Repositories.Medical
         public async Task<IEnumerable<Appointment>> GetPastAppointmentsAsync(Guid userId, bool isDoctor)
         {
             var now = DateTime.UtcNow;
+            var paymentsSet = _context.Set<Payment>();
             IQueryable<Appointment> query = _dbSet;
 
             if (isDoctor)
@@ -117,6 +138,19 @@ namespace Shuryan.Infrastructure.Repositories.Medical
                              .Include(a => a.DoctorReview)
                              .Include(a => a.Prescription)
                              .Where(a => a.PatientId == userId);
+
+            // For doctors: filter out PendingPayment and expired cancellations
+            if (isDoctor)
+            {
+                query = query.Where(a =>
+                    (a.Status != AppointmentStatus.PendingPayment && a.Status != AppointmentStatus.Cancelled)
+                    ||
+                    (a.Status == AppointmentStatus.Cancelled &&
+                     paymentsSet.Any(p => p.OrderType == "ConsultationBooking"
+                                      && p.OrderId == a.Id
+                                      && p.Status == PaymentStatus.Completed))
+                );
+            }
 
             return await query
                 .Where(a => a.ScheduledEndTime < now || a.Status == AppointmentStatus.Completed)
@@ -142,6 +176,7 @@ namespace Shuryan.Infrastructure.Repositories.Medical
                     a.DoctorId == doctorId
                     && a.Status != AppointmentStatus.Cancelled
                     && a.Status != AppointmentStatus.NoShow
+                    // PendingPayment intentionally included — blocks slot during payment
                     && ((a.ScheduledStartTime < endTime && a.ScheduledEndTime > startTime)));
 
             if (excludeAppointmentId.HasValue)
@@ -209,8 +244,14 @@ namespace Shuryan.Infrastructure.Repositories.Medical
 
         public async Task<int> GetCancelledAppointmentsCountAsync(Guid doctorId)
         {
+            // Only count REAL cancellations (patient cancelled after paying), not expired ones
+            var paymentsSet = _context.Set<Payment>();
             return await _dbSet
-                .Where(a => a.DoctorId == doctorId && a.Status == AppointmentStatus.Cancelled)
+                .Where(a => a.DoctorId == doctorId
+                    && a.Status == AppointmentStatus.Cancelled
+                    && paymentsSet.Any(p => p.OrderType == "ConsultationBooking"
+                                        && p.OrderId == a.Id
+                                        && p.Status == PaymentStatus.Completed))
                 .CountAsync();
         }
 
@@ -239,10 +280,23 @@ namespace Shuryan.Infrastructure.Repositories.Medical
             string sortBy,
             string sortOrder)
         {
-            // Build base query with necessary includes
+            // Build base query — Doctor sees:
+            //   1. All non-PendingPayment, non-Cancelled appointments (Confirmed, InProgress, etc.)
+            //   2. Cancelled appointments ONLY if they had a successful payment (real patient cancellation)
+            //   3. Never PendingPayment (not paid yet), never expired cancellations (Hangfire cleanup)
+            var paymentsSet = _context.Set<Payment>();
             var query = _dbSet
                 .Include(a => a.Patient)
-                .Where(a => a.DoctorId == doctorId);
+                .Where(a => a.DoctorId == doctorId && (
+                    // Non-cancelled, non-pending appointments (Confirmed, CheckedIn, InProgress, Completed, NoShow)
+                    (a.Status != AppointmentStatus.PendingPayment && a.Status != AppointmentStatus.Cancelled)
+                    ||
+                    // Cancelled with completed payment = real cancellation (patient cancelled after paying)
+                    (a.Status == AppointmentStatus.Cancelled &&
+                     paymentsSet.Any(p => p.OrderType == "ConsultationBooking"
+                                      && p.OrderId == a.Id
+                                      && p.Status == PaymentStatus.Completed))
+                ));
 
             // Apply date range filter
             if (startDate.HasValue)
@@ -294,6 +348,7 @@ namespace Shuryan.Infrastructure.Repositories.Medical
                            a.ScheduledStartTime < startOfDay.AddDays(1) &&  // أفضل من endOfDay
                            a.Status != AppointmentStatus.Cancelled &&
                            a.Status != AppointmentStatus.NoShow)
+                // PendingPayment intentionally NOT excluded — slot stays blocked while payment is pending
                 .OrderBy(a => a.ScheduledStartTime)
                 .ToListAsync();
         }
@@ -303,9 +358,17 @@ namespace Shuryan.Infrastructure.Repositories.Medical
             DateTime? startDate,
             DateTime? endDate)
         {
+            var paymentsSet = _context.Set<Payment>();
             var query = _dbSet
                 .AsNoTracking()
-                .Where(a => a.DoctorId == doctorId);
+                .Where(a => a.DoctorId == doctorId && (
+                    (a.Status != AppointmentStatus.PendingPayment && a.Status != AppointmentStatus.Cancelled)
+                    ||
+                    (a.Status == AppointmentStatus.Cancelled &&
+                     paymentsSet.Any(p => p.OrderType == "ConsultationBooking"
+                                      && p.OrderId == a.Id
+                                      && p.Status == PaymentStatus.Completed))
+                ));
 
             // Apply date range filter if provided
             if (startDate.HasValue)

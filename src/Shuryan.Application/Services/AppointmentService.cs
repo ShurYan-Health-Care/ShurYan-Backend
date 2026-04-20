@@ -10,8 +10,10 @@ using Shuryan.Application.DTOs.Requests.Appointment;
 using Shuryan.Application.DTOs.Responses.Appointment;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.Medical;
+using Shuryan.Core.Entities.External.Payments;
 using Shuryan.Core.Enums.Appointments;
 using Shuryan.Core.Enums.Medical;
+using Shuryan.Core.Enums.Payment;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Core.Interfaces.UnitOfWork;
 
@@ -801,7 +803,9 @@ namespace Shuryan.Application.Services
                 if (!isAvailable)
                     throw new InvalidOperationException($"The time slot {request.AppointmentTime} is already booked");
 
-                // ==================== Create Appointment ====================
+                // ==================== Create Appointment + Payment in a single transaction ====================
+                // This guarantees every PendingPayment appointment has a matching Pending payment record,
+                // so PaymentExpiryJob can always clean up expired bookings.
 
                 var appointment = new Appointment
                 {
@@ -814,98 +818,61 @@ namespace Shuryan.Application.Services
                     ConsultationFee = consultationFee,
                     SessionDurationMinutes = durationMinutes,
                     IsOnline = request.IsOnline,
-                    Status = AppointmentStatus.Confirmed,
+                    Status = AppointmentStatus.PendingPayment,
                     CreatedAt = DateTime.UtcNow
                 };
 
-                await _appointmentRepository.AddAsync(appointment);
-
-                if (request.IsOnline)
+                var payment = new Payment
                 {
-                    var videoSession = new VideoSession
-                    {
-                        AppointmentId = appointment.Id,
-                        DoctorId = request.DoctorId,
-                        PatientId = patientId,
-                        AgoraChannelName = appointment.Id.ToString("N"),
-                        Status = VideoSessionStatus.Waiting,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    await _unitOfWork.VideoSessions.AddAsync(videoSession);
-                }
+                    Id = Guid.NewGuid(),
+                    UserId = patientId,
+                    OrderType = "ConsultationBooking",
+                    OrderId = appointment.Id,
+                    Amount = consultationFee,
+                    PaymentMethod = PaymentMethod.Online,
+                    Provider = PaymentProvider.Paymob,
+                    Status = PaymentStatus.Pending,
+                    CreatedAt = DateTime.UtcNow
+                };
 
-                await _unitOfWork.SaveChangesAsync();
-
-                _logger.LogInformation("Successfully booked appointment {AppointmentId} for Patient {PatientId}",
-                    appointment.Id, patientId);
-
-                // ==================== Send Real-time Appointment Data to Doctor ====================
-                // بنبعت الـ appointment data كاملة للدكتور عبر SignalR بس لو الحجز في نفس اليوم
+                // Atomic save — both succeed or both rollback
+                await using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
-                    var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
-                    var todayInEgypt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, egyptTimeZone).Date;
-                    var appointmentDateInEgypt = TimeZoneInfo.ConvertTimeFromUtc(scheduledStartTime, egyptTimeZone).Date;
-
-                    // لو الحجز في نفس اليوم، ابعت الـ appointment data للدكتور
-                    if (appointmentDateInEgypt == todayInEgypt)
+                    await _appointmentRepository.AddAsync(appointment);
+                    if (request.IsOnline)
                     {
-                        // بناء الـ appointment DTO للإرسال
-                        var appointmentDto = new DTOs.Responses.Appointment.DoctorAppointmentResponse
+                        var videoSession = new VideoSession
                         {
-                            Id = appointment.Id,
-                            PatientId = appointment.PatientId,
-                            PatientName = $"{patient.FirstName} {patient.LastName}",
-                            PatientPhoneNumber = patient.PhoneNumber,
-                            AppointmentDate = appointmentDate.ToString("yyyy-MM-dd"),
-                            AppointmentTime = request.AppointmentTime,
-                            Duration = durationMinutes,
-                            AppointmentType = consultationType == ConsultationTypeEnum.FollowUp ? "followup" : "regular",
-                            Status = appointment.Status,
-                            CreatedAt = appointment.CreatedAt,
-                            Notes = null,
-                            Price = appointment.ConsultationFee
+                            AppointmentId = appointment.Id,
+                            DoctorId = request.DoctorId,
+                            PatientId = patientId,
+                            AgoraChannelName = appointment.Id.ToString("N"),
+                            Status = VideoSessionStatus.Waiting,
+                            CreatedAt = DateTime.UtcNow
                         };
-
-                        // إرسال عبر SignalR Hub
-                        await _notificationHubService.SendNotificationToUserAsync(
-                            userId: request.DoctorId,
-                            title: "NewAppointmentToday", // Event name للـ Frontend
-                            message: $"حجز جديد من {patient.FirstName} {patient.LastName}",
-                            data: appointmentDto
-                        );
-
-                        // كمان نحفظ notification في الـ Database (للـ persistence)
-                        await _notificationService.SendNotificationAsync(
-                            userId: request.DoctorId,
-                            type: Core.Enums.Notifications.NotificationType.AppointmentConfirmed,
-                            title: "حجز جديد اليوم",
-                            message: $"المريض {patient.FirstName} {patient.LastName} حجز معاك موعد النهاردة الساعة {request.AppointmentTime}",
-                            relatedEntityId: appointment.Id,
-                            relatedEntityType: "Appointment",
-                            priority: Core.Enums.Notifications.NotificationPriority.High
-                        );
-
-                        _logger.LogInformation(
-                            "Sent real-time appointment data to Doctor {DoctorId} for same-day appointment {AppointmentId}",
-                            request.DoctorId, appointment.Id);
+                        await _unitOfWork.VideoSessions.AddAsync(videoSession);
                     }
-                    else
-                    {
-                        _logger.LogInformation(
-                            "Skipped real-time update for Doctor {DoctorId} - appointment {AppointmentId} is not today",
-                            request.DoctorId, appointment.Id);
-                    }
+                    await _unitOfWork.Payments.AddAsync(payment);
+                    await _unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
                 }
-                catch (Exception signalREx)
+                catch
                 {
-                    // لو في مشكلة في إرسال الـ SignalR، ما نخليش ده يأثر على إنشاء الحجز
-                    _logger.LogError(signalREx, 
-                        "Failed to send real-time update to Doctor {DoctorId} for appointment {AppointmentId}. Appointment was created successfully.",
-                        request.DoctorId, appointment.Id);
+                    await transaction.RollbackAsync();
+                    throw;
                 }
 
-                // Return response
+                _logger.LogInformation(
+                    "Booked appointment {AppointmentId} with payment {PaymentId} for Patient {PatientId}",
+                    appointment.Id, payment.Id, patientId);
+
+                // ==================== Doctor Notification Deferred ====================
+                // Don't notify doctor yet — appointment is PendingPayment.
+                // Doctor will be notified after payment succeeds via Paymob Webhook
+                // (see PaymentProcessingService.UpdateOrderStatusAfterPaymentAsync)
+
+                // Return response with PaymentId for frontend to initiate Paymob redirect
                 return new BookedAppointmentResponse
                 {
                     Id = appointment.Id,
@@ -916,6 +883,7 @@ namespace Shuryan.Application.Services
                     ConsultationType = request.ConsultationType,
                     Status = appointment.Status.ToString(),
                     TotalAmount = appointment.ConsultationFee,
+                    PaymentId = payment.Id,
                     CreatedAt = appointment.CreatedAt
                 };
             }
