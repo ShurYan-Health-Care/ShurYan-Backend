@@ -13,6 +13,7 @@ namespace Shuryan.Core.Interfaces.Repositories
         Task<IEnumerable<Prescription>> GetPagedPrescriptionsForPatientAsync(Guid patientId, int pageNumber, int pageSize);
         Task<IEnumerable<Prescription>> GetAllPrescriptionsForPatientWithDetailsAsync(Guid patientId);
         Task<IEnumerable<Prescription>> GetActivePrescriptionsForPatientAsync(Guid patientId);
+        Task<Prescription?> GetByAppointmentIdAsync(Guid appointmentId);
         Task<Prescription?> FindByPrescriptionNumberAsync(string prescriptionNumber);
         Task<IEnumerable<Prescription>> GetPrescriptionsByDateRangeAsync(DateTime startDate, DateTime endDate);
         Task<IEnumerable<Prescription>> GetPrescriptionsContainingMedicationAsync(Guid medicationId);

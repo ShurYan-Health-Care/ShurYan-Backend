@@ -61,5 +61,20 @@ namespace Shuryan.Application.DTOs.Responses.Doctor
         /// سعر الكشف
         /// </summary>
         public decimal Price { get; set; }
+
+        /// <summary>
+        /// هل الموعد أونلاين (فيديو كول)؟
+        /// </summary>
+        public bool IsOnline { get; set; }
+
+        /// <summary>
+        /// وقت بدء الموعد الفعلي (UTC ISO-8601) — لحساب نافذة الانضمام
+        /// </summary>
+        public DateTime ScheduledStartTime { get; set; }
+
+        /// <summary>
+        /// وقت انتهاء الموعد الفعلي (UTC ISO-8601) — لحساب نافذة الانضمام
+        /// </summary>
+        public DateTime ScheduledEndTime { get; set; }
     }
 }

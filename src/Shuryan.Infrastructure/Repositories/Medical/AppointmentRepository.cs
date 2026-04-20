@@ -112,12 +112,12 @@ namespace Shuryan.Infrastructure.Repositories.Medical
             if (isDoctor)
                 query = query.Include(a => a.Patient).Where(a => a.DoctorId == userId);
             else
-                query = query.Include(a => a.Doctor).Where(a => a.PatientId == userId);
+                query = query.Include(a => a.Doctor).Include(a => a.VideoSession).Where(a => a.PatientId == userId);
 
             // Upcoming = future + Confirmed/CheckedIn only (no PendingPayment, no expired cancellations)
             return await query
-                .Where(a => a.ScheduledStartTime >= now
-                    && (a.Status == AppointmentStatus.Confirmed || a.Status == AppointmentStatus.CheckedIn))
+                .Where(a => a.ScheduledEndTime >= now
+                    && (a.Status == AppointmentStatus.Confirmed || a.Status == AppointmentStatus.CheckedIn || a.Status == AppointmentStatus.InProgress))
                 .OrderBy(a => a.ScheduledStartTime)
                 .ToListAsync();
         }

@@ -34,6 +34,7 @@ namespace Shuryan.Infrastructure.Data.Configurations
 			builder.Property(a => a.ConsultationFee).IsRequired().HasPrecision(10, 2);
 			builder.Property(a => a.SessionDurationMinutes).IsRequired();
 			builder.Property(a => a.Status).IsRequired().HasConversion<int>().HasDefaultValue(AppointmentStatus.Confirmed);
+			builder.Property(a => a.IsOnline).IsRequired().HasDefaultValue(false);
 			builder.Property(a => a.CancellationReason).IsRequired(false).HasMaxLength(500);
 			builder.Property(a => a.CancelledAt).IsRequired(false);
 			builder.Property(a => a.ActualStartTime).IsRequired(false);

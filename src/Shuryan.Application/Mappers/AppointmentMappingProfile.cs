@@ -3,6 +3,7 @@ using Shuryan.Application.DTOs.Requests.Appointment;
 using Shuryan.Application.DTOs.Responses.Appointment;
 using Shuryan.Core.Entities.Medical;
 using Shuryan.Core.Entities.Medical.Consultations;
+using Shuryan.Core.Enums.Medical;
 
 namespace Shuryan.Application.Mappers
 {
@@ -21,7 +22,9 @@ namespace Shuryan.Application.Mappers
                 .ForMember(dest => dest.PatientProfileImageUrl, opt => opt.MapFrom(src => 
                     src.Patient != null ? src.Patient.ProfileImageUrl : null))
                 .ForMember(dest => dest.PrescriptionId, opt => opt.MapFrom(src => 
-                    src.Prescription != null ? src.Prescription.Id : (Guid?)null));
+                    src.Prescription != null ? src.Prescription.Id : (Guid?)null))
+                .ForMember(dest => dest.IsVideoSessionEnded, opt => opt.MapFrom(src =>
+                    src.VideoSession != null && src.VideoSession.Status == VideoSessionStatus.Ended));
             
             CreateMap<CreateAppointmentRequest, Appointment>();
             CreateMap<UpdateAppointmentRequest, Appointment>()

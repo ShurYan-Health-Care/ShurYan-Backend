@@ -80,37 +80,43 @@ namespace Shuryan.Application.Services
                 //     throw new ArgumentException($"Appointment with ID {request.AppointmentId} not found");
                 // }
 
-                // Check if prescription number already exists
+                // Upsert: reuse existing prescription for this appointment if one already exists
                 var existingPrescription = await _unitOfWork.Prescriptions
-                    .FindByPrescriptionNumberAsync(request.PrescriptionNumber);
+                    .GetByAppointmentIdAsync(request.AppointmentId);
+
+                Prescription prescription;
                 if (existingPrescription != null)
                 {
-                    throw new InvalidOperationException($"Prescription number {request.PrescriptionNumber} already exists");
+                    prescription = existingPrescription;
+                    if (!string.IsNullOrEmpty(request.GeneralInstructions))
+                    {
+                        prescription.GeneralInstructions = request.GeneralInstructions;
+                        prescription.UpdatedAt = DateTime.UtcNow;
+                    }
+                }
+                else
+                {
+                    prescription = new Prescription
+                    {
+                        Id = Guid.NewGuid(),
+                        PrescriptionNumber = request.PrescriptionNumber,
+                        DigitalSignature = request.DigitalSignature,
+                        AppointmentId = request.AppointmentId,
+                        DoctorId = request.DoctorId,
+                        PatientId = request.PatientId,
+                        GeneralInstructions = request.GeneralInstructions,
+                        Status = Core.Enums.PrescriptionStatus.Active,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _unitOfWork.Prescriptions.AddAsync(prescription);
                 }
 
-                // Create prescription entity
-                var prescription = new Prescription
-                {
-                    Id = Guid.NewGuid(),
-                    PrescriptionNumber = request.PrescriptionNumber,
-                    DigitalSignature = request.DigitalSignature,
-                    AppointmentId = request.AppointmentId,
-                    DoctorId = request.DoctorId,
-                    PatientId = request.PatientId,
-                    GeneralInstructions = request.GeneralInstructions,
-                    Status = Core.Enums.PrescriptionStatus.Active,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                // Add prescribed medications
+                // Add only new medications (skip duplicates by MedicationId)
                 foreach (var medicationRequest in request.PrescribedMedications)
                 {
-                    // Validate medication exists
-                    var medication = await _unitOfWork.Medications.GetByIdAsync(medicationRequest.MedicationId);
-                    if (medication == null)
-                    {
-                        throw new ArgumentException($"Medication with ID {medicationRequest.MedicationId} not found");
-                    }
+                    if (existingPrescription != null &&
+                        existingPrescription.PrescribedMedications.Any(pm => pm.MedicationId == medicationRequest.MedicationId))
+                        continue;
 
                     var prescribedMedication = new PrescribedMedication
                     {
@@ -125,11 +131,10 @@ namespace Shuryan.Application.Services
                     prescription.PrescribedMedications.Add(prescribedMedication);
                 }
 
-                await _unitOfWork.Prescriptions.AddAsync(prescription);
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Prescription {PrescriptionNumber} created successfully for patient {PatientId}",
-                    prescription.PrescriptionNumber, prescription.PatientId);
+                _logger.LogInformation("Upserted prescription {PrescriptionId} for appointment {AppointmentId}",
+                    prescription.Id, request.AppointmentId);
 
                 // Reload with details
                 var createdPrescription = await _unitOfWork.Prescriptions

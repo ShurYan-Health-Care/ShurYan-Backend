@@ -20,6 +20,7 @@ using Shuryan.Infrastructure.Repositories.Patients;
 using Shuryan.Infrastructure.Repositories.Pharmacies;
 using Shuryan.Infrastructure.UnitOfWork;
 using Shuryan.Shared.Configurations;
+using Shuryan.Core.Settings;
 
 namespace Shuryan.API.Extensions
 {
@@ -31,8 +32,9 @@ namespace Shuryan.API.Extensions
             services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
             services.Configure<OAuthSettings>(configuration.GetSection("OAuthSettings"));
             services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
-            services.Configure<Shuryan.Core.Settings.PaymobSettings>(configuration.GetSection("Paymob"));
-            services.Configure<Shuryan.Core.Settings.FrontendSettings>(configuration.GetSection("FrontendSettings"));
+            services.Configure<PaymobSettings>(configuration.GetSection("Paymob"));
+            services.Configure<FrontendSettings>(configuration.GetSection("FrontendSettings"));
+            services.Configure<AgoraSettings>(configuration.GetSection("AgoraSettings"));
 
             return services;
         }

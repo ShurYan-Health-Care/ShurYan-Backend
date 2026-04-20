@@ -59,8 +59,8 @@ namespace Shuryan.Shared.Extensions
                         var accessToken = context.Request.Query["access_token"];
                         var path = context.HttpContext.Request.Path;
                         if (!string.IsNullOrEmpty(accessToken) &&
-                            (path.StartsWithSegments("/hubs/call") ||
-                             path.StartsWithSegments("/hubs/notifications")))
+                            (path.StartsWithSegments("/hubs/notifications") ||
+                             path.StartsWithSegments("/hubs/video-notify")))
                         {
                             context.Token = accessToken;
                         }

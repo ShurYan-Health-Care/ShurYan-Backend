@@ -810,7 +810,10 @@ namespace Shuryan.Application.Services
                     AppointmentType = a.ConsultationType == Core.Enums.Appointments.ConsultationTypeEnum.FollowUp ? "followup" : "regular",
                     Status = MapAppointmentStatus(a.Status),
                     Notes = a.ConsultationRecord?.ChiefComplaint,
-                    Price = a.ConsultationFee
+                    Price = a.ConsultationFee,
+                    IsOnline = a.IsOnline,
+                    ScheduledStartTime = a.ScheduledStartTime,
+                    ScheduledEndTime = a.ScheduledEndTime
                 }).ToList();
 
                 // تطبيق الـ Pagination

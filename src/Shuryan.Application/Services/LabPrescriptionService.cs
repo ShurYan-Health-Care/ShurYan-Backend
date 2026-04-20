@@ -215,17 +215,32 @@ namespace Shuryan.Application.Services
                 if (patient == null)
                     throw new ArgumentException($"Patient with ID {request.PatientId} not found");
 
-                var prescription = new LabPrescription
-                {
-                    Id = Guid.NewGuid(),
-                    AppointmentId = request.AppointmentId,
-                    DoctorId = request.DoctorId,
-                    PatientId = request.PatientId,
-                    GeneralNotes = request.GeneralNotes,
-                    CreatedAt = DateTime.UtcNow
-                };
+                // Upsert: reuse existing prescription for this appointment if one already exists
+                var existingPrescription = await _unitOfWork.LabPrescriptions.GetByAppointmentIdAsync(request.AppointmentId);
 
-                await _unitOfWork.LabPrescriptions.AddAsync(prescription);
+                LabPrescription prescription;
+                if (existingPrescription != null)
+                {
+                    prescription = existingPrescription;
+                    if (!string.IsNullOrEmpty(request.GeneralNotes))
+                    {
+                        prescription.GeneralNotes = request.GeneralNotes;
+                        prescription.UpdatedAt = DateTime.UtcNow;
+                    }
+                }
+                else
+                {
+                    prescription = new LabPrescription
+                    {
+                        Id = Guid.NewGuid(),
+                        AppointmentId = request.AppointmentId,
+                        DoctorId = request.DoctorId,
+                        PatientId = request.PatientId,
+                        GeneralNotes = request.GeneralNotes,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _unitOfWork.LabPrescriptions.AddAsync(prescription);
+                }
 
                 if (request.Items != null && request.Items.Any())
                 {
@@ -234,6 +249,11 @@ namespace Shuryan.Application.Services
                         var labTest = await _unitOfWork.LabTests.GetByIdAsync(itemRequest.LabTestId);
                         if (labTest == null)
                             throw new ArgumentException($"Lab test with ID {itemRequest.LabTestId} not found");
+
+                        // Skip if this test is already on the prescription
+                        if (existingPrescription != null &&
+                            existingPrescription.Items.Any(i => i.LabTestId == itemRequest.LabTestId))
+                            continue;
 
                         var item = new LabPrescriptionItem
                         {
@@ -250,7 +270,8 @@ namespace Shuryan.Application.Services
 
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Created lab prescription {PrescriptionId}", prescription.Id);
+                _logger.LogInformation("Upserted lab prescription {PrescriptionId} for appointment {AppointmentId}",
+                    prescription.Id, request.AppointmentId);
 
                 return await GetLabPrescriptionByIdAsync(prescription.Id)
                     ?? throw new InvalidOperationException("Failed to retrieve created lab prescription");

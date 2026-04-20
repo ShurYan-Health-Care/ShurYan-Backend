@@ -26,5 +26,10 @@ namespace Shuryan.Application.DTOs.Requests.Appointment
         /// نوع الاستشارة: 0=Regular, 1=ReExamination
         /// </summary>
         public int ConsultationType { get; set; }
+
+        /// <summary>
+        /// هل الاستشارة عبر الإنترنت (مكالمة مرئية)؟
+        /// </summary>
+        public bool IsOnline { get; set; } = false;
     }
 }

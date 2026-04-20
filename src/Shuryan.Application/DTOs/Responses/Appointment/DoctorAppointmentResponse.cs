@@ -20,5 +20,8 @@ namespace Shuryan.Application.DTOs.Responses.Appointment
         public DateTime CreatedAt { get; set; } // تاريخ إنشاء الجلسة
         public string? Notes { get; set; }
         public decimal Price { get; set; }
+        public bool IsOnline { get; set; }
+        public DateTime ScheduledStartTime { get; set; }
+        public DateTime ScheduledEndTime { get; set; }
     }
 }
