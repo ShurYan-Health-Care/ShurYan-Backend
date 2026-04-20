@@ -32,8 +32,7 @@ namespace Shuryan.API.Extensions
             services.Configure<CloudinarySettings>(configuration.GetSection("CloudinarySettings"));
             services.Configure<PaymobSettings>(configuration.GetSection("Paymob"));
             services.Configure<FrontendSettings>(configuration.GetSection("FrontendSettings"));
-            services.Configure<TelemedicineSettings>(configuration.GetSection("TelemedicineSettings"));
-
+            services.Configure<AgoraSettings>(configuration.GetSection("AgoraSettings"));
 
             return services;
         }
@@ -127,8 +126,12 @@ namespace Shuryan.API.Extensions
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<INotificationHubService, NotificationHubService>();
 
-            // Telemedicine Services
-            services.AddScoped<ICallSessionService, CallSessionService>();
+            // Agora Token Service
+            services.AddScoped<IAgoraTokenService, AgoraTokenService>();
+
+            // Video Session Service
+            services.AddScoped<IVideoSessionService, VideoSessionService>();
+            services.AddScoped<IVideoNotificationHubService, VideoNotificationHubService>();
 
             return services;
         }

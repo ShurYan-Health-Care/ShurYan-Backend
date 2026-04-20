@@ -11,8 +11,10 @@ using Shuryan.Application.DTOs.Responses.Appointment;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.Medical;
 using Shuryan.Core.Enums.Appointments;
+using Shuryan.Core.Enums.Medical;
 using Shuryan.Core.Interfaces.Repositories;
 using Shuryan.Core.Interfaces.UnitOfWork;
+
 
 namespace Shuryan.Application.Services
 {
@@ -172,14 +174,30 @@ namespace Shuryan.Application.Services
                     ConsultationType = request.ConsultationType,
                     ConsultationFee = doctorConsultation.ConsultationFee,
                     SessionDurationMinutes = doctorConsultation.SessionDurationMinutes,
+                    IsOnline = request.IsOnline,
                     Status = AppointmentStatus.PendingPayment,
                     CreatedAt = DateTime.UtcNow
                 };
 
                 await _appointmentRepository.AddAsync(appointment);
+
+                if (request.IsOnline)
+                {
+                    var videoSession = new VideoSession
+                    {
+                        AppointmentId = appointment.Id,
+                        DoctorId = request.DoctorId,
+                        PatientId = request.PatientId,
+                        AgoraChannelName = appointment.Id.ToString("N"),
+                        Status = VideoSessionStatus.Waiting,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _unitOfWork.VideoSessions.AddAsync(videoSession);
+                }
+
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Appointment {AppointmentId} created successfully", appointment.Id);
+                _logger.LogInformation("Appointment {AppointmentId} created successfully (IsOnline={IsOnline})", appointment.Id, request.IsOnline);
 
                 // Retrieve with details for response
                 var createdAppointment = await _appointmentRepository.GetByIdWithDetailsAsync(appointment.Id);
@@ -795,11 +813,27 @@ namespace Shuryan.Application.Services
                     ConsultationType = consultationType,
                     ConsultationFee = consultationFee,
                     SessionDurationMinutes = durationMinutes,
+                    IsOnline = request.IsOnline,
                     Status = AppointmentStatus.Confirmed,
                     CreatedAt = DateTime.UtcNow
                 };
 
                 await _appointmentRepository.AddAsync(appointment);
+
+                if (request.IsOnline)
+                {
+                    var videoSession = new VideoSession
+                    {
+                        AppointmentId = appointment.Id,
+                        DoctorId = request.DoctorId,
+                        PatientId = patientId,
+                        AgoraChannelName = appointment.Id.ToString("N"),
+                        Status = VideoSessionStatus.Waiting,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _unitOfWork.VideoSessions.AddAsync(videoSession);
+                }
+
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully booked appointment {AppointmentId} for Patient {PatientId}",
@@ -984,7 +1018,10 @@ namespace Shuryan.Application.Services
                     Status = a.Status,
                     CreatedAt = a.CreatedAt,
                     Notes = a.CancellationReason,
-                    Price = a.ConsultationFee
+                    Price = a.ConsultationFee,
+                    IsOnline = a.IsOnline,
+                    ScheduledStartTime = a.ScheduledStartTime,
+                    ScheduledEndTime = a.ScheduledEndTime
                 }).ToList();
 
                 // Build statistics object

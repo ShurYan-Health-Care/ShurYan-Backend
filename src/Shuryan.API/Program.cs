@@ -54,6 +54,6 @@ app.UseStaticFiles();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
-app.MapHub<CallHub>("/hubs/call");
+app.MapHub<VideoNotificationHub>("/hubs/video-notify");
 
 app.Run();
