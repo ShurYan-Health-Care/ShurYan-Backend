@@ -75,7 +75,7 @@ namespace Shuryan.Infrastructure.Data
 		// Appointments
 		public DbSet<Appointment> Appointments { get; set; }
 		public DbSet<ConsultationRecord> ConsultationRecords { get; set; }
-        public DbSet<TelemedicineSession> TelemedicineSessions { get; set; }
+		public DbSet<VideoSession> VideoSessions { get; set; }
 
         // Consultations
         public DbSet<ConsultationType> ConsultationTypes { get; set; }

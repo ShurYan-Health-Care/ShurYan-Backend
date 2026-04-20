@@ -25,6 +25,8 @@ namespace Shuryan.Application.DTOs.Requests.Appointment
         [Required(ErrorMessage = "Consultation type is required")]
         public ConsultationTypeEnum ConsultationType { get; set; }
 
+        public bool IsOnline { get; set; } = false;
+
         // Custom validation: EndTime > StartTime should be done in FluentValidator
     }
 }

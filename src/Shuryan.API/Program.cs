@@ -79,7 +79,7 @@ app.UseStaticFiles();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
-app.MapHub<CallHub>("/hubs/call");
+app.MapHub<VideoNotificationHub>("/hubs/video-notify");
 // Hangfire Dashboard (Development only) + Recurring Jobs
 if (app.Environment.IsDevelopment())
 {

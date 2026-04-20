@@ -48,8 +48,7 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private IAppointmentRepository? _appointments;
         private IConsultationRecordRepository? _consultationRecords;
         private IConsultationTypeRepository? _consultationTypes;
-        private ITelemedicineSessionRepository? _telemedicineSessions;
-
+        private IVideoSessionRepository? _videoSessions;
 
         // ==================== Clinic Related Fields ====================
         private IClinicRepository? _clinics;
@@ -137,8 +136,8 @@ namespace Shuryan.Infrastructure.UnitOfWork
         public IConsultationTypeRepository ConsultationTypes =>
             _consultationTypes ??= new ConsultationTypeRepository(_context);
 
-        public ITelemedicineSessionRepository TelemedicineSessions =>
-            _telemedicineSessions ??= new TelemedicineSessionRepository(_context);
+        public IVideoSessionRepository VideoSessions =>
+            _videoSessions ??= new VideoSessionRepository(_context);
 
         // ==================== Clinic Related Properties ====================
         public IClinicRepository Clinics =>

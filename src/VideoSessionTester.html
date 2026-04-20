@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Session (Telemedicine) Test Sandbox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.2.js"></script>
+    <style>
+        .video-container {
+            width: 100%;
+            height: 300px;
+            background: #1a202c;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .local-player {
+            width: 100%;
+            height: 100%;
+        }
+
+        .remote-player {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 120px;
+            height: 90px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid white;
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 font-sans p-4">
+
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">ShurYan Telemedicine Feature Tester</h1>
+
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+            <p class="text-sm text-blue-700">
+                <strong>How to test:</strong><br>
+                1. Login as both Doctor and Patient below (use existing seeded emails and the correct password you use
+                for testing).<br>
+                2. Once the Doctor logs in, their ID is automatically shared with the Patient side.<br>
+                3. The Patient clicks "Book Online Session" to create an appointment.<br>
+                <span class="bg-yellow-200 px-2 py-1 rounded mt-2 inline-block">
+                    <strong>OR:</strong> If you already booked from your frontend, paste the Appointment ID here:
+                    <input type="text" id="manual-apt-id" class="border px-2 py-1 ml-2 rounded text-black"
+                        value="b13e539a19e144319a1ab5c3028bdc92">
+                    <button onclick="setManualApt()"
+                        class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Load
+                        Appointment</button>
+                </span><br>
+                4. Both sides click "Join Session" to start the Agora Video call and connect to SignalR.
+            </p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Doctor Panel -->
+            <div class="w-full lg:w-1/2 bg-white rounded-lg shadow-lg p-6 border-t-4 border-purple-500">
+                <h2 class="text-xl font-semibold mb-4 text-purple-700">Dr. Panel</h2>
+
+                <!-- Login -->
+                <div class="mb-4 bg-gray-50 p-4 rounded" id="dr-login-box">
+                    <h3 class="font-medium text-sm text-gray-500 mb-2">1. Doctor Login</h3>
+                    <input type="text" id="dr-email" value="eilidh4@sacieblo.com" class="w-full mb-2 p-2 border rounded"
+                        placeholder="Doctor Email">
+                    <input type="password" id="dr-pass" value="123123123aA!" class="w-full mb-2 p-2 border rounded"
+                        placeholder="Password">
+                    <button onclick="login('doctor')"
+                        class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm">Login</button>
+                    <p id="dr-status" class="text-xs mt-2 font-mono text-gray-600"></p>
+                </div>
+
+                <div id="dr-session-controls" class="hidden">
+                    <h3 class="font-medium text-sm text-gray-500 mb-2">3. Video Session</h3>
+                    <p class="text-sm mb-2">Appointment ID: <span id="dr-apt-id"
+                            class="font-bold text-purple-600">Waiting for patient to book...</span></p>
+                    <button onclick="joinSession('doctor')" id="dr-join-btn"
+                        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm w-full mb-2 opacity-50 cursor-not-allowed"
+                        disabled>Join Video Session</button>
+                    <button onclick="endSession('doctor')" id="dr-end-btn"
+                        class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm w-full hidden">End
+                        Call</button>
+
+                    <!-- SignalR Status -->
+                    <div class="mt-4 p-2 bg-gray-100 rounded text-xs h-32 overflow-y-auto" id="dr-log"></div>
+
+                    <!-- Video Container -->
+                    <div class="video-container">
+                        <div id="dr-remote"
+                            class="local-player bg-gray-800 flex items-center justify-center text-gray-500">Waiting for
+                            remote stream...</div>
+                        <div id="dr-local" class="remote-player bg-gray-900 border-2 border-purple-400"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Panel -->
+            <div class="w-full lg:w-1/2 bg-white rounded-lg shadow-lg p-6 border-t-4 border-blue-500">
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">Patient Panel</h2>
+
+                <!-- Login -->
+                <div class="mb-4 bg-gray-50 p-4 rounded" id="pt-login-box">
+                    <h3 class="font-medium text-sm text-gray-500 mb-2">1. Patient Login</h3>
+                    <input type="text" id="pt-email" value="mathew3@sacieblo.com" class="w-full mb-2 p-2 border rounded"
+                        placeholder="Patient Email">
+                    <input type="password" id="pt-pass" value="123123123aA!" class="w-full mb-2 p-2 border rounded"
+                        placeholder="Password">
+                    <button onclick="login('patient')"
+                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Login</button>
+                    <p id="pt-status" class="text-xs mt-2 font-mono text-gray-600"></p>
+                </div>
+
+                <!-- Book Appointment -->
+                <div id="pt-book-box" class="mb-4 bg-gray-50 p-4 rounded hidden">
+                    <h3 class="font-medium text-sm text-gray-500 mb-2">2. Book Appointment</h3>
+                    <p class="text-xs mb-2">Doctor ID: <span id="pt-dr-id" class="font-mono text-gray-800">Not Logged
+                            In</span></p>
+                    <button onclick="bookSession()"
+                        class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm w-full">Book
+                        Online Visit</button>
+                </div>
+
+                <div id="pt-session-controls" class="hidden">
+                    <h3 class="font-medium text-sm text-gray-500 mb-2">3. Video Session</h3>
+                    <p class="text-sm mb-2">Appointment ID: <span id="pt-apt-id"
+                            class="font-bold text-blue-600">-</span></p>
+                    <button onclick="joinSession('patient')" id="pt-join-btn"
+                        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm w-full mb-2">Join
+                        Video Session</button>
+                    <button onclick="endSession('patient')" id="pt-end-btn"
+                        class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm w-full hidden">End
+                        Call</button>
+
+                    <!-- SignalR Status -->
+                    <div class="mt-4 p-2 bg-gray-100 rounded text-xs h-32 overflow-y-auto" id="pt-log"></div>
+
+                    <!-- Video Container -->
+                    <div class="video-container">
+                        <div id="pt-remote"
+                            class="local-player bg-gray-800 flex items-center justify-center text-gray-500">Waiting for
+                            remote stream...</div>
+                        <div id="pt-local" class="remote-player bg-gray-900 border-2 border-blue-400"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:5117/api";
+        const HUB_BASE = "http://localhost:5117/hubs/video-notify";
+
+        let state = {
+            doctor: { token: null, id: null, signalr: null, rtc: null },
+            patient: { token: null, id: null, signalr: null, rtc: null },
+            appointmentId: null,
+            channelName: null,
+            appId: null
+        };
+
+        // --- AUTH API ---
+        async function login(role) {
+            const isDr = role === 'doctor';
+            const prefix = isDr ? 'dr' : 'pt';
+            const email = document.getElementById(`${prefix}-email`).value;
+            const password = document.getElementById(`${prefix}-pass`).value;
+            const logEl = document.getElementById(`${prefix}-status`);
+
+            logEl.innerText = "Logging in...";
+            try {
+                const res = await axios.post(`${API_BASE}/Auth/login`, { email, password });
+                const token = res.data.data.accessToken;
+                state[role].token = token;
+
+                // Parse JWT body to get UserId
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const userId = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || payload.nameid || payload.sub;
+                state[role].id = userId;
+
+                logEl.innerText = `Success! UserId: ${userId.substring(0, 8)}...`;
+                document.getElementById(`${prefix}-login-box`).classList.add('bg-green-50');
+
+                if (isDr) {
+                    document.getElementById('dr-session-controls').classList.remove('hidden');
+                    document.getElementById('pt-dr-id').innerText = userId;
+                } else {
+                    document.getElementById('pt-book-box').classList.remove('hidden');
+                }
+
+                // Initialize SignalR eagerly
+                initSignalR(role);
+
+            } catch (err) {
+                console.error(err);
+                logEl.innerText = "Login failed: " + (err.response?.data?.message || err.message);
+                logEl.classList.add("text-red-500");
+            }
+        }
+
+        // --- MANUAL OVERRIDE ---
+        function setManualApt() {
+            const val = document.getElementById('manual-apt-id').value.trim();
+            if (!val) return alert('Please paste an Appointment ID first');
+            state.appointmentId = val;
+
+            document.getElementById('pt-apt-id').innerText = val;
+            document.getElementById('dr-apt-id').innerText = val;
+
+            // Enable Dr Join
+            document.getElementById('dr-join-btn').disabled = false;
+            document.getElementById('dr-join-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('dr-session-controls').classList.remove('hidden');
+
+            // Enable Pt Session Controls
+            document.getElementById('pt-session-controls').classList.remove('hidden');
+
+            alert('Appointment Loaded! Make sure you still Login on both sides, then click "Join Video Session".');
+        }
+
+        // --- DIAGNOSTIC TEST ---
+        async function testAppIdOnly() {
+            if (!state.appId) return alert('No AppId loaded. Please join a session normally first so we receive the AppId.');
+
+            addLog('pt', `🔍 Testing Raw App ID (${state.appId.substring(0, 6)}...) without Token...`);
+
+            try {
+                const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+                await client.join(state.appId, "test_channel_123", null, null);
+                addLog('pt', "✅ AppId is VALID! (Joined test channel with no token. This means your project Security is set to 'App ID only' maybe?)");
+            } catch (err) {
+                const msg = err.response?.data?.message || err.message;
+                if (msg.includes("unauthorized") || msg.includes("Token")) {
+                    addLog('pt', "✅ AppId is VALID in Agora! (Rejected because Token is missing, which proves the AppId exists!) THE ISSUE IS THE TOKEN.");
+                } else if (msg.includes("invalid vendor key")) {
+                    addLog('pt', "❌ AppId is TRULY INVALID. Agora's servers literally cannot find this App ID in their database. Your App ID is corrupted or deleted.");
+                } else {
+                    addLog('pt', `⚠️ Diagnostic Result: ${msg}`);
+                }
+            }
+        }
+
+        // --- BOOKING API ---
+        async function bookSession() {
+            if (!state.doctor.id) return alert("Please login doctor first so we have a DoctorId.");
+
+            try {
+                // Book 1 hour from now
+                const start = new Date();
+                start.setHours(start.getHours() + 1);
+                const end = new Date(start);
+                end.setMinutes(end.getMinutes() + 30);
+
+                const res = await axios.post(`${API_BASE}/patients/me/appointments`, {
+                    patientId: state.patient.id,
+                    doctorId: state.doctor.id,
+                    scheduledStartTime: start.toISOString(),
+                    scheduledEndTime: end.toISOString(),
+                    consultationType: 1, // Regular
+                    isOnline: true
+                }, {
+                    headers: { Authorization: `Bearer ${state.patient.token}` }
+                });
+
+                // Get ID
+                const aptId = res.data.data.id || res.data.data.appointmentId || res.data.data;
+                state.appointmentId = aptId;
+
+                document.getElementById('pt-apt-id').innerText = aptId;
+                document.getElementById('dr-apt-id').innerText = aptId;
+                document.getElementById('dr-join-btn').disabled = false;
+                document.getElementById('dr-join-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+                document.getElementById('pt-session-controls').classList.remove('hidden');
+
+                addLog('patient', `✅ Hooked Session: ${aptId}`);
+                addLog('doctor', `✅ Appointment received: ${aptId}`);
+
+            } catch (err) {
+                alert("Booking failed: " + (err.response?.data?.message || err.message));
+                console.dir(err);
+            }
+        }
+
+        // --- SIGNALR ---
+        async function initSignalR(role) {
+            const prefix = role === 'doctor' ? 'dr' : 'pt';
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl(`${HUB_BASE}?access_token=${state[role].token}`)
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("SessionReady", (data) => {
+                addLog(role, `📣 EVENT: SessionReady! Channel: ${data.channelName}`);
+            });
+
+            connection.on("SessionEnded", (data) => {
+                addLog(role, `🛑 EVENT: SessionEnded! Appointment: ${data.appointmentId}`);
+                leaveAgora(role);
+            });
+
+            try {
+                await connection.start();
+                addLog(role, `🔌 SignalR Connected`);
+                state[role].signalr = connection;
+            } catch (err) {
+                addLog(role, `❌ SignalR Failed: ${err.message}`);
+            }
+        }
+
+        // --- SESSION CONTROL ---
+        async function joinSession(role) {
+            const prefix = role === 'doctor' ? 'dr' : 'pt';
+            addLog(role, "Joining API Session...");
+
+            try {
+                const res = await axios.post(`${API_BASE}/video-sessions/${state.appointmentId}/join`, {}, {
+                    headers: { Authorization: `Bearer ${state[role].token}` }
+                });
+
+                const data = res.data.data;
+                state.appId = data.agoraAppId.trim();
+                state.channelName = data.agoraChannelName.trim();
+                const rtcToken = data.agoraToken;
+
+                addLog(role, `Backend returned AppId: ${state.appId.substring(0, 6)}...`);
+
+                // Switch UI buttons
+                document.getElementById(`${prefix}-join-btn`).classList.add('hidden');
+                document.getElementById(`${prefix}-end-btn`).classList.remove('hidden');
+
+                // Start WebRTC Agora Connect
+                await joinAgora(role, rtcToken);
+            } catch (err) {
+                addLog(role, "❌ /join API failed: " + (err.response?.data?.message || err.message));
+            }
+        }
+
+        async function endSession(role) {
+            const prefix = role === 'doctor' ? 'dr' : 'pt';
+            addLog(role, "Ending session...");
+
+            try {
+                await axios.post(`${API_BASE}/video-sessions/${state.appointmentId}/end?reason=1`, {}, {
+                    headers: { Authorization: `Bearer ${state[role].token}` }
+                });
+
+                addLog(role, "✅ Session ended on server. Cleaning up video.");
+                await leaveAgora(role);
+
+                // Hide end button
+                document.getElementById(`${prefix}-end-btn`).classList.add('hidden');
+                document.getElementById(`${prefix}-join-btn`).classList.remove('hidden');
+            } catch (err) {
+                addLog(role, "❌ /end failed: " + err.message);
+            }
+        }
+
+        // --- AGORA WEBRTC ---
+        async function joinAgora(role, rtcToken) {
+            const prefix = role === 'doctor' ? 'dr' : 'pt';
+            addLog(role, `🎥 Initializing Agora RTC...`);
+
+            const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+            state[role].rtc = { client, localTracks: [] };
+
+            client.on("user-published", async (user, mediaType) => {
+                await client.subscribe(user, mediaType);
+                addLog(role, `📡 Subscribed to remote ${mediaType}`);
+
+                if (mediaType === "video") {
+                    document.getElementById(`${prefix}-remote`).innerHTML = ""; // Clear waiting text
+                    user.videoTrack.play(`${prefix}-remote`);
+                }
+                if (mediaType === "audio") {
+                    user.audioTrack.play();
+                }
+            });
+
+            client.on("user-unpublished", user => {
+                addLog(role, `📴 Remote user unpublished.`);
+            });
+
+            try {
+                // Determine uid (using database Id hash string or null to let agora auto-assign)
+                const exactUid = state[role].id.replace(/-/g, '');
+                const uid = await client.join(state.appId, state.channelName, rtcToken, exactUid);
+
+                // Create local tracks
+                const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
+                state[role].rtc.localTracks = tracks;
+
+                // Play the local track directly in local div
+                document.getElementById(`${prefix}-local`).innerHTML = ""; // Clear first
+                tracks[1].play(`${prefix}-local`);
+
+                // Publish tracks to channel
+                await client.publish(tracks);
+                addLog(role, `✅ Agora Published! Ready to talk.`);
+            } catch (err) {
+                addLog(role, `❌ Agora Error: ${err.message}`);
+                console.error(err);
+            }
+        }
+
+        async function leaveAgora(role) {
+            const prefix = role === 'doctor' ? 'dr' : 'pt';
+            const rtcState = state[role].rtc;
+            if (!rtcState || !rtcState.client) return;
+
+            // Stop local tracks
+            rtcState.localTracks.forEach(track => {
+                track.stop();
+                track.close();
+            });
+
+            // Leave the channel
+            await rtcState.client.leave();
+
+            // Reset UI
+            document.getElementById(`${prefix}-local`).innerHTML = '';
+            document.getElementById(`${prefix}-remote`).innerHTML = 'Session Ended';
+
+            state[role].rtc = null;
+            addLog(role, "👋 Left Agora Channel.");
+        }
+
+        // --- UTILS ---
+        function addLog(role, msg) {
+            const el = document.getElementById(role === 'doctor' ? 'dr-log' : 'pt-log');
+            const d = new Date().toLocaleTimeString();
+            el.innerHTML += `<div><span class="text-gray-400">[${d}]</span> ${msg}</div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>

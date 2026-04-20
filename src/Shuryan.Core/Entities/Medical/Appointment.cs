@@ -31,6 +31,7 @@ namespace Shuryan.Core.Entities.Medical
         public decimal ConsultationFee { get; set; }
         public int SessionDurationMinutes { get; set; }
         public AppointmentStatus Status { get; set; } = AppointmentStatus.Confirmed;
+        public bool IsOnline { get; set; } = false;
         public string? CancellationReason { get; set; }
         public DateTime? CancelledAt { get; set; }
         public DateTime? ActualStartTime { get; set; }
@@ -45,7 +46,7 @@ namespace Shuryan.Core.Entities.Medical
         public virtual ICollection<Appointment> FollowUpAppointments { get; set; } = new HashSet<Appointment>();
         public virtual ICollection<LabPrescription> LabPrescription { get; set; } = new HashSet<LabPrescription>();
 		public virtual DoctorReview? DoctorReview { get; set; }
-        public virtual TelemedicineSession? TelemedicineSession { get; set; }
+        public virtual VideoSession? VideoSession { get; set; }
 
 
     }
