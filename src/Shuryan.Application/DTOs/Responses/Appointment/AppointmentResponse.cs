@@ -21,6 +21,8 @@ namespace Shuryan.Application.DTOs.Responses.Appointment
         public decimal ConsultationFee { get; set; }
         public int SessionDurationMinutes { get; set; }
         public AppointmentStatus Status { get; set; }
+        public bool IsOnline { get; set; }
+        public bool IsVideoSessionEnded { get; set; }
         public string? CancellationReason { get; set; }
         public DateTime? CancelledAt { get; set; }
         

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Shuryan.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class VideoFeatureDone : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -660,6 +660,7 @@ namespace Shuryan.Infrastructure.Migrations
                     ConsultationFee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     SessionDurationMinutes = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
+                    IsOnline = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     CancellationReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ActualStartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1159,6 +1160,51 @@ namespace Shuryan.Infrastructure.Migrations
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Prescriptions_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "VideoSessions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AgoraChannelName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
+                    DoctorJoinedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PatientJoinedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    StartedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EndedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DurationSeconds = table.Column<int>(type: "int", nullable: true),
+                    EndReason = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VideoSessions", x => x.Id);
+                    table.CheckConstraint("CK_VideoSession_Duration", "[DurationSeconds] IS NULL OR [DurationSeconds] >= 0");
+                    table.ForeignKey(
+                        name: "FK_VideoSessions_Appointments_AppointmentId",
+                        column: x => x.AppointmentId,
+                        principalTable: "Appointments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_VideoSessions_Doctors_DoctorId",
+                        column: x => x.DoctorId,
+                        principalTable: "Doctors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_VideoSessions_Patients_PatientId",
                         column: x => x.PatientId,
                         principalTable: "Patients",
                         principalColumn: "Id",
@@ -2518,6 +2564,27 @@ namespace Shuryan.Infrastructure.Migrations
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VideoSession_AppointmentId",
+                table: "VideoSessions",
+                column: "AppointmentId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VideoSession_DoctorId",
+                table: "VideoSessions",
+                column: "DoctorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VideoSession_PatientId",
+                table: "VideoSessions",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VideoSession_Status",
+                table: "VideoSessions",
+                column: "Status");
         }
 
         /// <inheritdoc />
@@ -2621,6 +2688,9 @@ namespace Shuryan.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");
+
+            migrationBuilder.DropTable(
+                name: "VideoSessions");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

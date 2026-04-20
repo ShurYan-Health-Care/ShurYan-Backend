@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Shuryan.Core.Enums.Appointments
 {
-    public enum AppointmentStatus
+    public enum     AppointmentStatus
     {
         [Description("محجوز ومؤكد")]
         Confirmed = 1,

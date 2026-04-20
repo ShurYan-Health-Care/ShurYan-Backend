@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using Shuryan.Core.Entities.Base;
 using Shuryan.Core.Entities.Identity;
@@ -7,7 +6,7 @@ using Shuryan.Core.Enums.Medical;
 
 namespace Shuryan.Core.Entities.Medical
 {
-    public class TelemedicineSession : AuditableEntity
+    public class VideoSession : AuditableEntity
     {
         [ForeignKey("Appointment")]
         public Guid AppointmentId { get; set; }
@@ -18,25 +17,22 @@ namespace Shuryan.Core.Entities.Medical
         [ForeignKey("Patient")]
         public Guid PatientId { get; set; }
 
-        [Required, MaxLength(100)]
-        public string RoomId { get; set; } = string.Empty;
+        public string AgoraChannelName { get; set; } = string.Empty;
 
-        public TelemedicineSessionStatus Status { get; set; } = TelemedicineSessionStatus.Waiting;
-
-        [MaxLength(256)]
-        public string? DoctorConnectionId { get; set; }
-
-        [MaxLength(256)]
-        public string? PatientConnectionId { get; set; }
+        public VideoSessionStatus Status { get; set; } = VideoSessionStatus.Waiting;
 
         public DateTime? DoctorJoinedAt { get; set; }
-        public DateTime? PatientJoinedAt { get; set; }
-        public DateTime? StartedAt { get; set; }
-        public DateTime? EndedAt { get; set; }
-        public int? DurationSeconds { get; set; }
-        public SessionEndReason? EndReason { get; set; }
 
-        // Navigation Properties
+        public DateTime? PatientJoinedAt { get; set; }
+
+        public DateTime? StartedAt { get; set; }
+
+        public DateTime? EndedAt { get; set; }
+
+        public int? DurationSeconds { get; set; }
+
+        public VideoSessionEndReason? EndReason { get; set; }
+
         public virtual Appointment Appointment { get; set; } = null!;
         public virtual Doctor Doctor { get; set; } = null!;
         public virtual Patient Patient { get; set; } = null!;

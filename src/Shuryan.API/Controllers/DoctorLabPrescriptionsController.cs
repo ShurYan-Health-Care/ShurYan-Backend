@@ -180,6 +180,40 @@ namespace Shuryan.API.Controllers
                 #region Patient Lab Prescriptions
 
                 /// <summary>
+                /// جلب تفاصيل طلب التحاليل لموعد معين
+                /// GET /api/doctors/me/appointments/{appointmentId}/lab-prescriptions
+                /// </summary>
+                [HttpGet("appointments/{appointmentId:guid}/lab-prescriptions")]
+                [ProducesResponseType(typeof(ApiResponse<LabPrescriptionDetailedResponse>), StatusCodes.Status200OK)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+                public async Task<ActionResult<ApiResponse<LabPrescriptionDetailedResponse>>> GetLabPrescriptionByAppointment(
+                    Guid appointmentId)
+                {
+                        var doctorId = GetCurrentDoctorId();
+                        if (doctorId == Guid.Empty)
+                                return Unauthorized(ApiResponse<object>.Failure("غير مصرح", statusCode: 401));
+
+                        try
+                        {
+                                var basic = await _labPrescriptionService.GetLabPrescriptionByAppointmentIdAsync(appointmentId);
+                                if (basic == null)
+                                        return NotFound(ApiResponse<object>.Failure("لا توجد تحاليل لهذا الموعد", statusCode: 404));
+
+                                var detailed = await _labPrescriptionService.GetLabPrescriptionDetailedAsync(basic.Id);
+                                if (detailed == null)
+                                        return NotFound(ApiResponse<object>.Failure("لا توجد تفاصيل للتحاليل", statusCode: 404));
+
+                                return Ok(ApiResponse<LabPrescriptionDetailedResponse>.Success(
+                                    detailed, "تم جلب تفاصيل التحاليل بنجاح"));
+                        }
+                        catch (Exception ex)
+                        {
+                                _logger.LogError(ex, "Error getting lab prescription for appointment {AppointmentId}", appointmentId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                        }
+                }
+
+                /// <summary>
                 /// عرض جميع التحاليل المطلوبة من مريض معين - ملخص
                 /// GET /api/doctors/me/patients/{patientId}/lab-prescriptions
                 /// </summary>

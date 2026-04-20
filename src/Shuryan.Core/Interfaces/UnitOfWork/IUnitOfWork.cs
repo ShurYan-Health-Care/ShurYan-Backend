@@ -27,8 +27,7 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
         IAppointmentRepository Appointments { get; }
         IConsultationRecordRepository ConsultationRecords { get; }
         IConsultationTypeRepository ConsultationTypes { get; }
-        ITelemedicineSessionRepository TelemedicineSessions { get; }
-
+        IVideoSessionRepository VideoSessions { get; }
 
         // ==================== Clinic Related Repositories ====================
         IClinicRepository Clinics { get; }
