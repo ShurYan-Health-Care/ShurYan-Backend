@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Shuryan.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class VideoFeatureDone : Migration
+    public partial class videocall : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -343,17 +343,18 @@ namespace Shuryan.Infrastructure.Migrations
                     PaymentMethod = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     Provider = table.Column<int>(type: "int", nullable: true),
-                    ProviderTransactionId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    ProviderResponse = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ProviderTransactionId = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: true),
+                    ProviderResponse = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RefundedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RefundReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    IpAddress = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IpAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IdempotencyKey = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     FailedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    FailureReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                    FailureReason = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -470,12 +471,12 @@ namespace Shuryan.Infrastructure.Migrations
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     ProviderTransactionId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    ProviderResponse = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    ErrorMessage = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ErrorCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ProviderResponse = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ErrorCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     ProcessedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Metadata = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                    Metadata = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -123,6 +123,11 @@ namespace Shuryan.API.Extensions
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<INotificationHubService, NotificationHubService>();
 
+            // Video Session Service
+            services.AddScoped<IAgoraTokenService, AgoraTokenService>();
+            services.AddScoped<IVideoNotificationHubService, Shuryan.API.Services.VideoNotificationHubService>();
+            services.AddScoped<IVideoSessionService, VideoSessionService>();
+
             return services;
         }
         #endregion
