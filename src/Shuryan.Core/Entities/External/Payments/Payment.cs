@@ -15,7 +15,6 @@ namespace Shuryan.Core.Entities.External.Payments
         public Guid UserId { get; set; }
 
         [Required]
-        [MaxLength(50)]
         public string OrderType { get; set; } = string.Empty; // PharmacyOrder, LabOrder, ConsultationBooking
 
         [Required]
@@ -37,10 +36,8 @@ namespace Shuryan.Core.Entities.External.Payments
 
         public PaymentProvider? Provider { get; set; }
 
-        [MaxLength(200)]
         public string? ProviderTransactionId { get; set; }
 
-        [MaxLength(500)]
         public string? ProviderResponse { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
@@ -48,14 +45,17 @@ namespace Shuryan.Core.Entities.External.Payments
 
         public DateTime? RefundedAt { get; set; }
 
-        [MaxLength(500)]
         public string? RefundReason { get; set; }
 
-        [MaxLength(1000)]
         public string? Notes { get; set; }
 
-        [MaxLength(100)]
         public string? IpAddress { get; set; }
+
+        /// <summary>
+        /// Client-generated key to prevent duplicate payment creation from network retries.
+        /// If a payment with the same IdempotencyKey already exists, the existing payment is returned.
+        /// </summary>
+        public string? IdempotencyKey { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -63,7 +63,6 @@ namespace Shuryan.Core.Entities.External.Payments
 
         public DateTime? FailedAt { get; set; }
 
-        [MaxLength(500)]
         public string? FailureReason { get; set; }
 
         // Navigation Properties

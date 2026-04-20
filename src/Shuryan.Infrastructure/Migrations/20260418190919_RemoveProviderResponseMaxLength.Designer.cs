@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Shuryan.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Shuryan.Infrastructure.Data;
 namespace Shuryan.Infrastructure.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    partial class ShuryanDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260418190919_RemoveProviderResponseMaxLength")]
+    partial class RemoveProviderResponseMaxLength
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -816,16 +819,19 @@ namespace Shuryan.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("FailureReason")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("IdempotencyKey")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IpAddress")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
@@ -842,11 +848,12 @@ namespace Shuryan.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ProviderResponse")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("ProviderTransactionId")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("RefundReason")
                         .HasMaxLength(500)
@@ -912,7 +919,8 @@ namespace Shuryan.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ProviderResponse")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("ProviderTransactionId")
                         .HasMaxLength(200)
@@ -1746,11 +1754,6 @@ namespace Shuryan.Infrastructure.Migrations
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsOnline")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
@@ -2086,16 +2089,11 @@ namespace Shuryan.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Shuryan.Core.Entities.Medical.VideoSession", b =>
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.TelemedicineSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("AgoraChannelName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<Guid>("AppointmentId")
                         .HasColumnType("uniqueidentifier");
@@ -2107,6 +2105,10 @@ namespace Shuryan.Infrastructure.Migrations
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DoctorConnectionId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uniqueidentifier");
@@ -2123,11 +2125,20 @@ namespace Shuryan.Infrastructure.Migrations
                     b.Property<DateTime?>("EndedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("PatientConnectionId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("PatientJoinedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("RoomId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("datetime2");
@@ -2147,20 +2158,24 @@ namespace Shuryan.Infrastructure.Migrations
 
                     b.HasIndex("AppointmentId")
                         .IsUnique()
-                        .HasDatabaseName("IX_VideoSession_AppointmentId");
+                        .HasDatabaseName("IX_TelemedicineSession_AppointmentId");
 
                     b.HasIndex("DoctorId")
-                        .HasDatabaseName("IX_VideoSession_DoctorId");
+                        .HasDatabaseName("IX_TelemedicineSession_DoctorId");
 
                     b.HasIndex("PatientId")
-                        .HasDatabaseName("IX_VideoSession_PatientId");
+                        .HasDatabaseName("IX_TelemedicineSession_PatientId");
+
+                    b.HasIndex("RoomId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TelemedicineSession_RoomId");
 
                     b.HasIndex("Status")
-                        .HasDatabaseName("IX_VideoSession_Status");
+                        .HasDatabaseName("IX_TelemedicineSession_Status");
 
-                    b.ToTable("VideoSessions", null, t =>
+                    b.ToTable("TelemedicineSessions", null, t =>
                         {
-                            t.HasCheckConstraint("CK_VideoSession_Duration", "[DurationSeconds] IS NULL OR [DurationSeconds] >= 0");
+                            t.HasCheckConstraint("CK_TelemedicineSession_Duration", "[DurationSeconds] IS NULL OR [DurationSeconds] >= 0");
                         });
                 });
 
@@ -3648,11 +3663,11 @@ namespace Shuryan.Infrastructure.Migrations
                     b.Navigation("Doctor");
                 });
 
-            modelBuilder.Entity("Shuryan.Core.Entities.Medical.VideoSession", b =>
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.TelemedicineSession", b =>
                 {
                     b.HasOne("Shuryan.Core.Entities.Medical.Appointment", "Appointment")
-                        .WithOne("VideoSession")
-                        .HasForeignKey("Shuryan.Core.Entities.Medical.VideoSession", "AppointmentId")
+                        .WithOne("TelemedicineSession")
+                        .HasForeignKey("Shuryan.Core.Entities.Medical.TelemedicineSession", "AppointmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -3988,7 +4003,7 @@ namespace Shuryan.Infrastructure.Migrations
 
                     b.Navigation("Prescription");
 
-                    b.Navigation("VideoSession");
+                    b.Navigation("TelemedicineSession");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.Medical.Consultations.ConsultationType", b =>
