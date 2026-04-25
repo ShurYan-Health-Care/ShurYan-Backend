@@ -405,6 +405,7 @@ namespace Shuryan.Application.Services
                                 PatientId = patientId,
                                 Status = LabOrderStatus.NewRequest,
                                 SampleCollectionType = request.SampleCollectionType,
+                                SendResultsToDoctor = request.SendResultsToDoctor,
                                 TestsTotalCost = totalCost,
                                 SampleCollectionDeliveryCost = request.SampleCollectionType == SampleCollectionType.HomeSampleCollection
                                 ? laboratory.HomeSampleCollectionFee ?? 0
