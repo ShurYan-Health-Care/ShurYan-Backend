@@ -15,5 +15,7 @@ namespace Shuryan.Application.DTOs.Requests.Patient
                 public Guid LaboratoryId { get; set; }
 
                 public SampleCollectionType SampleCollectionType { get; set; } = SampleCollectionType.LabVisit;
+
+                public bool SendResultsToDoctor { get; set; } = true;
         }
 }
