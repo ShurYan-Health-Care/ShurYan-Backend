@@ -35,6 +35,8 @@ namespace Shuryan.Core.Entities.External.Laboratories
         public string? RejectionReason { get; set; }
         public DateTime? RejectedAt { get; set; }
 
+        public bool SendResultsToDoctor { get; set; } = true;
+
         // Navigation Properties
         public virtual LabPrescription LabPrescription { get; set; } = null!;
         public virtual Laboratory Laboratory { get; set; } = null!;

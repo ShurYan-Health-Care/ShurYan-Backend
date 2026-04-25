@@ -21,5 +21,7 @@ namespace Shuryan.Application.DTOs.Requests.Laboratory
 
         [Required(ErrorMessage = "Sample collection type is required")]
         public SampleCollectionType SampleCollectionType { get; set; } = SampleCollectionType.LabVisit;
+
+        public bool SendResultsToDoctor { get; set; } = true;
     }
 }

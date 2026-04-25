@@ -18,15 +18,18 @@ namespace Shuryan.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<LabOrderService> _logger;
+        private readonly INotificationService _notificationService;
 
         public LabOrderService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            ILogger<LabOrderService> logger)
+            ILogger<LabOrderService> logger,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         #region Get All Lab Orders

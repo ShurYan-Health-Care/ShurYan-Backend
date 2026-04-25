@@ -190,8 +190,47 @@ namespace Shuryan.Application.Services
                 // 8. Save all changes
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("Successfully submitted {Count} results for order {OrderId} and marked as completed", 
+                _logger.LogInformation("Successfully submitted {Count} results for order {OrderId} and marked as completed",
                     labResults.Count, orderId);
+
+                // 8.5 Send Notifications
+                try
+                {
+                    // Notify Patient
+                    await _notificationService.SendNotificationAsync(
+                        userId: order.PatientId,
+                        type: Shuryan.Core.Enums.Notifications.NotificationType.LabOrderResultsReady,
+                        title: "نتيجة التحاليل جاهزة",
+                        message: "تم رفع نتيجة التحاليل الخاصة بك من قبل المعمل بنجاح.",
+                        relatedEntityId: order.Id,
+                        relatedEntityType: "LabOrder"
+                    );
+
+                    // Notify Doctor if the patient allowed it
+                    if (order.SendResultsToDoctor)
+                    {
+                        var prescriptionNotify = await _unitOfWork.LabPrescriptions.GetByIdAsync(order.LabPrescriptionId);
+                        if (prescriptionNotify != null)
+                        {
+                            var patient = await _unitOfWork.Patients.GetByIdAsync(order.PatientId);
+                            string patientName = patient != null ? $"{patient.FirstName} {patient.LastName}" : "مريض";
+
+                            await _notificationService.SendNotificationAsync(
+                                userId: prescriptionNotify.DoctorId,
+                                type: Shuryan.Core.Enums.Notifications.NotificationType.LabOrderResultsReady,
+                                title: "نتيجة تحاليل مريض جاهزة",
+                                message: $"المعمل قام برفع نتيجة التحاليل الخاصة بالمريض {patientName}.",
+                                relatedEntityId: order.Id,
+                                relatedEntityType: "LabOrder"
+                            );
+                        }
+                    }
+                }
+                catch (Exception notifEx)
+                {
+                    _logger.LogError(notifEx, "Failed to send notifications for lab order {OrderId}", orderId);
+                    // Do not fail the result submission if notification fails
+                }
 
                 // 9. Return updated order response
                 var response = await GetLabOrderByIdAsync(orderId);
@@ -243,15 +282,23 @@ namespace Shuryan.Application.Services
                 }
                 else if (userRole == "Doctor")
                 {
-                    // Doctor must have prescribed it - check via prescription
-                    var prescription = await _unitOfWork.LabPrescriptions.GetByIdAsync(order.LabPrescriptionId);
-                    if (prescription != null)
+                    if (!order.SendResultsToDoctor)
                     {
-                        isAuthorized = prescription.DoctorId == userId;
-                        if (!isAuthorized)
+                        _logger.LogWarning("Doctor {DoctorId} attempted to access order {OrderId} but patient did not share results", userId, orderId);
+                        isAuthorized = false;
+                    }
+                    else
+                    {
+                        // Doctor must have prescribed it - check via prescription
+                        var prescription = await _unitOfWork.LabPrescriptions.GetByIdAsync(order.LabPrescriptionId);
+                        if (prescription != null)
                         {
-                            _logger.LogWarning("Doctor {DoctorId} attempted to access order {OrderId} prescribed by doctor {PrescribingDoctorId}",
-                                userId, orderId, prescription.DoctorId);
+                            isAuthorized = prescription.DoctorId == userId;
+                            if (!isAuthorized)
+                            {
+                                _logger.LogWarning("Doctor {DoctorId} attempted to access order {OrderId} prescribed by doctor {PrescribingDoctorId}",
+                                    userId, orderId, prescription.DoctorId);
+                            }
                         }
                     }
                 }
