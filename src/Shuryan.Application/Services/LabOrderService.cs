@@ -304,12 +304,6 @@ namespace Shuryan.Application.Services
                 if (labPrescription == null)
                     throw new ArgumentException($"Lab prescription with ID {request.LabPrescriptionId} not found");
 
-                // Check if this prescription already has an order
-                var existingOrders = await _unitOfWork.LabOrders.GetAllAsync();
-                var existingOrder = existingOrders.FirstOrDefault(o => o.LabPrescriptionId == request.LabPrescriptionId);
-                if (existingOrder != null)
-                    throw new InvalidOperationException($"هذه الروشتة تم إنشاء طلب لها بالفعل (Order ID: {existingOrder.Id})");
-
                 // Validate laboratory exists
                 var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(request.LaboratoryId);
                 if (laboratory == null)
