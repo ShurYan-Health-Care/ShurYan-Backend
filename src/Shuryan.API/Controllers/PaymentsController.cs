@@ -2,8 +2,10 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using Shuryan.Application.DTOs.Requests.Payment;
 using Shuryan.Application.Interfaces;
+using Shuryan.Core.Settings;
 
 namespace Shuryan.API.Controllers
 {
@@ -13,10 +15,14 @@ namespace Shuryan.API.Controllers
     public class PaymentsController : ControllerBase
     {
         private readonly IPaymentProcessingService _paymentProcessingService;
+        private readonly FrontendSettings _frontendSettings;
 
-        public PaymentsController(IPaymentProcessingService paymentProcessingService)
+        public PaymentsController(
+            IPaymentProcessingService paymentProcessingService,
+            IOptions<FrontendSettings> frontendSettings)
         {
             _paymentProcessingService = paymentProcessingService;
+            _frontendSettings = frontendSettings.Value;
         }
 
         /// <summary>
@@ -101,6 +107,28 @@ namespace Shuryan.API.Controllers
                 cancellationToken);
 
             return StatusCode(result.StatusCode ?? 500, result);
+        }
+
+        /// <summary>
+        /// Paymob Transaction Response Callback - إعادة توجيه المتصفح بعد الدفع
+        /// </summary>
+        [HttpGet("response/paymob")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        public IActionResult PaymobResponseCallback()
+        {
+            var isSuccess = Request.Query["success"].ToString().ToLower() == "true";
+
+            var path = isSuccess
+                ? _frontendSettings.PaymentSuccessUrl
+                : _frontendSettings.PaymentFailedUrl;
+
+            // Forward all Paymob query params to the frontend page as-is
+            var queryString = Request.QueryString.Value ?? string.Empty;
+
+            var redirectUrl = $"{_frontendSettings.BaseUrl}{path}{queryString}";
+
+            return Redirect(redirectUrl);
         }
 
         /// <summary>

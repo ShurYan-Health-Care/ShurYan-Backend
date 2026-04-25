@@ -12,8 +12,8 @@ using Shuryan.Infrastructure.Data;
 namespace Shuryan.Infrastructure.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    [Migration("20260420222415_videocall")]
-    partial class videocall
+    [Migration("20260422132159_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
