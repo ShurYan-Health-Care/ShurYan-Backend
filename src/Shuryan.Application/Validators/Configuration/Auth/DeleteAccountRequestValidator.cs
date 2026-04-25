@@ -9,15 +9,15 @@ namespace Shuryan.Application.Validators.Configuration.Auth
         {
             RuleFor(x => x.Email)
                 .NotEmpty()
-                .WithMessage("Email is required")
+                .WithMessage("البريد الإلكتروني مطلوب")
                 .EmailAddress()
-                .WithMessage("Invalid email format");
+                .WithMessage("صيغة البريد الإلكتروني غير صحيحة");
 
             RuleFor(x => x.ConfirmationText)
                 .NotEmpty()
-                .WithMessage("Confirmation text is required")
+                .WithMessage("نص التأكيد مطلوب")
                 .Must(x => x?.Trim().ToUpper() == "DELETE")
-                .WithMessage("You must type 'DELETE' to confirm account deletion");
+                .WithMessage("يجب كتابة 'DELETE' لتأكيد حذف الحساب");
         }
     }
 }

@@ -13,31 +13,31 @@ namespace Shuryan.Application.Validators.Configuration.Auth
         public RegisterPatientRequestValidator()
         {
             RuleFor(x => x.FirstName)
-                .NotEmpty().WithMessage("First name is required")
-                .Length(2, 50).WithMessage("First name must be between 2-50 characters")
-                .Matches(@"^[a-zA-Z\s]+$").WithMessage("First name can only contain letters");
+                .NotEmpty().WithMessage("الاسم الأول مطلوب")
+                .Length(2, 50).WithMessage("الاسم الأول يجب أن يكون بين 2 و 50 حرفاً")
+                .Matches(@"^[a-zA-Z\s؀-ۿ]+$").WithMessage("الاسم الأول يجب أن يحتوي على حروف فقط");
 
             RuleFor(x => x.LastName)
-                .NotEmpty().WithMessage("Last name is required")
-                .Length(2, 50).WithMessage("Last name must be between 2-50 characters")
-                .Matches(@"^[a-zA-Z\s]+$").WithMessage("Last name can only contain letters");
+                .NotEmpty().WithMessage("الاسم الأخير مطلوب")
+                .Length(2, 50).WithMessage("الاسم الأخير يجب أن يكون بين 2 و 50 حرفاً")
+                .Matches(@"^[a-zA-Z\s؀-ۿ]+$").WithMessage("الاسم الأخير يجب أن يحتوي على حروف فقط");
 
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email is required")
-                .EmailAddress().WithMessage("Invalid email format")
-                .MaximumLength(255).WithMessage("Email cannot exceed 255 characters");
+                .NotEmpty().WithMessage("البريد الإلكتروني مطلوب")
+                .EmailAddress().WithMessage("صيغة البريد الإلكتروني غير صحيحة")
+                .MaximumLength(255).WithMessage("البريد الإلكتروني لا يمكن أن يتجاوز 255 حرفاً");
 
             RuleFor(x => x.Password)
-                .NotEmpty().WithMessage("Password is required")
-                .MinimumLength(8).WithMessage("Password must be at least 8 characters")
-                .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter")
-                .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter")
-                .Matches(@"[0-9]").WithMessage("Password must contain at least one number")
-                .Matches(@"[\W_]").WithMessage("Password must contain at least one special character");
+                .NotEmpty().WithMessage("كلمة المرور مطلوبة")
+                .MinimumLength(8).WithMessage("كلمة المرور يجب أن تكون 8 أحرف على الأقل")
+                .Matches(@"[A-Z]").WithMessage("كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل")
+                .Matches(@"[a-z]").WithMessage("كلمة المرور يجب أن تحتوي على حرف صغير واحد على الأقل")
+                .Matches(@"[0-9]").WithMessage("كلمة المرور يجب أن تحتوي على رقم واحد على الأقل")
+                .Matches(@"[\W_]").WithMessage("كلمة المرور يجب أن تحتوي على رمز خاص واحد على الأقل");
 
             RuleFor(x => x.ConfirmPassword)
-                .NotEmpty().WithMessage("Password confirmation is required")
-                .Equal(x => x.Password).WithMessage("Passwords do not match");
+                .NotEmpty().WithMessage("تأكيد كلمة المرور مطلوب")
+                .Equal(x => x.Password).WithMessage("كلمتا المرور غير متطابقتين");
         }
     }
 }

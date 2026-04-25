@@ -10,8 +10,7 @@ namespace Shuryan.Application.DTOs.Requests.Laboratory
                 [StringLength(500, ErrorMessage = "الوصف يجب ألا يتجاوز 500 حرف")]
                 public string? Description { get; set; }
 
-                [Phone(ErrorMessage = "صيغة رقم الهاتف غير صحيحة")]
-                [StringLength(12, MinimumLength = 10, ErrorMessage = "رقم الهاتف يجب أن يكون بين 10-20 رقم")]
+                [RegularExpression("^01[0125][0-9]{8}$", ErrorMessage = "رقم الهاتف يجب أن يكون رقم مصري صحيح يتكون من 11 رقم ويبدأ بـ 010 أو 011 أو 012 أو 015")]
                 public string? PhoneNumber { get; set; }
                 [Phone(ErrorMessage = "صيغة رقم الواتساب غير صحيحة")]
                 [StringLength(20, MinimumLength = 10, ErrorMessage = "رقم الواتساب يجب أن يكون بين 10-20 رقم")]

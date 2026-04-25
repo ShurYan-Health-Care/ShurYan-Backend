@@ -119,7 +119,7 @@ namespace Shuryan.Application.Services.Email
 <body>
     <div class='container'>
         <div class='header'>
-            <h1>🏥 Shuryan Healthcare</h1>
+            <h1>Shuryan Healthcare</h1>
             <p>Email Verification</p>
         </div>
         <div class='content'>
@@ -164,7 +164,7 @@ namespace Shuryan.Application.Services.Email
 <body>
     <div class='container'>
         <div class='header'>
-            <h1>🏥 Shuryan Healthcare</h1>
+            <h1>Shuryan Healthcare</h1>
             <p>Password Reset Request</p>
         </div>
         <div class='content'>
@@ -208,7 +208,7 @@ namespace Shuryan.Application.Services.Email
 <body>
     <div class='container'>
         <div class='header'>
-            <h1>🎉 Welcome to Shuryan Healthcare!</h1>
+            <h1>Welcome to Shuryan Healthcare!</h1>
         </div>
         <div class='content'>
             <h2>Hello {userName},</h2>

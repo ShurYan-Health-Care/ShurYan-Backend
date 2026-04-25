@@ -13,20 +13,20 @@ namespace Shuryan.Application.Validators.Configuration.Auth
         public  ChangePasswordRequestValidator()
         {
             RuleFor(x => x.CurrentPassword)
-                .NotEmpty().WithMessage("Current password is required");
+                .NotEmpty().WithMessage("كلمة المرور الحالية مطلوبة");
 
             RuleFor(x => x.NewPassword)
-                .NotEmpty().WithMessage("New password is required")
-                .MinimumLength(8).WithMessage("Password must be at least 8 characters")
-                .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter")
-                .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter")
-                .Matches(@"[0-9]").WithMessage("Password must contain at least one number")
-                .Matches(@"[\W_]").WithMessage("Password must contain at least one special character")
-                .NotEqual(x => x.CurrentPassword).WithMessage("New password must be different from current password");
+                .NotEmpty().WithMessage("كلمة المرور الجديدة مطلوبة")
+                .MinimumLength(8).WithMessage("كلمة المرور يجب أن تكون 8 أحرف على الأقل")
+                .Matches(@"[A-Z]").WithMessage("كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل")
+                .Matches(@"[a-z]").WithMessage("كلمة المرور يجب أن تحتوي على حرف صغير واحد على الأقل")
+                .Matches(@"[0-9]").WithMessage("كلمة المرور يجب أن تحتوي على رقم واحد على الأقل")
+                .Matches(@"[\W_]").WithMessage("كلمة المرور يجب أن تحتوي على رمز خاص واحد على الأقل")
+                .NotEqual(x => x.CurrentPassword).WithMessage("كلمة المرور الجديدة يجب أن تختلف عن الحالية");
 
             RuleFor(x => x.ConfirmNewPassword)
-                .NotEmpty().WithMessage("Password confirmation is required")
-                .Equal(x => x.NewPassword).WithMessage("Passwords do not match");
+                .NotEmpty().WithMessage("تأكيد كلمة المرور مطلوب")
+                .Equal(x => x.NewPassword).WithMessage("كلمتا المرور غير متطابقتين");
         }
     }
 }
