@@ -385,7 +385,9 @@ namespace Shuryan.Application.Services
 
                         // Check if order already exists
                         var existingOrders = await _unitOfWork.LabOrders.GetAllAsync();
-                        if (existingOrders.Any(o => o.LabPrescriptionId == request.LabPrescriptionId && o.LaboratoryId == request.LaboratoryId))
+                        // Allow multiple orders for the same prescription as long as the previous ones were rejected or cancelled
+                        if (existingOrders.Any(o => o.LabPrescriptionId == request.LabPrescriptionId && o.LaboratoryId == request.LaboratoryId &&
+                            o.Status != LabOrderStatus.CancelledByPatient && o.Status != LabOrderStatus.RejectedByLab))
                                 throw new InvalidOperationException("يوجد طلب مسبق لهذه الروشتة في هذا المعمل");
 
                         // Calculate total cost
