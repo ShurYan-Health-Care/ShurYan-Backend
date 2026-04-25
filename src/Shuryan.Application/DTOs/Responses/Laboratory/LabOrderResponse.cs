@@ -19,6 +19,7 @@ namespace Shuryan.Application.DTOs.Responses.Laboratory
         public SampleCollectionType SampleCollectionType { get; set; }
         public decimal TestsTotalCost { get; set; }
         public decimal SampleCollectionDeliveryCost { get; set; }
+        public bool SendResultsToDoctor { get; set; }
         public DateTime? ConfirmedByLabAt { get; set; }
         public string? CancellationReason { get; set; }
         public DateTime? CancelledAt { get; set; }
