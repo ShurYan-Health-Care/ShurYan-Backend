@@ -13,13 +13,13 @@ namespace Shuryan.Application.Validators.Configuration.Auth
         public  LoginRequestValidator()
         {
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email is required")
-                .EmailAddress().WithMessage("Invalid email format")
-                .MaximumLength(255).WithMessage("Email cannot exceed 255 characters");
+                .NotEmpty().WithMessage("البريد الإلكتروني مطلوب")
+                .EmailAddress().WithMessage("صيغة البريد الإلكتروني غير صحيحة")
+                .MaximumLength(255).WithMessage("البريد الإلكتروني لا يمكن أن يتجاوز 255 حرفاً");
 
             RuleFor(x => x.Password)
-                .NotEmpty().WithMessage("Password is required")
-                .MinimumLength(6).WithMessage("Password must be at least 6 characters");
+                .NotEmpty().WithMessage("كلمة المرور مطلوبة")
+                .MinimumLength(6).WithMessage("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
         }
     }
 }

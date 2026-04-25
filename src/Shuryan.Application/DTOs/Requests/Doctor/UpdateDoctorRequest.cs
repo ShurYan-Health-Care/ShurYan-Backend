@@ -18,8 +18,7 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
         [StringLength(50, MinimumLength = 2, ErrorMessage = "Last name must be between 2-50 characters")]
         public string? LastName { get; set; }
 
-        [Phone(ErrorMessage = "Invalid phone number format")]
-        [StringLength(20, MinimumLength = 10, ErrorMessage = "Phone number must be between 10-20 characters")]
+        [RegularExpression("^01[0125][0-9]{8}$", ErrorMessage = "Phone number must be a valid Egyptian number (11 digits, starts with 010, 011, 012, or 015)")]
         public string? PhoneNumber { get; set; }
 
         [Range(0, 70, ErrorMessage = "Years of experience must be between 0-70")]

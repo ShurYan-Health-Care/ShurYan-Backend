@@ -25,14 +25,14 @@ namespace Shuryan.Application.Validators.Configuration.Patient
                 .WithMessage("Last name must contain only letters, spaces, hyphens, and apostrophes");
 
             RuleFor(x => x.PhoneNumber)
-                .Matches(@"^\+?[1-9]\d{1,14}$")
+                .Matches(@"^01[0125][0-9]{8}$")
                 .When(x => !string.IsNullOrEmpty(x.PhoneNumber))
-                .WithMessage("Phone number must be in valid E.164 format");
+                .WithMessage("Phone number must be a valid Egyptian number (11 digits, starts with 010, 011, 012, or 015)");
 
             RuleFor(x => x.BirthDate)
-                .LessThan(DateTime.Today)
+                .LessThanOrEqualTo(DateTime.Today.AddYears(-15))
                 .When(x => x.BirthDate.HasValue)
-                .WithMessage("Birth date must be in the past");
+                .WithMessage("Patient must be at least 15 years old");
 
             RuleFor(x => x.Gender)
                 .IsInEnum()

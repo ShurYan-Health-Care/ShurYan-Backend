@@ -70,7 +70,7 @@ namespace Shuryan.Application.Services.Auth
                 var existingUser = await _userManager.FindByEmailAsync(dto.Email);
                 if (existingUser != null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Email already registered", new[] { "A user with this email already exists" }, 400);
+                    return ApiResponse<AuthResponseDto>.Failure("البريد الإلكتروني مسجل مسبقاً", new[] { "يوجد حساب مرتبط بهذا البريد الإلكتروني بالفعل" }, 400);
                 }
 
                 // Create Patient
@@ -90,7 +90,7 @@ namespace Shuryan.Application.Services.Auth
 
                 if (!result.Succeeded)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Registration failed", result.Errors.Select(e => e.Description), 400);
+                    return ApiResponse<AuthResponseDto>.Failure("فشل إنشاء الحساب", result.Errors.Select(e => e.Description), 400);
                 }
 
                 // Assign Patient role
@@ -116,14 +116,14 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<AuthResponseDto>.Success(
                     authResponse,
-                    "Registration successful! Please check your email for the verification code.",
+                    "تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني للحصول على رمز التفعيل.",
                     201);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during patient registration");
                 return ApiResponse<AuthResponseDto>.Failure(
-                    "An error occurred during registration",
+                    "حدث خطأ أثناء إنشاء الحساب",
                     new[] { ex.Message },
                     500);
             }
@@ -137,8 +137,8 @@ namespace Shuryan.Application.Services.Auth
                 if (existingUser != null)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Email already registered",
-                        new[] { "A user with this email already exists" },
+                        "البريد الإلكتروني مسجل مسبقاً",
+                        new[] { "يوجد حساب مرتبط بهذا البريد الإلكتروني بالفعل" },
                         400);
                 }
 
@@ -160,7 +160,7 @@ namespace Shuryan.Application.Services.Auth
                 if (!result.Succeeded)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Registration failed",
+                        "فشل إنشاء الحساب",
                         result.Errors.Select(e => e.Description),
                         400);
                 }
@@ -186,14 +186,14 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<AuthResponseDto>.Success(
                     authResponse,
-                    "Registration successful! Please verify your email and submit verification documents.",
+                    "تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني وتقديم وثائق التحقق.",
                     201);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during doctor registration");
                 return ApiResponse<AuthResponseDto>.Failure(
-                    "An error occurred during registration",
+                    "حدث خطأ أثناء إنشاء الحساب",
                     new[] { ex.Message },
                     500);
             }
@@ -207,8 +207,8 @@ namespace Shuryan.Application.Services.Auth
                 if (existingUser != null)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Email already registered",
-                        new[] { "A user with this email already exists" },
+                        "البريد الإلكتروني مسجل مسبقاً",
+                        new[] { "يوجد حساب مرتبط بهذا البريد الإلكتروني بالفعل" },
                         400);
                 }
 
@@ -228,7 +228,7 @@ namespace Shuryan.Application.Services.Auth
 
                 if (!result.Succeeded)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Registration failed", result.Errors.Select(e => e.Description), 400);
+                    return ApiResponse<AuthResponseDto>.Failure("فشل إنشاء الحساب", result.Errors.Select(e => e.Description), 400);
                 }
 
                 await EnsureRoleExistsAsync(UserRole.Laboratory);
@@ -252,14 +252,14 @@ namespace Shuryan.Application.Services.Auth
 
                 var authResponse = await GenerateAuthResponseAsync(laboratory, ipAddress);
 
-                return ApiResponse<AuthResponseDto>.Success(authResponse, "Registration successful! Please verify your email and submit verification documents.", 201);
+                return ApiResponse<AuthResponseDto>.Success(authResponse, "تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني وتقديم وثائق التحقق.", 201);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during laboratory registration");
                 //return ApiResponse<AuthResponseDto>.Failure("An error occurred during registration", new[] { ex.Message }, 500);
                 return ApiResponse<AuthResponseDto>.Failure(
-                    "An error occurred during registration",
+                    "حدث خطأ أثناء إنشاء الحساب",
                     new[] { ex.InnerException?.Message ?? ex.Message },
                     500);
             }
@@ -273,8 +273,8 @@ namespace Shuryan.Application.Services.Auth
                 if (existingUser != null)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Email already registered",
-                        new[] { "A user with this email already exists" },
+                        "البريد الإلكتروني مسجل مسبقاً",
+                        new[] { "يوجد حساب مرتبط بهذا البريد الإلكتروني بالفعل" },
                         400);
                 }
 
@@ -294,7 +294,7 @@ namespace Shuryan.Application.Services.Auth
                 if (!result.Succeeded)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Registration failed",
+                        "فشل إنشاء الحساب",
                         result.Errors.Select(e => e.Description),
                         400);
                 }
@@ -322,14 +322,14 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<AuthResponseDto>.Success(
                     authResponse,
-                    "Registration successful! Please verify your email and submit verification documents.",
+                    "تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني وتقديم وثائق التحقق.",
                     201);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during pharmacy registration");
                 return ApiResponse<AuthResponseDto>.Failure(
-                    "An error occurred during registration",
+                    "حدث خطأ أثناء إنشاء الحساب",
                     new[] { ex.Message },
                     500);
             }
@@ -343,8 +343,8 @@ namespace Shuryan.Application.Services.Auth
                 if (existingUser != null)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Email already registered",
-                        new[] { "A user with this email already exists" },
+                        "البريد الإلكتروني مسجل مسبقاً",
+                        new[] { "يوجد حساب مرتبط بهذا البريد الإلكتروني بالفعل" },
                         400);
                 }
 
@@ -373,7 +373,7 @@ namespace Shuryan.Application.Services.Auth
                 if (!result.Succeeded)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Registration failed",
+                        "فشل إنشاء الحساب",
                         result.Errors.Select(e => e.Description),
                         400);
                 }
@@ -401,14 +401,14 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<AuthResponseDto>.Success(
                     authResponse,
-                    "Verifier registration successful! Please verify your email.",
+                    "تم تسجيل المدقق بنجاح! يرجى التحقق من بريدك الإلكتروني.",
                     201);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during verifier registration");
                 return ApiResponse<AuthResponseDto>.Failure(
-                    "An error occurred during registration",
+                    "حدث خطأ أثناء إنشاء الحساب",
                     new[] { ex.Message },
                     500);
             }
@@ -431,8 +431,8 @@ namespace Shuryan.Application.Services.Auth
                 if (!isValid)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Invalid or expired OTP code",
-                        new[] { "Please check your code or request a new one" },
+                        "رمز التحقق غير صحيح أو منتهي الصلاحية",
+                        new[] { "يرجى التحقق من الرمز أو طلب رمز جديد" },
                         400);
                 }
 
@@ -440,7 +440,7 @@ namespace Shuryan.Application.Services.Auth
                 var user = await _userManager.FindByEmailAsync(dto.Email);
                 if (user == null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("User not found", null, 404);
+                    return ApiResponse<AuthResponseDto>.Failure("المستخدم غير موجود", null, 404);
                 }
 
                 user.EmailConfirmed = true;
@@ -459,14 +459,14 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<AuthResponseDto>.Success(
                     authResponse,
-                    "Email verified successfully! Welcome to Shuryan Healthcare.",
+                    "تم تفعيل البريد الإلكتروني بنجاح! مرحباً بك في شريان الصحة.",
                     200);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during email verification");
                 return ApiResponse<AuthResponseDto>.Failure(
-                    "An error occurred during verification",
+                    "حدث خطأ أثناء التحقق من البريد الإلكتروني",
                     new[] { ex.Message },
                     500);
             }
@@ -481,8 +481,8 @@ namespace Shuryan.Application.Services.Auth
                 if (!canResend)
                 {
                     return ApiResponse<bool>.Failure(
-                        "Too many requests",
-                        new[] { "Please wait before requesting another code" },
+                        "طلبات كثيرة جداً",
+                        new[] { "يرجى الانتظار قبل طلب رمز جديد" },
                         429);
                 }
 
@@ -492,13 +492,13 @@ namespace Shuryan.Application.Services.Auth
                     // Don't reveal if user exists
                     return ApiResponse<bool>.Success(
                         true,
-                        "If your email exists, you'll receive a verification code");
+                        "إذا كان بريدك الإلكتروني مسجلاً، ستصلك رسالة تحقق");
                 }
 
                 if (user.EmailConfirmed)
                 {
                     return ApiResponse<bool>.Failure(
-                        "Email already verified",
+                        "البريد الإلكتروني مفعّل بالفعل",
                         null,
                         400);
                 }
@@ -518,13 +518,13 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<bool>.Success(
                     true,
-                    "Verification code sent! Please check your email.");
+                    "تم إرسال رمز التحقق! يرجى التحقق من بريدك الإلكتروني.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error resending verification OTP");
                 return ApiResponse<bool>.Failure(
-                    "An error occurred",
+                    "حدث خطأ",
                     new[] { ex.Message },
                     500);
             }
@@ -542,21 +542,21 @@ namespace Shuryan.Application.Services.Auth
 
                 if (user == null)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Invalid credentials", new[] { "Email or password is incorrect" }, 401);
+                    return ApiResponse<AuthResponseDto>.Failure("بيانات الدخول غير صحيحة", new[] { "البريد الإلكتروني أو كلمة المرور غير صحيحة" }, 401);
                 }
 
                 // Check soft delete
                 if (user.IsDeleted)
                 {
-                    return ApiResponse<AuthResponseDto>.Failure("Account deactivated", new[] { "This account has been deactivated" }, 403);
+                    return ApiResponse<AuthResponseDto>.Failure("الحساب موقوف", new[] { "هذا الحساب تم إيقافه" }, 403);
                 }
 
                 // Check email verification (except for OAuth accounts)
                 if (!user.EmailConfirmed && !user.IsOAuthAccount)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Email not verified",
-                        new[] { "Please verify your email before logging in. Check your inbox for the verification code." },
+                        "البريد الإلكتروني غير مفعّل",
+                        new[] { "يرجى تفعيل بريدك الإلكتروني قبل تسجيل الدخول. تحقق من صندوق الوارد للحصول على رمز التفعيل." },
                         403);
                 }
 
@@ -564,8 +564,8 @@ namespace Shuryan.Application.Services.Auth
                 if (await _userManager.IsLockedOutAsync(user))
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Account locked",
-                        new[] { "Too many failed attempts. Please try again later." },
+                        "الحساب مقفل مؤقتاً",
+                        new[] { "محاولات دخول كثيرة. يرجى المحاولة مجدداً لاحقاً." },
                         403);
                 }
 
@@ -579,10 +579,10 @@ namespace Shuryan.Application.Services.Auth
                 {
                     if (result.IsLockedOut)
                     {
-                        return ApiResponse<AuthResponseDto>.Failure("Account locked", new[] { "Too many failed attempts. Account locked for 15 minutes." }, 403);
+                        return ApiResponse<AuthResponseDto>.Failure("الحساب مقفل مؤقتاً", new[] { "محاولات دخول كثيرة. الحساب مقفل لمدة 15 دقيقة." }, 403);
                     }
 
-                    return ApiResponse<AuthResponseDto>.Failure("Invalid credentials", new[] { "Email or password is incorrect" }, 401);
+                    return ApiResponse<AuthResponseDto>.Failure("بيانات الدخول غير صحيحة", new[] { "البريد الإلكتروني أو كلمة المرور غير صحيحة" }, 401);
                 }
 
                 // Successful login - update tracking
@@ -595,13 +595,13 @@ namespace Shuryan.Application.Services.Auth
 
                 _logger.LogInformation("User logged in successfully: {Email}", user.Email);
 
-                return ApiResponse<AuthResponseDto>.Success(authResponse, "Login successful", 200);
+                return ApiResponse<AuthResponseDto>.Success(authResponse, "تم تسجيل الدخول بنجاح", 200);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during login");
                 return ApiResponse<AuthResponseDto>.Failure(
-                    "An error occurred during login",
+                    "حدث خطأ أثناء تسجيل الدخول",
                     new[] { ex.Message },
                     500);
             }
@@ -620,8 +620,8 @@ namespace Shuryan.Application.Services.Auth
                 if (googleUser == null)
                 {
                     return ApiResponse<AuthResponseDto>.Failure(
-                        "Invalid Google token",
-                        new[] { "Unable to verify Google credentials" },
+                        "رمز Google غير صحيح",
+                        new[] { "تعذر التحقق من بيانات Google" },
                         401);
                 }
 
@@ -637,8 +637,8 @@ namespace Shuryan.Application.Services.Auth
                     if (user.IsDeleted)
                     {
                         return ApiResponse<AuthResponseDto>.Failure(
-                            "Account deactivated",
-                            new[] { "This account has been deactivated" },
+                            "الحساب موقوف",
+                            new[] { "هذا الحساب تم إيقافه" },
                             403);
                     }
 
@@ -665,7 +665,7 @@ namespace Shuryan.Application.Services.Auth
 
                     return ApiResponse<AuthResponseDto>.Success(
                         authResponse,
-                        "Login successful",
+                        "تم تسجيل الدخول بنجاح",
                         200);
                 }
                 else
@@ -673,19 +673,19 @@ namespace Shuryan.Application.Services.Auth
                     // ==========================================
                     // New User - Check if UserType is provided
                     // ==========================================
-                    
+
                     if (string.IsNullOrEmpty(dto.UserType))
                     {
                         // ==========================================
                         // Scenario 2: User Not Found, No Type Provided
                         // Return 404 to prompt user type selection
                         // ==========================================
-                        
+
                         _logger.LogInformation("New Google user, awaiting user type selection: {Email}", googleUser.Email);
-                        
+
                         return ApiResponse<AuthResponseDto>.Failure(
-                            "User not found. Please select user type to register.",
-                            new[] { "New user detected. User type selection required." },
+                            "المستخدم غير موجود. يرجى تحديد نوع الحساب للتسجيل.",
+                            new[] { "مستخدم جديد. يرجى اختيار نوع الحساب." },
                             404);
                     }
 
@@ -703,8 +703,8 @@ namespace Shuryan.Application.Services.Auth
                     catch
                     {
                         return ApiResponse<AuthResponseDto>.Failure(
-                            "Invalid user type",
-                            new[] { "User type must be one of: Patient, Doctor, Pharmacy, Laboratory" },
+                            "نوع الحساب غير صحيح",
+                            new[] { "نوع الحساب يجب أن يكون أحد: مريض، طبيب، صيدلية، مختبر" },
                             400);
                     }
 
@@ -779,7 +779,7 @@ namespace Shuryan.Application.Services.Auth
                     if (!result.Succeeded)
                     {
                         return ApiResponse<AuthResponseDto>.Failure(
-                            "Registration failed",
+                            "فشل إنشاء الحساب",
                             result.Errors.Select(e => e.Description),
                             400);
                     }
@@ -797,7 +797,7 @@ namespace Shuryan.Application.Services.Auth
 
                     return ApiResponse<AuthResponseDto>.Success(
                         authResponse,
-                        "Registration successful! Welcome to Shuryan Healthcare.",
+                        "تم التسجيل بنجاح! مرحباً بك في شريان الصحة.",
                         201);
                 }
             }
@@ -805,7 +805,7 @@ namespace Shuryan.Application.Services.Auth
             {
                 _logger.LogError(ex, "Error during Google OAuth");
                 return ApiResponse<AuthResponseDto>.Failure(
-                    "An error occurred during Google login",
+                    "حدث خطأ أثناء تسجيل الدخول عبر Google",
                     new[] { ex.Message },
                     500);
             }
@@ -827,7 +827,7 @@ namespace Shuryan.Application.Services.Auth
                 {
                     return ApiResponse<bool>.Success(
                         true,
-                        "If your email exists, you'll receive a password reset code");
+                        "إذا كان بريدك الإلكتروني مسجلاً، ستصلك رسالة لإعادة تعيين كلمة المرور");
                 }
 
 
@@ -836,11 +836,11 @@ namespace Shuryan.Application.Services.Auth
                 if (!canResend)
                 {
                     return ApiResponse<bool>.Failure(
-                        "Too many requests",
-                        new[] { "Please wait before requesting another code" },
+                        "طلبات كثيرة جداً",
+                        new[] { "يرجى الانتظار قبل طلب رمز جديد" },
                         429);
                 }
-                
+
 
                 // Generate and send OTP
                 var otpCode = await _otpService.GenerateAndStoreOtpAsync(
@@ -857,13 +857,13 @@ namespace Shuryan.Application.Services.Auth
 
                 return ApiResponse<bool>.Success(
                     true,
-                    "If your email exists, you'll receive a password reset code");
+                    "إذا كان بريدك الإلكتروني مسجلاً، ستصلك رسالة لإعادة تعيين كلمة المرور");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during forgot password");
                 return ApiResponse<bool>.Failure(
-                    "An error occurred",
+                    "حدث خطأ",
                     new[] { ex.Message },
                     500);
             }
@@ -883,15 +883,15 @@ namespace Shuryan.Application.Services.Auth
                 if (!isValid)
                 {
                     return ApiResponse<bool>.Failure(
-                        "Invalid or expired OTP code",
-                        new[] { "Please check your code or request a new one" },
+                        "رمز التحقق غير صحيح أو منتهي الصلاحية",
+                        new[] { "يرجى التحقق من الرمز أو طلب رمز جديد" },
                         400);
                 }
 
                 var user = await _userManager.FindByEmailAsync(dto.Email);
                 if (user == null)
                 {
-                    return ApiResponse<bool>.Failure("User not found", null, 404);
+                    return ApiResponse<bool>.Failure("المستخدم غير موجود", null, 404);
                 }
 
                 // Reset password
