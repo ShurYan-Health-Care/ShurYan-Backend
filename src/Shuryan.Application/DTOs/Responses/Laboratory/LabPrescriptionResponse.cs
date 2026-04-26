@@ -15,6 +15,7 @@ namespace Shuryan.Application.DTOs.Responses.Laboratory
         public Guid PatientId { get; set; }
         public string PatientName { get; set; } = string.Empty;
         public string? GeneralNotes { get; set; }
+        public string QrCodeUrl => $"https://shuryan.com/rx/{Id}";
         public IEnumerable<LabPrescriptionItemResponse> Items { get; set; } = new List<LabPrescriptionItemResponse>();
     }
 }

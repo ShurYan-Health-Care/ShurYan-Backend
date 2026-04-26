@@ -11,6 +11,7 @@ namespace Shuryan.Application.DTOs.Responses.Prescription
         public Guid Id { get; set; }
         public string PrescriptionNumber { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public string QrCodeUrl => $"https://shuryan.com/rx/{Id}";
         public IEnumerable<MedicationDetailResponse> Medications { get; set; } = new List<MedicationDetailResponse>();
     }
 

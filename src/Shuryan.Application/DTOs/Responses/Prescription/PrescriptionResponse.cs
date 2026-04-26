@@ -26,6 +26,7 @@ namespace Shuryan.Application.DTOs.Responses.Prescription
         
         public DoctorBasicResponse? Doctor { get; set; }
         public PatientBasicResponse? Patient { get; set; }
+        public string QrCodeUrl => $"https://shuryan.com/rx/{Id}";
         public IEnumerable<PrescribedMedicationResponse> PrescribedMedications { get; set; } = new List<PrescribedMedicationResponse>();
     }
 }
