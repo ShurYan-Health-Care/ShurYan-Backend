@@ -13,5 +13,10 @@ namespace Shuryan.Application.DTOs.Responses.Patient
         public MedicalHistoryType Type { get; set; }
         public string Text { get; set; } = string.Empty;
         public Guid PatientId { get; set; }
+
+        // Emergency SOS & Medical Profile Fields
+        public Shuryan.Core.Enums.Medical.AllergyReactionType? ReactionType { get; set; }
+        public string? Dosage { get; set; }
+        public string? Frequency { get; set; }
     }
 }

@@ -43,6 +43,16 @@ namespace Shuryan.Application.DTOs.Requests.Patient
         /// النوع (ذكر/أنثى) (اختياري)
         /// </summary>
         public Gender? Gender { get; set; }
+
+        // Emergency SOS & Medical Profile Fields
+        public Shuryan.Core.Enums.Medical.BloodType? BloodType { get; set; }
+        public decimal? WeightKg { get; set; }
+        public decimal? HeightCm { get; set; }
+        public string? EmergencyContactName { get; set; }
+        public string? EmergencyContactPhone { get; set; }
+        public string? EmergencyContactRelationship { get; set; }
+        public bool? IsPregnant { get; set; }
+        public string? PhysicalDisabilities { get; set; }
     }
 }
 

@@ -25,7 +25,7 @@ namespace Shuryan.Tests.ControllersTests
             _mockPatientService = new Mock<IPatientService>();
             _mockAppointmentService = new Mock<IAppointmentService>();
             _mockLogger = new Mock<ILogger<PatientsController>>();
-            _controller = new PatientsController(_mockPatientService.Object, _mockAppointmentService.Object, _mockLogger.Object);
+            _controller = new PatientsController(_mockPatientService.Object, _mockLogger.Object);
 
             // Mock the User property to simulate an authenticated user
             var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
@@ -47,16 +47,16 @@ namespace Shuryan.Tests.ControllersTests
             var mockPatient = new PatientResponse { Id = patientId, FirstName = "John Doe" };
 
             _mockPatientService
-                .Setup(service => service.GetPatientByIdAsync(It.IsAny<Guid>()))
+                .Setup(service => service.GetCurrentPatientAsync(It.IsAny<Guid>()))
                 .ReturnsAsync(mockPatient);
 
             // Act
-            var result = await _controller.GetMyProfile();
+            var result = await _controller.GetCurrentPatient(patientId);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var response = Assert.IsType<ApiResponse<PatientResponse>>(okResult.Value);
-            Assert.Equal(patientId, response.Data.Id);
+            var response = Assert.IsType<PatientResponse>(okResult.Value);
+            Assert.Equal(patientId, response.Id);
         }
     }
 }

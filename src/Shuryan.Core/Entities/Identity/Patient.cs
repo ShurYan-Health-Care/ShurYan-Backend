@@ -18,6 +18,21 @@ namespace Shuryan.Core.Entities.Identity
         [ForeignKey("Address")]
         public Guid? AddressId { get; set; }
 
+        // Emergency SOS & Medical Profile Fields
+        public Enums.Medical.BloodType? BloodType { get; set; }
+        public decimal? WeightKg { get; set; }
+        public decimal? HeightCm { get; set; }
+        public string? EmergencyContactName { get; set; }
+        public string? EmergencyContactPhone { get; set; }
+        public string? EmergencyContactRelationship { get; set; }
+        public bool? IsPregnant { get; set; }
+        public string? PhysicalDisabilities { get; set; }
+        public bool EmergencyModeActive { get; set; } = false;
+
+        [ForeignKey("EmergencyModeActivatedBy")]
+        public Guid? EmergencyModeActivatedById { get; set; }
+        public virtual Doctor? EmergencyModeActivatedBy { get; set; }
+
         // Navigation Properties
         public virtual Address? Address { get; set; }
         public virtual ICollection<MedicalHistoryItem> MedicalHistory { get; set; } = new HashSet<MedicalHistoryItem>();

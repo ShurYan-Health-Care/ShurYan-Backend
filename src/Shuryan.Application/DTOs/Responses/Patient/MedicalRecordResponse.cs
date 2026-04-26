@@ -22,6 +22,7 @@ namespace Shuryan.Application.DTOs.Responses.Patient
         public Guid Id { get; set; }
         public string DrugName { get; set; } = string.Empty;
         public string? Reaction { get; set; }
+        public Shuryan.Core.Enums.Medical.AllergyReactionType? ReactionType { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

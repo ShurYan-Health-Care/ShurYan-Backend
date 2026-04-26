@@ -14,6 +14,11 @@ namespace Shuryan.Core.Entities.Shared
 		public MedicalHistoryType Type { get; set; }
 		public string Text { get; set; } = string.Empty;
 
+		// Emergency SOS Extended Fields
+		public Enums.Medical.AllergyReactionType? ReactionType { get; set; }
+		public string? Dosage { get; set; }
+		public string? Frequency { get; set; }
+
 		// Navigation Properties
 		public virtual Patient Patient { get; set; } = null!;
 	}

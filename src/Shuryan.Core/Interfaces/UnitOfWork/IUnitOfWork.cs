@@ -28,6 +28,8 @@ namespace Shuryan.Core.Interfaces.UnitOfWork
         IConsultationRecordRepository ConsultationRecords { get; }
         IConsultationTypeRepository ConsultationTypes { get; }
         IVideoSessionRepository VideoSessions { get; }
+        IEmergencyEventRepository EmergencyEvents { get; }
+        IEmergencyAuditLogRepository EmergencyAuditLogs { get; }
 
         // ==================== Clinic Related Repositories ====================
         IClinicRepository Clinics { get; }
