@@ -49,6 +49,8 @@ namespace Shuryan.Infrastructure.UnitOfWork
         private IConsultationRecordRepository? _consultationRecords;
         private IConsultationTypeRepository? _consultationTypes;
         private IVideoSessionRepository? _videoSessions;
+        private IEmergencyEventRepository? _emergencyEvents;
+        private IEmergencyAuditLogRepository? _emergencyAuditLogs;
 
         // ==================== Clinic Related Fields ====================
         private IClinicRepository? _clinics;
@@ -138,6 +140,12 @@ namespace Shuryan.Infrastructure.UnitOfWork
 
         public IVideoSessionRepository VideoSessions =>
             _videoSessions ??= new VideoSessionRepository(_context);
+
+        public IEmergencyEventRepository EmergencyEvents =>
+            _emergencyEvents ??= new EmergencyEventRepository(_context);
+
+        public IEmergencyAuditLogRepository EmergencyAuditLogs =>
+            _emergencyAuditLogs ??= new EmergencyAuditLogRepository(_context);
 
         // ==================== Clinic Related Properties ====================
         public IClinicRepository Clinics =>

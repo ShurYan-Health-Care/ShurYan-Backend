@@ -246,6 +246,55 @@ namespace Shuryan.Application.Services
                     }
                 }
 
+                // Emergency SOS & Medical Profile Fields
+                if (request.BloodType.HasValue && patient.BloodType != request.BloodType.Value)
+                {
+                    patient.BloodType = request.BloodType.Value;
+                    hasChanges = true;
+                }
+
+                if (request.WeightKg.HasValue && patient.WeightKg != request.WeightKg.Value)
+                {
+                    patient.WeightKg = request.WeightKg.Value;
+                    hasChanges = true;
+                }
+
+                if (request.HeightCm.HasValue && patient.HeightCm != request.HeightCm.Value)
+                {
+                    patient.HeightCm = request.HeightCm.Value;
+                    hasChanges = true;
+                }
+
+                if (request.EmergencyContactName != null && patient.EmergencyContactName != request.EmergencyContactName)
+                {
+                    patient.EmergencyContactName = request.EmergencyContactName;
+                    hasChanges = true;
+                }
+
+                if (request.EmergencyContactPhone != null && patient.EmergencyContactPhone != request.EmergencyContactPhone)
+                {
+                    patient.EmergencyContactPhone = request.EmergencyContactPhone;
+                    hasChanges = true;
+                }
+
+                if (request.EmergencyContactRelationship != null && patient.EmergencyContactRelationship != request.EmergencyContactRelationship)
+                {
+                    patient.EmergencyContactRelationship = request.EmergencyContactRelationship;
+                    hasChanges = true;
+                }
+
+                if (request.IsPregnant.HasValue && patient.IsPregnant != request.IsPregnant.Value)
+                {
+                    patient.IsPregnant = request.IsPregnant.Value;
+                    hasChanges = true;
+                }
+
+                if (request.PhysicalDisabilities != null && patient.PhysicalDisabilities != request.PhysicalDisabilities)
+                {
+                    patient.PhysicalDisabilities = request.PhysicalDisabilities;
+                    hasChanges = true;
+                }
+
                 // لو مفيش أي تغييرات، ارجع الـ patient زي ما هو
                 if (!hasChanges)
                 {

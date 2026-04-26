@@ -128,6 +128,11 @@ namespace Shuryan.API.Extensions
             services.AddScoped<IVideoNotificationHubService, Shuryan.API.Services.VideoNotificationHubService>();
             services.AddScoped<IVideoSessionService, VideoSessionService>();
 
+            // Emergency SOS Services
+            services.AddScoped<IEmergencyAuditService, EmergencyAuditService>();
+            services.AddScoped<IEmergencyModeService, EmergencyModeService>();
+            services.AddScoped<IEmergencyDispatchService, EmergencyDispatchService>();
+
             return services;
         }
         #endregion

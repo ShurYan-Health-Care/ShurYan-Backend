@@ -76,6 +76,7 @@ namespace Shuryan.Infrastructure.Data
 		public DbSet<Appointment> Appointments { get; set; }
 		public DbSet<ConsultationRecord> ConsultationRecords { get; set; }
 		public DbSet<VideoSession> VideoSessions { get; set; }
+		public DbSet<EmergencyEvent> EmergencyEvents { get; set; }
 
         // Consultations
         public DbSet<ConsultationType> ConsultationTypes { get; set; }
@@ -96,6 +97,8 @@ namespace Shuryan.Infrastructure.Data
 		/// <summary>
 		/// System Entities
 		/// </summary>
+		public DbSet<EmergencyAuditLog> EmergencyAuditLogs { get; set; }
+
 		// Review
 		public DbSet<DoctorReview> DoctorReviews { get; set; }
 		public DbSet<LaboratoryReview> LaboratoryReviews { get; set; }

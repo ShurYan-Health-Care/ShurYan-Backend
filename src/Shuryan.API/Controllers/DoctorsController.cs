@@ -21,13 +21,16 @@ namespace Shuryan.API.Controllers
     public class DoctorsController : ControllerBase
     {
         private readonly IDoctorService _doctorService;
+        private readonly Shuryan.Application.Interfaces.IEmergencyModeService _emergencyModeService;
         private readonly ILogger<DoctorsController> _logger;
 
         public DoctorsController(
             IDoctorService doctorService,
+            Shuryan.Application.Interfaces.IEmergencyModeService emergencyModeService,
             ILogger<DoctorsController> logger)
         {
             _doctorService = doctorService;
+            _emergencyModeService = emergencyModeService;
             _logger = logger;
         }
 
@@ -649,6 +652,83 @@ namespace Shuryan.API.Controllers
                     new[] { ex.Message },
                     500
                 ));
+            }
+        }
+
+        #endregion
+
+        #region Emergency Mode Operations
+
+        /// <summary>
+        /// تفعيل وضع الطوارئ للمريض أثناء الحجز
+        /// </summary>
+        [HttpPost("appointments/{appointmentId}/emergency-mode")]
+        [Authorize(Roles = "Doctor")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<object>>> ActivateEmergencyMode(Guid appointmentId)
+        {
+            var doctorId = GetCurrentDoctorId();
+            if (doctorId == Guid.Empty)
+                return Unauthorized(ApiResponse<object>.Failure("غير مصرح لك بالوصول", statusCode: 401));
+
+            _logger.LogInformation("Doctor {DoctorId} requesting emergency mode activation for appointment {AppointmentId}", doctorId, appointmentId);
+
+            try
+            {
+                await _emergencyModeService.ActivateEmergencyModeAsync(doctorId, appointmentId);
+                return Ok(ApiResponse<object>.Success(null, "تم تفعيل وضع الطوارئ بنجاح"));
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ApiResponse<object>.Failure(ex.Message, statusCode: 403));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error activating emergency mode");
+                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ أثناء تفعيل وضع الطوارئ", statusCode: 500));
+            }
+        }
+
+        /// <summary>
+        /// تعطيل وضع الطوارئ لمريض من لوحة تحكم الطوارئ
+        /// </summary>
+        [HttpDelete("patients/{patientId}/emergency-mode")]
+        [Authorize(Roles = "Doctor")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<object>>> DeactivateEmergencyMode(Guid patientId)
+        {
+            var doctorId = GetCurrentDoctorId();
+            if (doctorId == Guid.Empty)
+                return Unauthorized(ApiResponse<object>.Failure("غير مصرح لك بالوصول", statusCode: 401));
+
+            _logger.LogInformation("Doctor {DoctorId} requesting emergency mode deactivation for patient {PatientId}", doctorId, patientId);
+
+            try
+            {
+                await _emergencyModeService.DeactivateEmergencyModeAsync(doctorId, patientId);
+                return Ok(ApiResponse<object>.Success(null, "تم تعطيل وضع الطوارئ بنجاح"));
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error deactivating emergency mode");
+                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ أثناء تعطيل وضع الطوارئ", statusCode: 500));
             }
         }
 

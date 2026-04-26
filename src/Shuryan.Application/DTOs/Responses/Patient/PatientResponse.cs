@@ -20,6 +20,18 @@ namespace Shuryan.Application.DTOs.Responses.Patient
         public Gender? Gender { get; set; }
         public string? ProfileImageUrl { get; set; }
         public AddressResponse? Address { get; set; }
+
+        // Emergency SOS & Medical Profile Fields
+        public Shuryan.Core.Enums.Medical.BloodType? BloodType { get; set; }
+        public decimal? WeightKg { get; set; }
+        public decimal? HeightCm { get; set; }
+        public string? EmergencyContactName { get; set; }
+        public string? EmergencyContactPhone { get; set; }
+        public string? EmergencyContactRelationship { get; set; }
+        public bool? IsPregnant { get; set; }
+        public string? PhysicalDisabilities { get; set; }
+        public bool EmergencyModeActive { get; set; }
+
         public IEnumerable<MedicalHistoryItemResponse> MedicalHistory { get; set; } = new List<MedicalHistoryItemResponse>();
     }
 }

@@ -27,6 +27,8 @@ namespace Shuryan.Application.DTOs.Requests.Patient
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Drug name must be between 2-100 characters")]
         public string DrugName { get; set; } = string.Empty;
 
+        public Shuryan.Core.Enums.Medical.AllergyReactionType? ReactionType { get; set; }
+
         [StringLength(500, ErrorMessage = "Reaction cannot exceed 500 characters")]
         public string? Reaction { get; set; }
     }
