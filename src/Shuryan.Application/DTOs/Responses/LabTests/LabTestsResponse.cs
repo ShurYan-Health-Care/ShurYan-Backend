@@ -3,9 +3,6 @@ using System.Collections.Generic;
 
 namespace Shuryan.Application.DTOs.Responses.LabTests
 {
-    /// <summary>
-    /// Response لبيانات طلب التحاليل
-    /// </summary>
     public class LabTestsResponse
     {
         public Guid LabRequestId { get; set; }

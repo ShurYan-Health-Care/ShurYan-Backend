@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shuryan.Application.DTOs.Common.Base;
 using Shuryan.Application.DTOs.Requests.Patient;
+using Shuryan.Application.DTOs.Responses.LabTests;
 using Shuryan.Application.DTOs.Responses.Patient;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Enums.Laboratory;
@@ -15,11 +16,16 @@ namespace Shuryan.API.Controllers
         public class PatientLabController : ControllerBase
         {
                 private readonly IPatientLabService _patientLabService;
+                private readonly ILabSummaryService _labSummaryService;
                 private readonly ILogger<PatientLabController> _logger;
 
-                public PatientLabController(IPatientLabService patientLabService, ILogger<PatientLabController> logger)
+                public PatientLabController(
+                    IPatientLabService patientLabService,
+                    ILabSummaryService labSummaryService,
+                    ILogger<PatientLabController> logger)
                 {
                         _patientLabService = patientLabService;
+                        _labSummaryService = labSummaryService;
                         _logger = logger;
                 }
 
@@ -519,6 +525,41 @@ namespace Shuryan.API.Controllers
                         {
                                 _logger.LogError(ex, "Error creating review for order {OrderId}", orderId);
                                 return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ", new[] { ex.Message }, 500));
+                        }
+                }
+
+                #endregion
+
+                #region Lab Summary (AI)
+                [HttpPost("lab-orders/{orderId:guid}/summarize")]
+                [ProducesResponseType(typeof(ApiResponse<LabSummaryResponse>), StatusCodes.Status200OK)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+                public async Task<ActionResult<ApiResponse<LabSummaryResponse>>> SummarizeLabOrder(Guid orderId)
+                {
+                        var patientId = GetCurrentPatientId();
+                        if (patientId == Guid.Empty)
+                                return Unauthorized(ApiResponse<object>.Failure("غير مصرح", statusCode: 401));
+
+                        _logger.LogInformation("Lab summary request for order {OrderId} by patient {PatientId}", orderId, patientId);
+
+                        try
+                        {
+                                var summary = await _labSummaryService.SummarizeLabOrderAsync(patientId, orderId);
+                                return Ok(ApiResponse<LabSummaryResponse>.Success(summary, "تم توليد الملخص بنجاح"));
+                        }
+                        catch (KeyNotFoundException ex)
+                        {
+                                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                                return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+                        }
+                        catch (Exception ex)
+                        {
+                                _logger.LogError(ex, "Error generating lab summary for order {OrderId}", orderId);
+                                return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ أثناء توليد الملخص", new[] { ex.Message }, 500));
                         }
                 }
 

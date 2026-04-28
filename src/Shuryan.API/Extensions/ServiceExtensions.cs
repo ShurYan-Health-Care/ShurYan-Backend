@@ -108,6 +108,13 @@ namespace Shuryan.API.Extensions
 
             // Payment Services
             services.AddHttpClient<IPaymobService, PaymobService>();
+
+            // Lab Summary AI Service
+            services.AddHttpClient("LabSummaryClient", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(60);
+            });
+            services.AddScoped<ILabSummaryService, LabSummaryService>();
             services.AddScoped<IPaymentProcessingService, PaymentProcessingService>();
 
             // Pharmacy Profile Service
