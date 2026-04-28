@@ -713,6 +713,7 @@ namespace Shuryan.Application.Services
                 private async Task<PatientLabPrescriptionResponse> MapPrescriptionToResponse(LabPrescription prescription)
                 {
                         var doctor = await _unitOfWork.Doctors.GetByIdAsync(prescription.DoctorId);
+                        var appointment = await _unitOfWork.Appointments.GetByIdAsync(prescription.AppointmentId);
                         var items = prescription.Items.ToList();
                         var tests = new List<PatientLabPrescriptionItemResponse>();
 
@@ -749,6 +750,7 @@ namespace Shuryan.Application.Services
                                 GeneralNotes = prescription.GeneralNotes,
                                 CreatedAt = prescription.CreatedAt,
                                 Tests = tests,
+                                AppointmentType = appointment?.ConsultationType == Core.Enums.Appointments.ConsultationTypeEnum.FollowUp ? "followup" : "regular",
                                 HasOrder = order != null,
                                 LabOrderId = order?.Id,
                                 OrderStatus = order != null ? GetStatusArabicName(order.Status) : null

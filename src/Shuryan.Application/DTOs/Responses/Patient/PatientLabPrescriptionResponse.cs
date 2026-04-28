@@ -20,6 +20,9 @@ namespace Shuryan.Application.DTOs.Responses.Patient
                 // Tests
                 public List<PatientLabPrescriptionItemResponse> Tests { get; set; } = new();
 
+                // Appointment Type
+                public string? AppointmentType { get; set; }
+
                 // Order Status
                 public bool HasOrder { get; set; }
                 public Guid? LabOrderId { get; set; }
