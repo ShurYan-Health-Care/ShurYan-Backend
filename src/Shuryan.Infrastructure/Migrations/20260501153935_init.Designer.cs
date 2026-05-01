@@ -12,7 +12,7 @@ using Shuryan.Infrastructure.Data;
 namespace Shuryan.Infrastructure.Migrations
 {
     [DbContext(typeof(ShuryanDbContext))]
-    [Migration("20260422132159_init")]
+    [Migration("20260501153935_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -427,6 +427,9 @@ namespace Shuryan.Infrastructure.Migrations
 
                     b.Property<DateTime?>("SamplesCollectedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("SendResultsToDoctor")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
@@ -1922,6 +1925,55 @@ namespace Shuryan.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.EmergencyEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActivatingDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("MedicalRecordSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivatingDoctorId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("EmergencyEvents");
+                });
+
             modelBuilder.Entity("Shuryan.Core.Entities.Medical.Partners.DoctorPartnerSuggestion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2302,8 +2354,17 @@ namespace Shuryan.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Dosage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Frequency")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ReactionType")
+                        .HasColumnType("int");
 
                     b.Property<string>("Text")
                         .IsRequired()
@@ -2572,6 +2633,45 @@ namespace Shuryan.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_EmailVerification_AttemptCount", "[AttemptCount] >= 0 AND [AttemptCount] <= 10");
                         });
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.System.EmergencyAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("EmergencyAuditLogs");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.System.Notification", b =>
@@ -3128,10 +3228,42 @@ namespace Shuryan.Infrastructure.Migrations
                     b.Property<Guid?>("AddressId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("BloodType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EmergencyContactName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmergencyContactPhone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmergencyContactRelationship")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("EmergencyModeActivatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("EmergencyModeActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("HeightCm")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool?>("IsPregnant")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PhysicalDisabilities")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasIndex("AddressId")
                         .IsUnique()
                         .HasDatabaseName("IX_Patient_AddressId")
                         .HasFilter("[AddressId] IS NOT NULL");
+
+                    b.HasIndex("EmergencyModeActivatedById");
 
                     b.ToTable("Patients", (string)null);
                 });
@@ -3615,6 +3747,25 @@ namespace Shuryan.Infrastructure.Migrations
                     b.Navigation("Doctor");
                 });
 
+            modelBuilder.Entity("Shuryan.Core.Entities.Medical.EmergencyEvent", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.Identity.Doctor", "ActivatingDoctor")
+                        .WithMany()
+                        .HasForeignKey("ActivatingDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Shuryan.Core.Entities.Identity.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ActivatingDoctor");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("Shuryan.Core.Entities.Medical.Partners.DoctorPartnerSuggestion", b =>
                 {
                     b.HasOne("Shuryan.Core.Entities.Identity.Doctor", "Doctor")
@@ -3728,6 +3879,25 @@ namespace Shuryan.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Shuryan.Core.Entities.System.EmergencyAuditLog", b =>
+                {
+                    b.HasOne("Shuryan.Core.Entities.Identity.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Shuryan.Core.Entities.Identity.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.System.Notification", b =>
@@ -3906,6 +4076,10 @@ namespace Shuryan.Infrastructure.Migrations
                         .HasForeignKey("Shuryan.Core.Entities.Identity.Patient", "AddressId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Shuryan.Core.Entities.Identity.Doctor", "EmergencyModeActivatedBy")
+                        .WithMany()
+                        .HasForeignKey("EmergencyModeActivatedById");
+
                     b.HasOne("Shuryan.Core.Entities.Identity.ProfileUser", null)
                         .WithOne()
                         .HasForeignKey("Shuryan.Core.Entities.Identity.Patient", "Id")
@@ -3913,6 +4087,8 @@ namespace Shuryan.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Address");
+
+                    b.Navigation("EmergencyModeActivatedBy");
                 });
 
             modelBuilder.Entity("Shuryan.Core.Entities.External.Clinic.Clinic", b =>
