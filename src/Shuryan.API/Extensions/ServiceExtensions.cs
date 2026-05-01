@@ -275,6 +275,13 @@ namespace Shuryan.API.Extensions
                 // Custom Schema ID to avoid conflicts
                 options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
 
+                // Map IFormFile to the correct OpenAPI binary string format
+                options.MapType<IFormFile>(() => new Microsoft.OpenApi.Models.OpenApiSchema
+                {
+                    Type = "string",
+                    Format = "binary"
+                });
+
                 // Add JWT Authentication to Swagger
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {

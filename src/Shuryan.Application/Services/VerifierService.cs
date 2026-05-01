@@ -2,9 +2,13 @@ using Microsoft.Extensions.Logging;
 using Shuryan.Application.DTOs.Common.Pagination;
 using Shuryan.Application.DTOs.Requests;
 using Shuryan.Application.DTOs.Responses.Doctor;
+using Shuryan.Application.DTOs.Responses.Pharmacy;
 using Shuryan.Application.Extensions;
 using Shuryan.Application.Interfaces;
+using Shuryan.Core.Entities.Shared;
+using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Identity;
+using Shuryan.Core.Enums.Pharmacy;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using System;
 using System.Collections.Generic;
@@ -433,6 +437,203 @@ namespace Shuryan.Application.Services
                 _logger.LogError(ex, "Error rejecting document {DocumentId}", documentId);
                 throw;
             }
+        }
+
+        public async Task<bool> ApprovePharmacyDocumentAsync(Guid documentId)
+        {
+            try
+            {
+                _logger.LogInformation("Approving pharmacy document {DocumentId}", documentId);
+
+                var document = await _unitOfWork.PharmacyDocuments.GetByIdAsync(documentId);
+                if (document == null)
+                {
+                    _logger.LogWarning("Pharmacy document {DocumentId} not found", documentId);
+                    throw new ArgumentException($"Pharmacy document with ID {documentId} not found");
+                }
+
+                document.Status = Shuryan.Core.Enums.VerificationDocumentStatus.Approved;
+                document.RejectionReason = null;
+                document.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Pharmacy document {DocumentId} has been approved", documentId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving pharmacy document {DocumentId}", documentId);
+                throw;
+            }
+        }
+
+        public async Task<bool> RejectPharmacyDocumentAsync(Guid documentId, string? rejectionReason)
+        {
+            try
+            {
+                _logger.LogInformation("Rejecting pharmacy document {DocumentId} with reason: {Reason}", documentId, rejectionReason ?? "No reason provided");
+
+                var document = await _unitOfWork.PharmacyDocuments.GetByIdAsync(documentId);
+                if (document == null)
+                {
+                    _logger.LogWarning("Pharmacy document {DocumentId} not found", documentId);
+                    throw new ArgumentException($"Pharmacy document with ID {documentId} not found");
+                }
+
+                document.Status = Shuryan.Core.Enums.VerificationDocumentStatus.Rejected;
+                document.RejectionReason = rejectionReason;
+                document.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Pharmacy document {DocumentId} has been rejected", documentId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting pharmacy document {DocumentId}", documentId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Pharmacy Verification Status Management
+
+        public async Task<bool> StartPharmacyReviewAsync(Guid pharmacyId)
+        {
+            var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+            if (pharmacy == null) throw new ArgumentException($"Pharmacy with ID {pharmacyId} not found");
+            pharmacy.VerificationStatus = Core.Enums.Identity.VerificationStatus.UnderReview;
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Review started for pharmacy {PharmacyId}", pharmacyId);
+            return true;
+        }
+
+        public async Task<bool> VerifyPharmacyAsync(Guid pharmacyId, Guid verifierId)
+        {
+            var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+            if (pharmacy == null) throw new ArgumentException($"Pharmacy with ID {pharmacyId} not found");
+            pharmacy.VerificationStatus = Core.Enums.Identity.VerificationStatus.Verified;
+            pharmacy.VerifiedAt = DateTime.UtcNow;
+            pharmacy.VerifierId = verifierId;
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Pharmacy {PharmacyId} verified by {VerifierId}", pharmacyId, verifierId);
+            return true;
+        }
+
+        public async Task<bool> RejectPharmacyAsync(Guid pharmacyId)
+        {
+            var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+            if (pharmacy == null) throw new ArgumentException($"Pharmacy with ID {pharmacyId} not found");
+            pharmacy.VerificationStatus = Core.Enums.Identity.VerificationStatus.Rejected;
+            pharmacy.VerifiedAt = null;
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Pharmacy {PharmacyId} rejected", pharmacyId);
+            return true;
+        }
+
+        #endregion
+
+        #region Get Pharmacies by Verification Status
+
+        public async Task<PaginatedResponse<PharmacyVerificationListResponse>> GetPharmaciesWithSentStatusAsync(PaginationParams paginationParams)
+            => await GetPharmaciesByStatusAsync(VerificationStatus.Sent, paginationParams);
+
+        public async Task<PaginatedResponse<PharmacyVerificationListResponse>> GetPharmaciesUnderReviewAsync(PaginationParams paginationParams)
+            => await GetPharmaciesByStatusAsync(VerificationStatus.UnderReview, paginationParams);
+
+        public async Task<PaginatedResponse<PharmacyVerificationListResponse>> GetRejectedPharmaciesAsync(PaginationParams paginationParams)
+            => await GetPharmaciesByStatusAsync(VerificationStatus.Rejected, paginationParams);
+
+        public async Task<PaginatedResponse<PharmacyVerificationListResponse>> GetVerifiedPharmaciesAsync(PaginationParams paginationParams, Guid verifierId)
+        {
+            var all = await _unitOfWork.Pharmacies.GetAllAsync();
+            var filtered = all.Where(p => p.VerificationStatus == VerificationStatus.Verified && p.VerifierId == verifierId).ToList();
+            return await BuildPharmacyPaginatedResponse(filtered, paginationParams);
+        }
+
+        public async Task<List<PharmacyDocumentItemResponse>> GetPharmacyDocumentsAsync(Guid pharmacyId)
+        {
+            var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+            if (pharmacy == null) throw new ArgumentException($"Pharmacy with ID {pharmacyId} not found");
+
+            var documents = await _unitOfWork.PharmacyDocuments.GetByPharmacyIdAsync(pharmacyId);
+            return documents.Select(d => new PharmacyDocumentItemResponse
+            {
+                Id = d.Id,
+                DocumentUrl = d.DocumentUrl,
+                Type = d.Type,
+                TypeName = d.Type.GetDescription(),
+                Status = d.Status,
+                StatusName = d.Status.GetDescription(),
+                RejectionReason = d.RejectionReason,
+                CreatedAt = d.CreatedAt
+            }).ToList();
+        }
+
+        // ---- Helper ----
+        private async Task<PaginatedResponse<PharmacyVerificationListResponse>> GetPharmaciesByStatusAsync(
+            VerificationStatus status, PaginationParams paginationParams)
+        {
+            var all = await _unitOfWork.Pharmacies.GetAllAsync();
+            var filtered = all.Where(p => p.VerificationStatus == status).ToList();
+            return await BuildPharmacyPaginatedResponse(filtered, paginationParams);
+        }
+
+        private async Task<PaginatedResponse<PharmacyVerificationListResponse>> BuildPharmacyPaginatedResponse(
+            List<Core.Entities.Identity.Pharmacy> pharmacies, PaginationParams paginationParams)
+        {
+            var totalCount = pharmacies.Count;
+            var totalPages = (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize);
+            var paged = pharmacies
+                .Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
+                .Take(paginationParams.PageSize)
+                .ToList();
+
+            var responses = new List<DTOs.Responses.Pharmacy.PharmacyVerificationListResponse>();
+            foreach (var pharmacy in paged)
+            {
+                var docs = await _unitOfWork.PharmacyDocuments.GetByPharmacyIdAsync(pharmacy.Id);
+                var address = pharmacy.Address;
+                responses.Add(new PharmacyVerificationListResponse
+                {
+                    Id = pharmacy.Id,
+                    Name = pharmacy.Name,
+                    OwnerName = pharmacy.FirstName != null ? $"{pharmacy.FirstName} {pharmacy.LastName}" : null,
+                    Governorate = address?.Governorate.GetDescription() ?? string.Empty,
+                    City = address?.City ?? string.Empty,
+                    Address = address != null ? $"{address.Street}, {address.City}" : null,
+                    ProfileImageUrl = pharmacy.ProfilePictureUrl,
+                    PhoneNumber = pharmacy.PhoneNumber,
+                    Email = pharmacy.Email,
+                    VerificationStatus = pharmacy.VerificationStatus,
+                    VerificationStatusName = pharmacy.VerificationStatus.GetDescription(),
+                    Documents = docs.Select(d => new PharmacyDocumentItemResponse
+                    {
+                        Id = d.Id,
+                        DocumentUrl = d.DocumentUrl,
+                        Type = d.Type,
+                        TypeName = d.Type.GetDescription(),
+                        Status = d.Status,
+                        StatusName = d.Status.GetDescription(),
+                        RejectionReason = d.RejectionReason,
+                        CreatedAt = d.CreatedAt
+                    }).ToList()
+                });
+            }
+
+            return new PaginatedResponse<PharmacyVerificationListResponse>
+            {
+                PageNumber = paginationParams.PageNumber,
+                PageSize = paginationParams.PageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = paginationParams.PageNumber > 1,
+                HasNextPage = paginationParams.PageNumber < totalPages,
+                Data = responses
+            };
         }
 
         #endregion
