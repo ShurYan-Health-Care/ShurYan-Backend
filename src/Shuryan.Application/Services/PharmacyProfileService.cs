@@ -1276,5 +1276,126 @@ namespace Shuryan.Application.Services
         }
 
         #endregion
+
+        #region Verification Document Operations
+
+        public async Task<IEnumerable<PharmacyDocumentItemResponse>> GetVerificationDocumentsAsync(Guid pharmacyId)
+        {
+            try
+            {
+                var docs = await _unitOfWork.PharmacyDocuments.GetByPharmacyIdAsync(pharmacyId);
+                return docs.Select(MapToDocumentItemResponse).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving verification documents for pharmacy {PharmacyId}", pharmacyId);
+                throw;
+            }
+        }
+
+        public async Task<PharmacyDocumentItemResponse> UploadVerificationDocumentAsync(Guid pharmacyId, int documentType, IFormFile file)
+        {
+            if (!Enum.IsDefined(typeof(PharmacyDocumentType), documentType))
+                throw new ArgumentException($"Invalid document type: {documentType}");
+
+            var docType = (PharmacyDocumentType)documentType;
+
+            try
+            {
+                var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+                if (pharmacy == null || pharmacy.IsDeleted)
+                    throw new KeyNotFoundException($"Pharmacy with ID {pharmacyId} not found");
+
+                // Upload file to Cloudinary
+                var uploadResult = await _fileUploadService.UploadDocumentAsync(file, $"pharmacy-docs/{pharmacyId}");
+
+                // Check if document of this type already exists
+                var existing = (await _unitOfWork.PharmacyDocuments.GetByPharmacyIdAsync(pharmacyId))
+                    .FirstOrDefault(d => d.Type == docType);
+
+                PharmacyDocument document;
+                if (existing != null)
+                {
+                    // Delete old file and update record
+                    if (!string.IsNullOrEmpty(existing.DocumentUrl))
+                        await _fileUploadService.DeleteFileAsync(existing.DocumentUrl);
+
+                    existing.DocumentUrl = uploadResult.FileUrl;
+                    existing.Status = VerificationDocumentStatus.UnderReview;
+                    existing.RejectionReason = null;
+                    existing.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.Repository<PharmacyDocument>().Update(existing);
+                    document = existing;
+                }
+                else
+                {
+                    document = new PharmacyDocument
+                    {
+                        Id = Guid.NewGuid(),
+                        PharmacyId = pharmacyId,
+                        Type = docType,
+                        DocumentUrl = uploadResult.FileUrl,
+                        Status = VerificationDocumentStatus.UnderReview,
+                        CreatedAt = DateTime.UtcNow,
+                    };
+                    await _unitOfWork.Repository<PharmacyDocument>().AddAsync(document);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                _logger.LogInformation("Pharmacy {PharmacyId} uploaded document of type {DocType}", pharmacyId, docType);
+
+                return MapToDocumentItemResponse(document);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading verification document for pharmacy {PharmacyId}", pharmacyId);
+                throw;
+            }
+        }
+
+        public async Task SubmitForReviewAsync(Guid pharmacyId)
+        {
+            try
+            {
+                var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(pharmacyId);
+                if (pharmacy == null || pharmacy.IsDeleted)
+                    throw new KeyNotFoundException($"Pharmacy with ID {pharmacyId} not found");
+
+                // Only allow transition from Unverified or Rejected states
+                if (pharmacy.VerificationStatus != Core.Enums.Identity.VerificationStatus.Unverified &&
+                    pharmacy.VerificationStatus != Core.Enums.Identity.VerificationStatus.Rejected)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot submit for review from status: {pharmacy.VerificationStatus}. Must be Unverified or Rejected.");
+                }
+
+                pharmacy.VerificationStatus = Core.Enums.Identity.VerificationStatus.Sent;
+                pharmacy.UpdatedAt = DateTime.UtcNow;
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Pharmacy {PharmacyId} submitted for verification review", pharmacyId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error submitting pharmacy {PharmacyId} for review", pharmacyId);
+                throw;
+            }
+        }
+
+        // Helper: map PharmacyDocument entity → DTO
+        private static PharmacyDocumentItemResponse MapToDocumentItemResponse(PharmacyDocument d) =>
+            new PharmacyDocumentItemResponse
+            {
+                Id = d.Id,
+                DocumentUrl = d.DocumentUrl,
+                Type = d.Type,
+                TypeName = d.Type.ToString(),
+                Status = d.Status,
+                StatusName = d.Status.ToString(),
+                RejectionReason = d.RejectionReason,
+                CreatedAt = d.CreatedAt
+            };
+
+        #endregion
     }
 }

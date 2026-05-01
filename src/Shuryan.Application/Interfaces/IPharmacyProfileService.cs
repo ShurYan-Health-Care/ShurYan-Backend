@@ -120,5 +120,23 @@ namespace Shuryan.Application.Interfaces
 
         #endregion
 
+        #region Verification Document Operations
+
+        /// <summary>
+        /// جلب مستندات التوثيق الخاصة بالصيدلية
+        /// </summary>
+        Task<IEnumerable<PharmacyDocumentItemResponse>> GetVerificationDocumentsAsync(Guid pharmacyId);
+
+        /// <summary>
+        /// رفع مستند توثيق جديد
+        /// </summary>
+        Task<PharmacyDocumentItemResponse> UploadVerificationDocumentAsync(Guid pharmacyId, int documentType, IFormFile file);
+
+        /// <summary>
+        /// إرسال طلب التوثيق (تغيير الحالة من Unverified إلى Sent)
+        /// </summary>
+        Task SubmitForReviewAsync(Guid pharmacyId);
+
+        #endregion
     }
 }

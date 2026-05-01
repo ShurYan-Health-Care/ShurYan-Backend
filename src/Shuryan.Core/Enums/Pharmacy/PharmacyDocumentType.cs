@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -9,7 +9,7 @@ namespace Shuryan.Core.Enums.Pharmacy
 {
     public enum PharmacyDocumentType
     {
-        [Description("الترخيص التجاري")]
+        [Description("الرخصة التجارية")]
         CommercialLicense = 1,
 
         [Description("ترخيص وزارة الصحة")]
@@ -24,8 +24,14 @@ namespace Shuryan.Core.Enums.Pharmacy
         [Description("البطاقة الضريبية")]
         TaxCard = 5,
 
-        [Description("مستندات إضافية")]
-        AdditionalDocuments = 6
+        [Description("بطاقة الرقم القومي للمالك/المدير")]
+        OwnerNationalId = 7,
+
+        [Description("كارنيه نقابة الصيادلة للصيدلي المسؤول")]
+        PharmacistSyndicateCard = 8,
+
+        [Description("صور واجهة الصيدلية")]
+        PharmacyFacadePhotos = 9
 
     }
 }

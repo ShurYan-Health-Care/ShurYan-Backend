@@ -366,6 +366,211 @@ namespace Shuryan.API.Controllers
             }
         }
 
+        /// <summary>
+        /// قبول مستند صيدلية
+        /// </summary>
+        [HttpPost("pharmacy-documents/{documentId}/approve")]
+        [Authorize(Roles = "Verifier,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<object>>> ApprovePharmacyDocument(Guid documentId)
+        {
+            _logger.LogInformation("Request to approve pharmacy document {DocumentId}", documentId);
+            try
+            {
+                var result = await _verifierService.ApprovePharmacyDocumentAsync(documentId);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Pharmacy document has been approved"));
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving pharmacy document: {DocumentId}", documentId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        /// <summary>
+        /// رفض مستند صيدلية مع سبب الرفض (اختياري)
+        /// </summary>
+        [HttpPost("pharmacy-documents/{documentId}/reject")]
+        [Authorize(Roles = "Verifier,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<object>>> RejectPharmacyDocument(
+            Guid documentId,
+            [FromBody] Shuryan.Application.DTOs.Requests.Verifier.RejectDocumentRequest request)
+        {
+            _logger.LogInformation("Request to reject pharmacy document {DocumentId} with reason: {Reason}",
+                documentId, request?.RejectionReason ?? "No reason provided");
+            try
+            {
+                var result = await _verifierService.RejectPharmacyDocumentAsync(documentId, request?.RejectionReason);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Pharmacy document has been rejected"));
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting pharmacy document: {DocumentId}", documentId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        #endregion
+
+        #region Pharmacy Verification Status Management
+
+        [HttpPost("pharmacies/{pharmacyId}/start-review")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<object>>> StartPharmacyReview(Guid pharmacyId)
+        {
+            try
+            {
+                var result = await _verifierService.StartPharmacyReviewAsync(pharmacyId);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Review has been started"));
+            }
+            catch (ArgumentException ex) { return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404)); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error starting review for pharmacy: {PharmacyId}", pharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpPost("pharmacies/{pharmacyId}/verify")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<object>>> VerifyPharmacy(Guid pharmacyId)
+        {
+            var currentVerifierId = GetCurrentUserId();
+            if (currentVerifierId == Guid.Empty)
+                return Unauthorized(ApiResponse<object>.Failure("Invalid or missing authentication token", statusCode: 401));
+            try
+            {
+                var result = await _verifierService.VerifyPharmacyAsync(pharmacyId, currentVerifierId);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Pharmacy has been verified"));
+            }
+            catch (ArgumentException ex) { return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404)); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error verifying pharmacy: {PharmacyId}", pharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpPost("pharmacies/{pharmacyId}/reject")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<object>>> RejectPharmacy(Guid pharmacyId)
+        {
+            try
+            {
+                var result = await _verifierService.RejectPharmacyAsync(pharmacyId);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Pharmacy has been rejected"));
+            }
+            catch (ArgumentException ex) { return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404)); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting pharmacy: {PharmacyId}", pharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        #endregion
+
+        #region Get Pharmacies by Verification Status
+
+        [HttpGet("pharmacies/status/sent")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<Application.DTOs.Responses.Pharmacy.PharmacyVerificationListResponse>>>> GetPharmaciesWithSentStatus(
+            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await _verifierService.GetPharmaciesWithSentStatusAsync(new Application.DTOs.Common.Pagination.PaginationParams { PageNumber = pageNumber, PageSize = pageSize });
+                return Ok(ApiResponse<PaginatedResponse<Application.DTOs.Responses.Pharmacy.PharmacyVerificationListResponse>>.Success(result, "Pharmacies with Sent status retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving pharmacies with Sent status");
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpGet("pharmacies/status/under-review")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<Application.DTOs.Responses.Pharmacy.PharmacyVerificationListResponse>>>> GetPharmaciesUnderReview(
+            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await _verifierService.GetPharmaciesUnderReviewAsync(new Application.DTOs.Common.Pagination.PaginationParams { PageNumber = pageNumber, PageSize = pageSize });
+                return Ok(ApiResponse<PaginatedResponse<Application.DTOs.Responses.Pharmacy.PharmacyVerificationListResponse>>.Success(result, "Pharmacies under review retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving pharmacies under review");
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpGet("pharmacies/status/verified")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<Application.DTOs.Responses.Pharmacy.PharmacyVerificationListResponse>>>> GetVerifiedPharmacies(
+            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var currentVerifierId = GetCurrentUserId();
+            if (currentVerifierId == Guid.Empty)
+                return Unauthorized(ApiResponse<object>.Failure("Invalid or missing authentication token", statusCode: 401));
+            try
+            {
+                var result = await _verifierService.GetVerifiedPharmaciesAsync(new Application.DTOs.Common.Pagination.PaginationParams { PageNumber = pageNumber, PageSize = pageSize }, currentVerifierId);
+                return Ok(ApiResponse<PaginatedResponse<Application.DTOs.Responses.Pharmacy.PharmacyVerificationListResponse>>.Success(result, "Verified pharmacies retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving verified pharmacies");
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpGet("pharmacies/status/rejected")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<Application.DTOs.Responses.Pharmacy.PharmacyVerificationListResponse>>>> GetRejectedPharmacies(
+            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await _verifierService.GetRejectedPharmaciesAsync(new Application.DTOs.Common.Pagination.PaginationParams { PageNumber = pageNumber, PageSize = pageSize });
+                return Ok(ApiResponse<PaginatedResponse<Application.DTOs.Responses.Pharmacy.PharmacyVerificationListResponse>>.Success(result, "Rejected pharmacies retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving rejected pharmacies");
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpGet("pharmacies/{pharmacyId}/documents")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<List<Application.DTOs.Responses.Pharmacy.PharmacyDocumentItemResponse>>>> GetPharmacyDocuments(Guid pharmacyId)
+        {
+            try
+            {
+                var documents = await _verifierService.GetPharmacyDocumentsAsync(pharmacyId);
+                return Ok(ApiResponse<List<Application.DTOs.Responses.Pharmacy.PharmacyDocumentItemResponse>>.Success(documents, "Pharmacy documents retrieved successfully"));
+            }
+            catch (ArgumentException ex) { return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404)); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving documents for pharmacy: {PharmacyId}", pharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
         #endregion
 
         #region Helper Methods
