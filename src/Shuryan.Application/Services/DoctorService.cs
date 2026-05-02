@@ -1447,16 +1447,13 @@ namespace Shuryan.Application.Services
             }
         }
 
-        /// <summary>
-        /// حساب NextAvailableSlot محلياً بدون database queries إضافية
-        /// يستخدم البيانات المحملة مسبقاً (Availabilities, Overrides, Consultations)
-        /// </summary>
         private DateTime? CalculateNextAvailableSlotLocally(Doctor doctor)
         {
             try
             {
-                // التحقق من وجود availabilities
-                if (doctor.Availabilities == null || !doctor.Availabilities.Any())
+                // التحقق من وجود availabilities أو overrides إضافية
+                if ((doctor.Availabilities == null || !doctor.Availabilities.Any()) && 
+                    (doctor.Overrides == null || !doctor.Overrides.Any(o => o.Type == OverrideType.Available)))
                     return null;
 
                 var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
@@ -1476,27 +1473,60 @@ namespace Shuryan.Application.Services
                 {
                     var dayOfWeek = (SysDayOfWeek)((int)currentDate.DayOfWeek + 1);
                     
-                    // جلب ساعات العمل لهذا اليوم
-                    var availability = doctor.Availabilities
-                        .FirstOrDefault(a => a.DayOfWeek == dayOfWeek);
-                    
-                    if (availability == null)
-                        continue;
+                    var dayOverrides = doctor.Overrides?
+                        .Where(o => o.StartTime.Date == currentDate)
+                        .ToList() ?? new List<Core.Entities.Medical.Schedules.DoctorOverride>();
 
-                    // تحويل TimeOnly إلى DateTime
-                    var workStart = currentDate.Add(availability.StartTime.ToTimeSpan());
-                    var workEnd = currentDate.Add(availability.EndTime.ToTimeSpan());
-                    
-                    // لو اليوم هو اليوم الحالي، نبدأ من الوقت الحالي
-                    var startTime = currentDate.Date == nowLocal.Date && nowLocal > workStart 
-                        ? nowLocal 
-                        : workStart;
+                    // تحقق من إجازة اليوم بالكامل
+                    var fullDayUnavailable = dayOverrides.Any(o => 
+                        o.Type == OverrideType.Unavailable &&
+                        o.StartTime.TimeOfDay == TimeSpan.Zero &&
+                        o.EndTime.Date > currentDate);
 
-                    // التحقق من وجود slot متاح في ساعات العمل
-                    if (startTime < workEnd)
+                    if (fullDayUnavailable) continue;
+
+                    // تجميع أوقات العمل
+                    var workingHours = new List<(TimeOnly Start, TimeOnly End)>();
+
+                    var availability = doctor.Availabilities?.FirstOrDefault(a => a.DayOfWeek == dayOfWeek);
+                    if (availability != null)
+                        workingHours.Add((availability.StartTime, availability.EndTime));
+
+                    var availableOverrides = dayOverrides.Where(o => o.Type == OverrideType.Available);
+                    foreach (var ovr in availableOverrides)
+                        workingHours.Add((TimeOnly.FromDateTime(ovr.StartTime), TimeOnly.FromDateTime(ovr.EndTime)));
+
+                    if (!workingHours.Any()) continue;
+
+                    var unavailableOverrides = dayOverrides.Where(o => o.Type == OverrideType.Unavailable).ToList();
+
+                    // التحقق من كل وقت عمل وتوليد الجلسات
+                    foreach (var (start, end) in workingHours)
                     {
-                        // نرجع أول slot متاح (simplified - بدون التحقق من المواعيد المحجوزة)
-                        return TimeZoneInfo.ConvertTimeToUtc(startTime, egyptTimeZone);
+                        var currentSlot = currentDate.Add(start.ToTimeSpan());
+                        var workEnd = currentDate.Add(end.ToTimeSpan());
+
+                        while (currentSlot < workEnd)
+                        {
+                            var slotEnd = currentSlot.AddMinutes(sessionDurationMinutes);
+                            
+                            // نعتبر الموعد متاحاً إذا كان يبعد عن الوقت الحالي (الآن) بـ 5 دقائق على الأقل لتجنب حجز موعد فات
+                            if (currentSlot > nowLocal.AddMinutes(5))
+                            {
+                                // التحقق من أن الموعد لا يقع في فترة Unavailable
+                                bool isUnavailable = unavailableOverrides.Any(u =>
+                                    (currentSlot >= u.StartTime && currentSlot < u.EndTime) ||
+                                    (slotEnd > u.StartTime && slotEnd <= u.EndTime) ||
+                                    (currentSlot <= u.StartTime && slotEnd >= u.EndTime)
+                                );
+
+                                if (!isUnavailable)
+                                {
+                                    return TimeZoneInfo.ConvertTimeToUtc(currentSlot, egyptTimeZone);
+                                }
+                            }
+                            currentSlot = currentSlot.AddMinutes(sessionDurationMinutes);
+                        }
                     }
                 }
 

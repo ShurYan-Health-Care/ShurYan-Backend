@@ -13,7 +13,7 @@ namespace Shuryan.Application.DTOs.Requests.Doctor
         [Range(0.01, 10000, ErrorMessage = "Consultation fee must be between 0.01 and 10000")]
         public decimal? ConsultationFee { get; set; }
 
-        [Range(15, 480, ErrorMessage = "Session duration must be between 15-480 minutes")]
+        [Range(5, 480, ErrorMessage = "Session duration must be between 5-480 minutes")]
         public int? SessionDurationMinutes { get; set; }
     }
 }

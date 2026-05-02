@@ -42,7 +42,7 @@ namespace Shuryan.Infrastructure.Data.Configurations.DoctorConfigurations
 
             // Check Constraints
             builder.HasCheckConstraint("CK_DoctorConsultation_Fee", "[ConsultationFee] >= 0");
-            builder.HasCheckConstraint("CK_DoctorConsultation_Duration", "[SessionDurationMinutes] >= 15 AND [SessionDurationMinutes] <= 120");
+            builder.HasCheckConstraint("CK_DoctorConsultation_Duration", "[SessionDurationMinutes] >= 5 AND [SessionDurationMinutes] <= 480");
         }
     }
 }
