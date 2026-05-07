@@ -52,7 +52,17 @@ namespace Shuryan.Infrastructure.Repositories.Pharmacies
 
         public async Task<bool> IsPharmacyOpenAsync(Guid pharmacyId, DateTime dateTime)
         {
-            var dayOfWeek = (SysDayOfWeek)((int)dateTime.DayOfWeek);
+            var dayOfWeek = dateTime.DayOfWeek switch
+            {
+                DayOfWeek.Saturday => SysDayOfWeek.Saturday,
+                DayOfWeek.Sunday => SysDayOfWeek.Sunday,
+                DayOfWeek.Monday => SysDayOfWeek.Monday,
+                DayOfWeek.Tuesday => SysDayOfWeek.Tuesday,
+                DayOfWeek.Wednesday => SysDayOfWeek.Wednesday,
+                DayOfWeek.Thursday => SysDayOfWeek.Thursday,
+                DayOfWeek.Friday => SysDayOfWeek.Friday,
+                _ => SysDayOfWeek.Saturday
+            };
             var currentTime = TimeOnly.FromDateTime(dateTime);
 
             var workingHours = await _dbSet

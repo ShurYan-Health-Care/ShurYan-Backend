@@ -1471,7 +1471,17 @@ namespace Shuryan.Application.Services
                 // البحث عن أول slot متاح
                 for (var currentDate = nowLocal.Date; currentDate <= searchEndDate; currentDate = currentDate.AddDays(1))
                 {
-                    var dayOfWeek = (SysDayOfWeek)((int)currentDate.DayOfWeek + 1);
+                    var dayOfWeek = currentDate.DayOfWeek switch
+                    {
+                        DayOfWeek.Saturday => SysDayOfWeek.Saturday,
+                        DayOfWeek.Sunday => SysDayOfWeek.Sunday,
+                        DayOfWeek.Monday => SysDayOfWeek.Monday,
+                        DayOfWeek.Tuesday => SysDayOfWeek.Tuesday,
+                        DayOfWeek.Wednesday => SysDayOfWeek.Wednesday,
+                        DayOfWeek.Thursday => SysDayOfWeek.Thursday,
+                        DayOfWeek.Friday => SysDayOfWeek.Friday,
+                        _ => SysDayOfWeek.Saturday
+                    };
                     
                     var dayOverrides = doctor.Overrides?
                         .Where(o => o.StartTime.Date == currentDate)
