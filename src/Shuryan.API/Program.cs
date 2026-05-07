@@ -62,10 +62,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(Theme.UniversalDark);
-
     await app.SeedDatabaseAsync();
-
-	//await app.ClearDatabaseAsync();
+}
+else
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(Theme.UniversalDark);
 }
 
 app.UseExceptionHandler();
@@ -86,10 +88,18 @@ if (app.Environment.IsDevelopment())
     app.UseHangfireDashboard("/hangfire");
 }
 
-// Register recurring job: expire stale pending payments every 30 minutes
-RecurringJob.AddOrUpdate<IPaymentExpiryJob>(
-    "expire-pending-payments",
-    job => job.ExpirePendingPaymentsAsync(),
-    "*/1 * * * *"); // Every 30 minutes
+
+try
+{
+    // Register recurring job: expire stale pending payments every 30 minutes
+    RecurringJob.AddOrUpdate<IPaymentExpiryJob>(
+        "expire-pending-payments",
+        job => job.ExpirePendingPaymentsAsync(),
+        "*/1 * * * *"); // Every 30 minutes
+}
+catch (Exception ex)
+{
+    // Hangfire not ready yet
+}
 
 app.Run();

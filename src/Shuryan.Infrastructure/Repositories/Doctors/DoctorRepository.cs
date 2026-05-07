@@ -110,7 +110,17 @@ namespace Shuryan.Infrastructure.Repositories.Doctors
 
             if (doctor == null) return false;
 
-            var dayOfWeek = (SysDayOfWeek)((int)dateTime.DayOfWeek + 1);
+            var dayOfWeek = dateTime.DayOfWeek switch
+            {
+                DayOfWeek.Saturday => SysDayOfWeek.Saturday,
+                DayOfWeek.Sunday => SysDayOfWeek.Sunday,
+                DayOfWeek.Monday => SysDayOfWeek.Monday,
+                DayOfWeek.Tuesday => SysDayOfWeek.Tuesday,
+                DayOfWeek.Wednesday => SysDayOfWeek.Wednesday,
+                DayOfWeek.Thursday => SysDayOfWeek.Thursday,
+                DayOfWeek.Friday => SysDayOfWeek.Friday,
+                _ => SysDayOfWeek.Saturday
+            };
             var timeOnly = TimeOnly.FromDateTime(dateTime);
 
             // Check Overrides first
