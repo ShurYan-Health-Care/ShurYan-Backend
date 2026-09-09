@@ -7,8 +7,14 @@ using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.External.Laboratories;
 using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Enums;
+using Shuryan.Core.Enums.Identity;
+using Shuryan.Core.Enums.Laboratory;
+using Shuryan.Application.Extensions;
 using Shuryan.Core.Interfaces;
 using Shuryan.Core.Interfaces.UnitOfWork;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Shuryan.Application.Services
 {
@@ -805,6 +811,128 @@ namespace Shuryan.Application.Services
                                 throw;
                         }
                 }
+
+                #endregion
+
+                #region Verification Document Operations
+
+                public async Task<List<LaboratoryDocumentItemResponse>> GetVerificationDocumentsAsync(Guid laboratoryId)
+                {
+                    try
+                    {
+                        _logger.LogInformation("Getting verification documents for laboratory {LaboratoryId}", laboratoryId);
+
+                        var documents = await _unitOfWork.LaboratoryDocuments.GetByLaboratoryIdAsync(laboratoryId);
+                        return documents.Select(MapToDocumentItemResponse).ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error retrieving verification documents for laboratory {LaboratoryId}", laboratoryId);
+                        throw;
+                    }
+                }
+
+                public async Task<LaboratoryDocumentItemResponse> UploadVerificationDocumentAsync(Guid laboratoryId, int documentType, IFormFile file)
+                {
+                    if (!Enum.IsDefined(typeof(LaboratoryDocumentType), documentType))
+                        throw new ArgumentException($"Invalid document type: {documentType}");
+
+                    var docType = (LaboratoryDocumentType)documentType;
+
+                    try
+                    {
+                        var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(laboratoryId);
+                        if (laboratory == null || laboratory.IsDeleted)
+                            throw new KeyNotFoundException($"Laboratory with ID {laboratoryId} not found");
+
+                        // Upload file to Cloudinary
+                        var uploadResult = await _fileUploadService.UploadDocumentAsync(file, $"laboratory-docs/{laboratoryId}");
+
+                        // Check if document of this type already exists
+                        var existing = (await _unitOfWork.LaboratoryDocuments.GetByLaboratoryIdAsync(laboratoryId))
+                            .FirstOrDefault(d => d.Type == docType);
+
+                        LaboratoryDocument document;
+                        if (existing != null)
+                        {
+                            // Delete old file and update record
+                            if (!string.IsNullOrEmpty(existing.DocumentUrl))
+                                await _fileUploadService.DeleteFileAsync(existing.DocumentUrl);
+
+                            existing.DocumentUrl = uploadResult.FileUrl;
+                            existing.Status = VerificationDocumentStatus.UnderReview;
+                            existing.RejectionReason = null;
+                            existing.UpdatedAt = DateTime.UtcNow;
+                            _unitOfWork.Repository<LaboratoryDocument>().Update(existing);
+                            document = existing;
+                        }
+                        else
+                        {
+                            document = new LaboratoryDocument
+                            {
+                                Id = Guid.NewGuid(),
+                                LaboratoryId = laboratoryId,
+                                Type = docType,
+                                DocumentUrl = uploadResult.FileUrl,
+                                Status = VerificationDocumentStatus.UnderReview,
+                                CreatedAt = DateTime.UtcNow,
+                            };
+                            await _unitOfWork.Repository<LaboratoryDocument>().AddAsync(document);
+                        }
+
+                        await _unitOfWork.SaveChangesAsync();
+                        _logger.LogInformation("Laboratory {LaboratoryId} uploaded document of type {DocType}", laboratoryId, docType);
+
+                        return MapToDocumentItemResponse(document);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error uploading verification document for laboratory {LaboratoryId}", laboratoryId);
+                        throw;
+                    }
+                }
+
+                public async Task SubmitForReviewAsync(Guid laboratoryId)
+                {
+                    try
+                    {
+                        var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(laboratoryId);
+                        if (laboratory == null || laboratory.IsDeleted)
+                            throw new KeyNotFoundException($"Laboratory with ID {laboratoryId} not found");
+
+                        // Only allow transition from Unverified or Rejected states
+                        if (laboratory.VerificationStatus != Core.Enums.Identity.VerificationStatus.Unverified &&
+                            laboratory.VerificationStatus != Core.Enums.Identity.VerificationStatus.Rejected)
+                        {
+                            throw new InvalidOperationException(
+                                $"Cannot submit for review from status: {laboratory.VerificationStatus}. Must be Unverified or Rejected.");
+                        }
+
+                        laboratory.VerificationStatus = Core.Enums.Identity.VerificationStatus.Sent;
+                        laboratory.UpdatedAt = DateTime.UtcNow;
+                        await _unitOfWork.SaveChangesAsync();
+
+                        _logger.LogInformation("Laboratory {LaboratoryId} submitted for verification review", laboratoryId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error submitting laboratory {LaboratoryId} for review", laboratoryId);
+                        throw;
+                    }
+                }
+
+                private static LaboratoryDocumentItemResponse MapToDocumentItemResponse(LaboratoryDocument d) =>
+                    new LaboratoryDocumentItemResponse
+                    {
+                        Id = d.Id,
+                        DocumentUrl = d.DocumentUrl,
+                        Type = d.Type,
+                        TypeName = d.Type.GetDescription(),
+                        Status = d.Status,
+                        StatusName = d.Status.GetDescription(),
+                        RejectionReason = d.RejectionReason,
+                        CreatedAt = d.CreatedAt
+                    };
 
                 #endregion
         }

@@ -1280,6 +1280,108 @@ namespace Shuryan.API.Controllers
 
                 #endregion
 
+                #region Verification Document Operations
+
+                /// <summary>
+                /// جلب مستندات التوثيق الخاصة بالمعمل
+                /// GET /api/laboratories/me/documents
+                /// </summary>
+                [HttpGet("documents")]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+                public async Task<ActionResult<ApiResponse<object>>> GetVerificationDocuments()
+                {
+                    var currentLaboratoryId = GetCurrentLaboratoryId();
+                    if (currentLaboratoryId == Guid.Empty)
+                        return Unauthorized(ApiResponse<object>.Failure("Invalid or missing authentication token", statusCode: 401));
+
+                    try
+                    {
+                        var documents = await _laboratoryProfileService.GetVerificationDocumentsAsync(currentLaboratoryId);
+                        return Ok(ApiResponse<object>.Success(documents, "تم جلب المستندات بنجاح"));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error retrieving verification documents for laboratory: {LaboratoryId}", currentLaboratoryId);
+                        return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ أثناء جلب المستندات", new[] { ex.Message }, 500));
+                    }
+                }
+
+                /// <summary>
+                /// رفع مستند توثيق جديد
+                /// POST /api/laboratories/me/documents
+                /// </summary>
+                [HttpPost("documents")]
+                [Consumes("multipart/form-data")]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+                public async Task<ActionResult<ApiResponse<object>>> UploadVerificationDocument(
+                    [FromForm] UploadLaboratoryDocumentRequest request)
+                {
+                    var currentLaboratoryId = GetCurrentLaboratoryId();
+                    if (currentLaboratoryId == Guid.Empty)
+                        return Unauthorized(ApiResponse<object>.Failure("Invalid or missing authentication token", statusCode: 401));
+
+                    if (request.Document == null || request.Document.Length == 0)
+                        return BadRequest(ApiResponse<object>.Failure("يجب رفع مستند", statusCode: 400));
+
+                    if (request.Document.Length > 10 * 1024 * 1024)
+                        return BadRequest(ApiResponse<object>.Failure("حجم الملف يجب ألا يتجاوز 10 ميجابايت", statusCode: 400));
+
+                    _logger.LogInformation("Laboratory {LaboratoryId} uploading document of type {Type}", currentLaboratoryId, request.Type);
+
+                    try
+                    {
+                        var result = await _laboratoryProfileService.UploadVerificationDocumentAsync(currentLaboratoryId, request.Type, request.Document);
+                        return Ok(ApiResponse<object>.Success(result, "تم رفع المستند بنجاح"));
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error uploading verification document for laboratory: {LaboratoryId}", currentLaboratoryId);
+                        return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ أثناء رفع المستند", new[] { ex.Message }, 500));
+                    }
+                }
+
+                /// <summary>
+                /// إرسال طلب التوثيق
+                /// POST /api/laboratories/me/submit-for-review
+                /// </summary>
+                [HttpPost("submit-for-review")]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+                [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+                public async Task<ActionResult<ApiResponse<object>>> SubmitForReview()
+                {
+                    var currentLaboratoryId = GetCurrentLaboratoryId();
+                    if (currentLaboratoryId == Guid.Empty)
+                        return Unauthorized(ApiResponse<object>.Failure("Invalid or missing authentication token", statusCode: 401));
+
+                    _logger.LogInformation("Laboratory {LaboratoryId} submitting for review", currentLaboratoryId);
+
+                    try
+                    {
+                        await _laboratoryProfileService.SubmitForReviewAsync(currentLaboratoryId);
+                        return Ok(ApiResponse<object>.Success(new { submitted = true }, "تم إرسال طلب التوثيق بنجاح"));
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return BadRequest(ApiResponse<object>.Failure(ex.Message, statusCode: 400));
+                    }
+                    catch (KeyNotFoundException ex)
+                    {
+                        return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error submitting for review for laboratory: {LaboratoryId}", currentLaboratoryId);
+                        return StatusCode(500, ApiResponse<object>.Failure("حدث خطأ أثناء إرسال الطلب", new[] { ex.Message }, 500));
+                    }
+                }
+
+                #endregion
+
                 #region Helper Methods
 
                 private Guid GetCurrentLaboratoryId()
