@@ -2,6 +2,7 @@ using Shuryan.Application.DTOs.Common.Pagination;
 using Shuryan.Application.DTOs.Requests;
 using Shuryan.Application.DTOs.Responses.Doctor;
 using Shuryan.Application.DTOs.Responses.Pharmacy;
+using Shuryan.Application.DTOs.Responses.Laboratory;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 namespace Shuryan.Application.Interfaces
 {
     /// <summary>
-    /// Service interface لعمليات الـ Verifier - إدارة حالات التحقق للأطباء والصيدليات
+    /// Service interface لعمليات الـ Verifier - إدارة حالات التحقق للأطباء والصيدليات والمعامل
     /// </summary>
     public interface IVerifierService
     {
@@ -40,6 +41,10 @@ namespace Shuryan.Application.Interfaces
         Task<bool> ApprovePharmacyDocumentAsync(Guid documentId);
         Task<bool> RejectPharmacyDocumentAsync(Guid documentId, string? rejectionReason);
 
+        // Laboratory document approval/rejection
+        Task<bool> ApproveLaboratoryDocumentAsync(Guid documentId);
+        Task<bool> RejectLaboratoryDocumentAsync(Guid documentId, string? rejectionReason);
+
         #endregion
 
         #region Pharmacy Verification Status Management
@@ -59,5 +64,24 @@ namespace Shuryan.Application.Interfaces
         Task<List<PharmacyDocumentItemResponse>> GetPharmacyDocumentsAsync(Guid pharmacyId);
 
         #endregion
+
+        #region Laboratory Verification Status Management
+
+        Task<bool> StartLaboratoryReviewAsync(Guid laboratoryId);
+        Task<bool> VerifyLaboratoryAsync(Guid laboratoryId, Guid verifierId);
+        Task<bool> RejectLaboratoryAsync(Guid laboratoryId);
+
+        #endregion
+
+        #region Get Laboratories by Verification Status
+
+        Task<PaginatedResponse<LaboratoryVerificationListResponse>> GetLaboratoriesWithSentStatusAsync(PaginationParams paginationParams);
+        Task<PaginatedResponse<LaboratoryVerificationListResponse>> GetLaboratoriesUnderReviewAsync(PaginationParams paginationParams);
+        Task<PaginatedResponse<LaboratoryVerificationListResponse>> GetVerifiedLaboratoriesAsync(PaginationParams paginationParams, Guid verifierId);
+        Task<PaginatedResponse<LaboratoryVerificationListResponse>> GetRejectedLaboratoriesAsync(PaginationParams paginationParams);
+        Task<List<LaboratoryDocumentItemResponse>> GetLaboratoryDocumentsAsync(Guid laboratoryId);
+
+        #endregion
     }
 }
+

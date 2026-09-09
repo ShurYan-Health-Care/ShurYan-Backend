@@ -3,12 +3,14 @@ using Shuryan.Application.DTOs.Common.Pagination;
 using Shuryan.Application.DTOs.Requests;
 using Shuryan.Application.DTOs.Responses.Doctor;
 using Shuryan.Application.DTOs.Responses.Pharmacy;
+using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Application.Extensions;
 using Shuryan.Application.Interfaces;
 using Shuryan.Core.Entities.Shared;
 using Shuryan.Core.Enums;
 using Shuryan.Core.Enums.Identity;
 using Shuryan.Core.Enums.Pharmacy;
+using Shuryan.Core.Enums.Laboratory;
 using Shuryan.Core.Interfaces.UnitOfWork;
 using System;
 using System.Collections.Generic;
@@ -497,6 +499,64 @@ namespace Shuryan.Application.Services
             }
         }
 
+        public async Task<bool> ApproveLaboratoryDocumentAsync(Guid documentId)
+        {
+            try
+            {
+                _logger.LogInformation("Approving laboratory document {DocumentId}", documentId);
+
+                var document = await _unitOfWork.LaboratoryDocuments.GetByIdAsync(documentId);
+                if (document == null)
+                {
+                    _logger.LogWarning("Laboratory document {DocumentId} not found", documentId);
+                    throw new ArgumentException($"Laboratory document with ID {documentId} not found");
+                }
+
+                document.Status = Shuryan.Core.Enums.VerificationDocumentStatus.Approved;
+                document.RejectionReason = null;
+                document.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Laboratory document {DocumentId} has been approved", documentId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving laboratory document {DocumentId}", documentId);
+                throw;
+            }
+        }
+
+        public async Task<bool> RejectLaboratoryDocumentAsync(Guid documentId, string? rejectionReason)
+        {
+            try
+            {
+                _logger.LogInformation("Rejecting laboratory document {DocumentId} with reason: {Reason}", documentId, rejectionReason ?? "No reason provided");
+
+                var document = await _unitOfWork.LaboratoryDocuments.GetByIdAsync(documentId);
+                if (document == null)
+                {
+                    _logger.LogWarning("Laboratory document {DocumentId} not found", documentId);
+                    throw new ArgumentException($"Laboratory document with ID {documentId} not found");
+                }
+
+                document.Status = Shuryan.Core.Enums.VerificationDocumentStatus.Rejected;
+                document.RejectionReason = rejectionReason;
+                document.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Laboratory document {DocumentId} has been rejected", documentId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting laboratory document {DocumentId}", documentId);
+                throw;
+            }
+        }
+
         #endregion
 
         #region Pharmacy Verification Status Management
@@ -625,6 +685,145 @@ namespace Shuryan.Application.Services
             }
 
             return new PaginatedResponse<PharmacyVerificationListResponse>
+            {
+                PageNumber = paginationParams.PageNumber,
+                PageSize = paginationParams.PageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = paginationParams.PageNumber > 1,
+                HasNextPage = paginationParams.PageNumber < totalPages,
+                Data = responses
+            };
+        }
+
+        #endregion
+
+        #region Laboratory Verification Status Management
+
+        public async Task<bool> StartLaboratoryReviewAsync(Guid laboratoryId)
+        {
+            var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(laboratoryId);
+            if (laboratory == null) throw new ArgumentException($"Laboratory with ID {laboratoryId} not found");
+            laboratory.VerificationStatus = Core.Enums.Identity.VerificationStatus.UnderReview;
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Review started for laboratory {LaboratoryId}", laboratoryId);
+            return true;
+        }
+
+        public async Task<bool> VerifyLaboratoryAsync(Guid laboratoryId, Guid verifierId)
+        {
+            var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(laboratoryId);
+            if (laboratory == null) throw new ArgumentException($"Laboratory with ID {laboratoryId} not found");
+            laboratory.VerificationStatus = Core.Enums.Identity.VerificationStatus.Verified;
+            laboratory.VerifiedAt = DateTime.UtcNow;
+            laboratory.VerifierId = verifierId;
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Laboratory {LaboratoryId} verified by {VerifierId}", laboratoryId, verifierId);
+            return true;
+        }
+
+        public async Task<bool> RejectLaboratoryAsync(Guid laboratoryId)
+        {
+            var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(laboratoryId);
+            if (laboratory == null) throw new ArgumentException($"Laboratory with ID {laboratoryId} not found");
+            laboratory.VerificationStatus = Core.Enums.Identity.VerificationStatus.Rejected;
+            laboratory.VerifiedAt = null;
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Laboratory {LaboratoryId} rejected", laboratoryId);
+            return true;
+        }
+
+        #endregion
+
+        #region Get Laboratories by Verification Status
+
+        public async Task<PaginatedResponse<LaboratoryVerificationListResponse>> GetLaboratoriesWithSentStatusAsync(PaginationParams paginationParams)
+            => await GetLaboratoriesByStatusAsync(VerificationStatus.Sent, paginationParams);
+
+        public async Task<PaginatedResponse<LaboratoryVerificationListResponse>> GetLaboratoriesUnderReviewAsync(PaginationParams paginationParams)
+            => await GetLaboratoriesByStatusAsync(VerificationStatus.UnderReview, paginationParams);
+
+        public async Task<PaginatedResponse<LaboratoryVerificationListResponse>> GetRejectedLaboratoriesAsync(PaginationParams paginationParams)
+            => await GetLaboratoriesByStatusAsync(VerificationStatus.Rejected, paginationParams);
+
+        public async Task<PaginatedResponse<LaboratoryVerificationListResponse>> GetVerifiedLaboratoriesAsync(PaginationParams paginationParams, Guid verifierId)
+        {
+            var all = await _unitOfWork.Laboratories.GetAllAsync();
+            var filtered = all.Where(p => p.VerificationStatus == VerificationStatus.Verified && p.VerifierId == verifierId).ToList();
+            return await BuildLaboratoryPaginatedResponse(filtered, paginationParams);
+        }
+
+        public async Task<List<LaboratoryDocumentItemResponse>> GetLaboratoryDocumentsAsync(Guid laboratoryId)
+        {
+            var laboratory = await _unitOfWork.Laboratories.GetByIdAsync(laboratoryId);
+            if (laboratory == null) throw new ArgumentException($"Laboratory with ID {laboratoryId} not found");
+
+            var documents = await _unitOfWork.LaboratoryDocuments.GetByLaboratoryIdAsync(laboratoryId);
+            return documents.Select(d => new LaboratoryDocumentItemResponse
+            {
+                Id = d.Id,
+                DocumentUrl = d.DocumentUrl,
+                Type = d.Type,
+                TypeName = d.Type.GetDescription(),
+                Status = d.Status,
+                StatusName = d.Status.GetDescription(),
+                RejectionReason = d.RejectionReason,
+                CreatedAt = d.CreatedAt
+            }).ToList();
+        }
+
+        // ---- Helper ----
+        private async Task<PaginatedResponse<LaboratoryVerificationListResponse>> GetLaboratoriesByStatusAsync(
+            VerificationStatus status, PaginationParams paginationParams)
+        {
+            var all = await _unitOfWork.Laboratories.GetAllAsync();
+            var filtered = all.Where(p => p.VerificationStatus == status).ToList();
+            return await BuildLaboratoryPaginatedResponse(filtered, paginationParams);
+        }
+
+        private async Task<PaginatedResponse<LaboratoryVerificationListResponse>> BuildLaboratoryPaginatedResponse(
+            List<Core.Entities.Identity.Laboratory> laboratories, PaginationParams paginationParams)
+        {
+            var totalCount = laboratories.Count;
+            var totalPages = (int)Math.Ceiling(totalCount / (double)paginationParams.PageSize);
+            var paged = laboratories
+                .Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
+                .Take(paginationParams.PageSize)
+                .ToList();
+
+            var responses = new List<DTOs.Responses.Laboratory.LaboratoryVerificationListResponse>();
+            foreach (var laboratory in paged)
+            {
+                var docs = await _unitOfWork.LaboratoryDocuments.GetByLaboratoryIdAsync(laboratory.Id);
+                var address = laboratory.Address;
+                responses.Add(new LaboratoryVerificationListResponse
+                {
+                    Id = laboratory.Id,
+                    Name = laboratory.Name,
+                    OwnerName = laboratory.FirstName != null ? $"{laboratory.FirstName} {laboratory.LastName}" : null,
+                    Governorate = address?.Governorate.GetDescription() ?? string.Empty,
+                    City = address?.City ?? string.Empty,
+                    Address = address != null ? $"{address.Street}, {address.City}" : null,
+                    ProfileImageUrl = laboratory.ProfilePictureUrl,
+                    PhoneNumber = laboratory.PhoneNumber,
+                    Email = laboratory.Email,
+                    VerificationStatus = laboratory.VerificationStatus,
+                    VerificationStatusName = laboratory.VerificationStatus.GetDescription(),
+                    Documents = docs.Select(d => new LaboratoryDocumentItemResponse
+                    {
+                        Id = d.Id,
+                        DocumentUrl = d.DocumentUrl,
+                        Type = d.Type,
+                        TypeName = d.Type.GetDescription(),
+                        Status = d.Status,
+                        StatusName = d.Status.GetDescription(),
+                        RejectionReason = d.RejectionReason,
+                        CreatedAt = d.CreatedAt
+                    }).ToList()
+                });
+            }
+
+            return new PaginatedResponse<LaboratoryVerificationListResponse>
             {
                 PageNumber = paginationParams.PageNumber,
                 PageSize = paginationParams.PageSize,

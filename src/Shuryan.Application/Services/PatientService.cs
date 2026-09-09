@@ -1563,9 +1563,9 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Prescription with ID {prescriptionId} not found for patient {patientId}");
                 }
 
-                if (prescription.Status != PrescriptionStatus.Active)
+                if (prescription.Status != PrescriptionStatus.Active && prescription.Status != PrescriptionStatus.Reported)
                 {
-                    throw new InvalidOperationException($"Prescription {prescriptionId} is not active. Current status: {prescription.Status}");
+                    throw new InvalidOperationException($"Prescription {prescriptionId} is not active or reported. Current status: {prescription.Status}");
                 }
 
                 var pharmacy = await _pharmacyRepository.GetByIdAsync(request.PharmacyId);
@@ -1574,16 +1574,16 @@ namespace Shuryan.Application.Services
                     throw new ArgumentException($"Pharmacy with ID {request.PharmacyId} not found");
                 }
 
-                // تحقق من إذا كانت الروشتة تم إرسالها لنفس الصيدلية من قبل
-                var existingOrderToSamePharmacy = await _unitOfWork.Repository<PharmacyOrder>()
+                // تحقق من إذا كان هناك طلب معلق لهذه الروشتة لدى نفس الصيدلية في انتظار الرد
+                var existingPendingOrder = await _unitOfWork.Repository<PharmacyOrder>()
                     .GetQueryable()
                     .FirstOrDefaultAsync(po => po.PrescriptionId == prescriptionId && 
                                               po.PharmacyId == request.PharmacyId &&
-                                              po.Status != PharmacyOrderStatus.Cancelled);
+                                              po.Status == PharmacyOrderStatus.PendingPharmacyResponse);
 
-                if (existingOrderToSamePharmacy != null)
+                if (existingPendingOrder != null)
                 {
-                    throw new InvalidOperationException($"تم إرسال هذه الروشتة مسبقاً إلى نفس الصيدلية");
+                    throw new InvalidOperationException($"يوجد طلب معلق لهذه الروشتة بالفعل لدى هذه الصيدلية في انتظار الرد");
                 }
 
                 var orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";

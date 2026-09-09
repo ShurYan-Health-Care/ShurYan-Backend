@@ -65,5 +65,24 @@ namespace Shuryan.Application.Interfaces
                 Task<IEnumerable<LabTestListResponse>> GetAvailableLabTestsAsync(string? searchTerm = null, string? category = null);
 
                 #endregion
+
+                #region Verification Document Operations
+
+                /// <summary>
+                /// جلب مستندات التوثيق للمعمل
+                /// </summary>
+                Task<List<LaboratoryDocumentItemResponse>> GetVerificationDocumentsAsync(Guid laboratoryId);
+
+                /// <summary>
+                /// رفع مستند توثيق للمعمل
+                /// </summary>
+                Task<LaboratoryDocumentItemResponse> UploadVerificationDocumentAsync(Guid laboratoryId, int documentType, IFormFile file);
+
+                /// <summary>
+                /// إرسال طلب التوثيق للمراجعة
+                /// </summary>
+                Task SubmitForReviewAsync(Guid laboratoryId);
+
+                #endregion
         }
 }
