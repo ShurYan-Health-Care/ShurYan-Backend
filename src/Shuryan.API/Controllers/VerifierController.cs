@@ -7,6 +7,7 @@ using Shuryan.Application.DTOs.Common.Pagination;
 using Shuryan.Application.DTOs.Requests;
 using Shuryan.Application.DTOs.Responses;
 using Shuryan.Application.DTOs.Responses.Doctor;
+using Shuryan.Application.DTOs.Responses.Laboratory;
 using Shuryan.Application.Interfaces;
 using System;
 using System.Linq;
@@ -421,6 +422,61 @@ namespace Shuryan.API.Controllers
             }
         }
 
+        /// <summary>
+        /// قبول مستند معمل
+        /// </summary>
+        [HttpPost("laboratory-documents/{documentId}/approve")]
+        [Authorize(Roles = "Verifier,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<object>>> ApproveLaboratoryDocument(Guid documentId)
+        {
+            _logger.LogInformation("Request to approve laboratory document {DocumentId}", documentId);
+            try
+            {
+                var result = await _verifierService.ApproveLaboratoryDocumentAsync(documentId);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Laboratory document has been approved"));
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving laboratory document: {DocumentId}", documentId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        /// <summary>
+        /// رفض مستند معمل مع سبب الرفض (اختياري)
+        /// </summary>
+        [HttpPost("laboratory-documents/{documentId}/reject")]
+        [Authorize(Roles = "Verifier,Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<object>>> RejectLaboratoryDocument(
+            Guid documentId,
+            [FromBody] Shuryan.Application.DTOs.Requests.Verifier.RejectDocumentRequest request)
+        {
+            _logger.LogInformation("Request to reject laboratory document {DocumentId} with reason: {Reason}",
+                documentId, request?.RejectionReason ?? "No reason provided");
+            try
+            {
+                var result = await _verifierService.RejectLaboratoryDocumentAsync(documentId, request?.RejectionReason);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Laboratory document has been rejected"));
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting laboratory document: {DocumentId}", documentId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
         #endregion
 
         #region Pharmacy Verification Status Management
@@ -567,6 +623,156 @@ namespace Shuryan.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving documents for pharmacy: {PharmacyId}", pharmacyId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        #endregion
+
+        #region Laboratory Verification Status Management
+
+        [HttpPost("laboratories/{laboratoryId}/start-review")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<object>>> StartLaboratoryReview(Guid laboratoryId)
+        {
+            try
+            {
+                var result = await _verifierService.StartLaboratoryReviewAsync(laboratoryId);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Review has been started"));
+            }
+            catch (ArgumentException ex) { return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404)); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error starting review for laboratory: {LaboratoryId}", laboratoryId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpPost("laboratories/{laboratoryId}/verify")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<object>>> VerifyLaboratory(Guid laboratoryId)
+        {
+            var currentVerifierId = GetCurrentUserId();
+            if (currentVerifierId == Guid.Empty)
+                return Unauthorized(ApiResponse<object>.Failure("Invalid or missing authentication token", statusCode: 401));
+            try
+            {
+                var result = await _verifierService.VerifyLaboratoryAsync(laboratoryId, currentVerifierId);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Laboratory has been verified"));
+            }
+            catch (ArgumentException ex) { return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404)); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error verifying laboratory: {LaboratoryId}", laboratoryId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpPost("laboratories/{laboratoryId}/reject")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<object>>> RejectLaboratory(Guid laboratoryId)
+        {
+            try
+            {
+                var result = await _verifierService.RejectLaboratoryAsync(laboratoryId);
+                return Ok(ApiResponse<object>.Success(new { updated = result }, "Laboratory has been rejected"));
+            }
+            catch (ArgumentException ex) { return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404)); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting laboratory: {LaboratoryId}", laboratoryId);
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        #endregion
+
+        #region Get Laboratories by Verification Status
+
+        [HttpGet("laboratories/status/sent")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<LaboratoryVerificationListResponse>>>> GetLaboratoriesWithSentStatus(
+            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await _verifierService.GetLaboratoriesWithSentStatusAsync(new Application.DTOs.Common.Pagination.PaginationParams { PageNumber = pageNumber, PageSize = pageSize });
+                return Ok(ApiResponse<PaginatedResponse<LaboratoryVerificationListResponse>>.Success(result, "Laboratories with Sent status retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving laboratories with Sent status");
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpGet("laboratories/status/under-review")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<LaboratoryVerificationListResponse>>>> GetLaboratoriesUnderReview(
+            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await _verifierService.GetLaboratoriesUnderReviewAsync(new Application.DTOs.Common.Pagination.PaginationParams { PageNumber = pageNumber, PageSize = pageSize });
+                return Ok(ApiResponse<PaginatedResponse<LaboratoryVerificationListResponse>>.Success(result, "Laboratories under review retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving laboratories under review");
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpGet("laboratories/status/verified")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<LaboratoryVerificationListResponse>>>> GetVerifiedLaboratories(
+            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var currentVerifierId = GetCurrentUserId();
+            if (currentVerifierId == Guid.Empty)
+                return Unauthorized(ApiResponse<object>.Failure("Invalid or missing authentication token", statusCode: 401));
+            try
+            {
+                var result = await _verifierService.GetVerifiedLaboratoriesAsync(new Application.DTOs.Common.Pagination.PaginationParams { PageNumber = pageNumber, PageSize = pageSize }, currentVerifierId);
+                return Ok(ApiResponse<PaginatedResponse<LaboratoryVerificationListResponse>>.Success(result, "Verified laboratories retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving verified laboratories");
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpGet("laboratories/status/rejected")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<PaginatedResponse<LaboratoryVerificationListResponse>>>> GetRejectedLaboratories(
+            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await _verifierService.GetRejectedLaboratoriesAsync(new Application.DTOs.Common.Pagination.PaginationParams { PageNumber = pageNumber, PageSize = pageSize });
+                return Ok(ApiResponse<PaginatedResponse<LaboratoryVerificationListResponse>>.Success(result, "Rejected laboratories retrieved successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving rejected laboratories");
+                return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
+            }
+        }
+
+        [HttpGet("laboratories/{laboratoryId}/documents")]
+        [Authorize(Roles = "Verifier,Admin")]
+        public async Task<ActionResult<ApiResponse<List<LaboratoryDocumentItemResponse>>>> GetLaboratoryDocuments(Guid laboratoryId)
+        {
+            try
+            {
+                var documents = await _verifierService.GetLaboratoryDocumentsAsync(laboratoryId);
+                return Ok(ApiResponse<List<LaboratoryDocumentItemResponse>>.Success(documents, "Laboratory documents retrieved successfully"));
+            }
+            catch (ArgumentException ex) { return NotFound(ApiResponse<object>.Failure(ex.Message, statusCode: 404)); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving documents for laboratory: {LaboratoryId}", laboratoryId);
                 return StatusCode(500, ApiResponse<object>.Failure("An unexpected error occurred", new[] { ex.Message }, 500));
             }
         }
