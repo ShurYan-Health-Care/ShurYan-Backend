@@ -52,6 +52,15 @@ namespace Shuryan.Application.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Idempotent fallback: confirm a payment (and its linked order) using only the
+        /// Payment.Id returned in the GET redirect callback query-string.
+        /// Safe to call even if the webhook already completed the payment.
+        /// </summary>
+        Task ProcessCallbackPaymentAsync(
+            Guid paymentId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Get payment details by ID
         /// </summary>
         Task<ApiResponse<PaymentResponse>> GetPaymentByIdAsync(

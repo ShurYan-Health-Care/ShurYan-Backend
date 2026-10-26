@@ -210,7 +210,9 @@ namespace Shuryan.Infrastructure.Repositories.Medical
             return await _dbSet
                 .Where(a => a.DoctorId == doctorId
                     && a.ScheduledStartTime >= today
-                    && a.ScheduledStartTime < tomorrow)
+                    && a.ScheduledStartTime < tomorrow
+                    && a.Status != AppointmentStatus.PendingPayment
+                    && a.Status != AppointmentStatus.Cancelled)
                 .CountAsync();
         }
 
