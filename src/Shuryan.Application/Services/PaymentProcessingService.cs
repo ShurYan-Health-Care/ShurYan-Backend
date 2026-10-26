@@ -373,6 +373,51 @@ namespace Shuryan.Application.Services
                 return ApiResponse<PaymentResponse>.Success(response, "تم إلغاء عملية الدفع");
         }
 
+        /// <summary>
+        /// Idempotent fallback triggered by the GET redirect callback.
+        /// Confirms the payment and promotes the linked order to its post-payment status.
+        /// Safe to call multiple times — skips silently if payment is already Completed.
+        /// </summary>
+        public async Task ProcessCallbackPaymentAsync(
+            Guid paymentId,
+            CancellationToken cancellationToken = default)
+        {
+            var payment = await _unitOfWork.Payments.GetPaymentWithTransactionsAsync(paymentId);
+            if (payment == null)
+            {
+                _logger.LogWarning("[Callback-Fallback] Payment {PaymentId} not found — skipping", paymentId);
+                return;
+            }
+
+            // Already completed — webhook already did the job, nothing to do
+            if (payment.Status == PaymentStatus.Completed)
+            {
+                _logger.LogInformation("[Callback-Fallback] Payment {PaymentId} already Completed — skipping", paymentId);
+                return;
+            }
+
+            // Only promote Pending / Processing payments
+            if (payment.Status == PaymentStatus.Cancelled || payment.Status == PaymentStatus.Failed)
+            {
+                _logger.LogWarning("[Callback-Fallback] Payment {PaymentId} is {Status} — skipping", paymentId, payment.Status);
+                return;
+            }
+
+            _logger.LogInformation(
+                "[Callback-Fallback] Completing payment {PaymentId} for {OrderType}/{OrderId} (status was {Status})",
+                paymentId, payment.OrderType, payment.OrderId, payment.Status);
+
+            payment.Status = PaymentStatus.Completed;
+            payment.CompletedAt = DateTime.UtcNow;
+            _unitOfWork.Payments.Update(payment);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Promote the linked order (Appointment → Confirmed, PharmacyOrder → Confirmed, etc.)
+            await UpdateOrderStatusAfterPaymentAsync(payment.OrderType, payment.OrderId, cancellationToken);
+
+            _logger.LogInformation("[Callback-Fallback] Payment {PaymentId} completed and order updated", paymentId);
+        }
+
         #region Private Helper Methods
 
         private async Task<ApiResponse<InitiatePaymentResponse>> InitiatePaymentAsync(
